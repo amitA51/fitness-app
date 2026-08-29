@@ -8,6 +8,7 @@ import {
   type SettingsJumpItem,
   SettingsJumpNav,
 } from '../components/ui/SettingsSectionLabel';
+import { useIsAppAdmin } from '../hooks/useIsAppAdmin';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { deleteAllUserData } from '../services/settingsService';
 import { signOut } from '../services/supabaseAuth';
@@ -67,6 +68,18 @@ export default function Settings() {
   const cloudSync = useCloudSync();
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+
+  // /paywall sits behind AdminGuard (no monetization model has been chosen, so
+  // the screen exists only for the owner to look at). Offering the row to
+  // everyone made a normal user tap it and land silently on the home screen —
+  // a dead end with no feedback at all. Same hook as the route guard, so the
+  // row and the destination can never disagree.
+  //
+  // `loading` is honoured the same way the guard honours it: render NOTHING
+  // until the app_admins lookup settles. Rendering the row optimistically would
+  // pop it in and yank it back out on every cold load for the 99% who are not
+  // admins.
+  const { isAdmin: isAppAdmin, loading: appAdminLoading } = useIsAppAdmin();
 
   // The cloud-sync section reports "connected" only when BOTH the backend is
   // reachable AND the user is actually signed in — a reachable Supabase with no
@@ -159,46 +172,51 @@ export default function Settings() {
           <AccountSection authEmail={state.authEmail} onSignOut={handleSignOut} />
         </div>
 
-        <Link
-          to="/paywall"
-          className="active:scale-[0.98]"
-          aria-label="פרימיום — הצטרפות לרשימת ההמתנה"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            marginBottom: 28,
-            padding: '14px 16px',
-            background: 'var(--fs-surface)',
-            border: '1px solid var(--fs-accent)',
-            borderRadius: 'var(--radius-asymmetric)',
-            textDecoration: 'none',
-          }}
-        >
-          <span style={{ display: 'flex', flexDirection: 'column' }}>
-            <span
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 700,
-                fontSize: 15,
-                color: 'var(--fs-ink)',
-              }}
-            >
-              פרימיום
+        {/* Admin-only: /paywall is an AdminGuard-ed scaffold. Never offer a row
+            whose destination bounces the tapper straight back home. */}
+        {!appAdminLoading && isAppAdmin && (
+          <Link
+            to="/paywall"
+            className="active:scale-[0.98]"
+            aria-label="פרימיום — הצטרפות לרשימת ההמתנה"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              marginBottom: 28,
+              padding: '14px 16px',
+              minHeight: 44,
+              background: 'var(--fs-surface)',
+              border: '1px solid var(--fs-accent)',
+              borderRadius: 'var(--radius-asymmetric)',
+              textDecoration: 'none',
+            }}
+          >
+            <span style={{ display: 'flex', flexDirection: 'column' }}>
+              <span
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 700,
+                  fontSize: 15,
+                  color: 'var(--fs-ink)',
+                }}
+              >
+                פרימיום
+              </span>
+              <span
+                style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--fs-muted)' }}
+              >
+                הצטרפו לרשימת ההמתנה
+              </span>
             </span>
-            <span
-              style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--fs-muted)' }}
-            >
-              הצטרפו לרשימת ההמתנה
-            </span>
-          </span>
-          <Crown
-            size={18}
-            aria-hidden="true"
-            style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
-          />
-        </Link>
+            <Crown
+              size={18}
+              aria-hidden="true"
+              style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
+            />
+          </Link>
+        )}
 
         <div id="set-profile" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
           <ProfileSection

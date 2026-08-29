@@ -417,10 +417,6 @@ export function useWorkoutHandlers({
     dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'tutorial', isOpen: false } });
   }, [dispatch]);
 
-  const handleCloseAICoach = useCallback(() => {
-    dispatch({ type: 'CLOSE_AI_COACH' });
-  }, [dispatch]);
-
   const handleOpenSelector = useCallback(() => {
     dispatch({ type: 'OPEN_SELECTOR' });
   }, [dispatch]);
@@ -497,7 +493,6 @@ export function useWorkoutHandlers({
     handleCooldownComplete,
     handleCooldownSkip,
     handleCloseTutorial,
-    handleCloseAICoach,
     handleOpenSelector,
     handleGoalSelect,
   };

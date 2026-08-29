@@ -94,7 +94,6 @@ export interface WorkoutFlowOverlaysProps {
   tutorialNote?: string;
   onSaveTutorialNote?: (note: string) => void;
   onCloseTutorial: () => void;
-  onCloseAICoach: () => void;
 }
 
 const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
@@ -149,7 +148,6 @@ const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
   tutorialNote,
   onSaveTutorialNote,
   onCloseTutorial,
-  onCloseAICoach,
 }) => (
   <>
     {/* Confirm Exit — only mounted while open */}
@@ -236,13 +234,7 @@ const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
 
     {/* Tutorial + AI Coach — own error boundary so an AI failure can't blank the workout */}
     {showTutorial && tutorialExercise && (
-      <OverlayErrorBoundary
-        fallbackLabel="המדריך לא נפתח"
-        onDismiss={() => {
-          onCloseTutorial();
-          onCloseAICoach();
-        }}
-      >
+      <OverlayErrorBoundary fallbackLabel="המדריך לא נפתח" onDismiss={onCloseTutorial}>
         <React.Suspense fallback={null}>
           <ExerciseTutorial
             isOpen={true}

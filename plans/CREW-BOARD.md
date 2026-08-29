@@ -1099,7 +1099,389 @@ The trainee-facing surface is small, but nutrition has **three other consumers**
 - **No new admin toggle SCREEN.** That is a UI for a feature he may delete. If he later wants a
   runtime switch, the flag is the seam and it is a separate, small task.
 
-# Batch 15 — dispatched 2026-08-28 18:02. Amit: nutrition goals STAY hidden · paywall = my call · then photos
+# Batch 17 — dispatched 2026-08-29 20:07. Amit: "תמשיך את המשימות ומה שצריך לעשות בלי לשכוח כלום ובלי פשרות"
+
+**My call, taken under his standing autonomy:** finish T-048 rather than `git restore` it. The work is
+85% done and correct; throwing it away to redo the identical deletions tomorrow is the compromise, not
+the safe choice. And a repo that cannot typecheck is not a state to leave over a weekend.
+
+### State I re-measured myself at 20:06 before planning (a day had passed — I assumed nothing)
+Identical to the halt: branch `feat/ux-templates-picker` @ **`852b76a`**, **`master` untouched at
+`3bf1f7f`**, the same 6 `src/` files modified, newest `src/` mtime 08-28 18:36, **no worker alive**,
+e2e still **13** specs, zero debris, `plans/ONBOARDING-AUDIT.md` still absent.
+
+### ⚠️ THE ONE COORDINATION RISK IN THIS BATCH, and it has bitten this crew before
+**The tree starts RED**, at exactly one line: `ActiveWorkoutNew.tsx:858`. T-050 owns that line and
+fixes it as its first action. But T-051's definition of done also demands `verify` exit 0 — and in
+batch 14 a worker in this exact situation "helpfully" repaired a file another worker owned.
+**So T-051 is told the line by name, told who owns it, and told that if the only remaining errors are
+in that file it must report and stop rather than touch it.** T-052 is read-only and unaffected.
+Both are also told their own suite counts are NOT authoritative — only my post-batch run is.
+
+### Ownership map — disjoint, verified against the live tree
+- **T-050** → `ActiveWorkoutNew.tsx`, `Settings.tsx` + a NEW test file, `workoutTypes.ts`,
+  `useWorkoutHandlers.ts`, `WorkoutFlowOverlays.tsx`, `WorkoutOverlays.tsx`, `services/billing/types.ts`
+- **T-051** → `src/styles/tokens.css` (high-contrast block only) + `useWorkoutSettings.ts`
+- **T-052** → WRITES ONLY `plans/ONBOARDING-AUDIT.md`. Read-only everywhere else.
+- **NO PLAYWRIGHT, no build.** The screenshot round runs after this batch on a settled tree.
+
+## [T-051] light + high-contrast FIXED — ACCEPTED 2026-08-29 20:25. Best-evidenced report of the batch.
+- status: **done** — 2 files, exactly its ownership. 14 declarations added inside `html.high-contrast`
+  only; 2 lines removed from `useAccessibilitySettings`'s cleanup. All scratch files deleted.
+- **TEN failures cleared in light+HC, one in dark+HC, ZERO new failures.** Every one of 28 surfaces
+  stated as a number in all four states. Highlights: CTA fill **1.39 → 16.82**; pressed CTA
+  **1.18 → 5.23** with pressed-vs-resting **1.18 → 3.22**; active tab **1.25 → 15.12**; active chip
+  **1.39 → 16.82**; trained day vs empty **1.32 → 15.94**; `--fs-link` **3.17 → 16.82**; body ink on a
+  hovered card **1.10 → 18.88**.
+- **THE WEEK STRIP'S POLARITY IS FIXED AND IT CORRECTED MY BRIEF WHILE DOING IT.** I wrote "keep the
+  same luminance direction as the plain themes". It pointed out the plain themes order in **OPPOSITE**
+  directions — light is dark-on-light so trained is the DARKEST cell; dark is bright-on-dark. Since HC
+  blacks out both canvases, **the only coherent target is the dark ordering**, and both HC states now
+  match plain dark exactly. Before, light+HC was **not monotonic**: the rest day was the brightest cell
+  of the row. The operative clause — trained never dimmer than rest — now holds in both.
+- **⚠️ IT FOUND A FAILURE THE PROBE SCORED AS A PASS.** The probe reported the rest cell's dashed border
+  at 3.49 / 4.46 as a NON-TEXT figure against 3:1 and marked both ✅. But **the rest cell's LABEL is
+  `--fs-ink` on that same fill**, so those are §1.4.3 TEXT figures against 4.5 — **both were failing,
+  including in dark+HC, which everyone believed was safe.** Now 4.77 in both.
+- **It corrected 2 of the probe's 27 figures** and named why each was wrong: the dark+HC rest border
+  (probe 5.65, actual **4.46** — 5.65 contradicts the probe's own stated luminance) and perfect-week vs
+  empty (probe 16.82 is the ratio against pure `#000000`, not against the empty cell's actual `#090909`
+  — mislabelled). Neither changes a verdict. It also reproduced this repo's own published luminances to
+  6 decimal places before trusting its method.
+- **THE ARCHITECTURAL CALL IS THE GOOD PART: it did NOT move `--fs-primary`, and the reason is one I
+  had on the do-not-touch list without connecting it.** That token is **dual-use** — a dark-PANEL fill
+  AND the ink on `--fs-signal` via `--color-on-mustard`. Brighten it and lime loses its ink; black it
+  out and `SettingsPrimitives`' active border goes 1.39 → 1.00. So it left the token alone and moved the
+  **semantic fills that merely aliased it** (`--nav-pill-*`, `--btn-primary-*`) to the accent —
+  **precisely what `html.dark` already does for this same class of defect.** Found the house pattern
+  rather than inventing one, for the fourth batch running.
+- Pressed fill `#4e8a77` = `--fs-accent` × **0.55** uniform. It explains why the existing house factors
+  do not fit here: **0.64 reaches only 2.46:1 against the resting fill**, so the press stops being
+  perceptible. 0.55 is the factor whose window clears all three floors at once. Hue and saturation
+  held — no third accent.
+- **THE SECOND-ORDER CATCH: the bottom nav was MANDATORY, not scope creep.** A mint pill on the light
+  theme's translucent white bar (which composites to `#c7c7c7` over a black page) measures **1.35:1** —
+  so repointing `--nav-pill-bg` without also making `--nav-bg` opaque would have **created a brand-new
+  invisible selection** while fixing the old one. It measured that before shipping.
+- **One figure goes DOWN on purpose and it argued the trade:** hovered card vs page in light+HC
+  19.06 → 1.11. Before, the hover flashed near-white `#f0f5f3` under white ink — **1.10:1, unreadable
+  text**. After, the fill is one surface step and the ink is 18.88:1, with the border swapping to
+  21:1. "Text legibility beats a hover flash." Correct.
+- **`dark + high-contrast` still holds** — every metric meets its floor, and pressed-vs-resting actually
+  IMPROVES 1.86 → 3.22. **Plain themes untouched two ways:** every edit is inside the HC block, and all
+  28 metrics recomputed for plain light and plain dark are identical before and after.
+
+### ⚠️ ITEM 2 — THE UNMOUNT BUG WAS REAL, AND THE FIX IS NARROWER THAN THE OBVIOUS ONE
+`SettingsContext.tsx:193-207` is the OWNER: `classList.toggle(name, boolean)`, keyed to
+`[highContrast, largeText, reducedAnimations, darkMode]`. `useAccessibilitySettings`'s cleanup removed
+`high-contrast` and `reduce-motion` on unmount — **none of those four deps changed, so the owner's
+effect never re-ran and never put them back. Leaving a workout silently turned high contrast OFF for
+the rest of the session while the switch still read ON in Settings.** Prediction confirmed.
+**It removed ONLY the two `classList.remove` lines and deliberately KEPT the effect body**, because the
+in-workout overlay's own HC switch (`WorkoutSettingsOverlay.tsx:449-451`) writes to the WORKOUT store
+which `SettingsContext` does not read — so the body is the only thing that applies that switch.
+Deleting it would have been the bigger change that breaks it. `--font-scale` reported, untouched.
+
+### Findings it surfaced and correctly did NOT touch
+1. **`.toggle-thumb`** (`components.css:381`) goes 15.12 → **1.25** in light+HC — but **dark+HC already
+   ships exactly 1.25 today**, so this is parity, not a new defect, and no single knob value serves both
+   states. Needs a per-state thumb colour in `components.css`.
+2. **`SettingsPrimitives.tsx:284,333,401`** use `var(--fs-primary)` DIRECTLY as the active border —
+   1.39:1 on black in light+HC, and unreachable from `tokens.css` for the dual-use reason above.
+3. `SettingsToggle.tsx:71`'s `#318d78` is a hex literal no axis can reach; 1.25:1 in light+HC.
+4. **Pre-existing PLAIN-theme failures**, now measured: `.day-cell.done.perfect-week` vs empty
+   **1.85:1 in plain light**; `--fs-steel` hairline 1.73 light / 1.32 dark; CTA pressed-vs-resting
+   1.18 light / 1.36 dark.
+5. HC's de-translucency rule targets `.glass/.glass-strong/.glass-subtle/.glass-nav` — **zero call
+   sites.** The real classes are `.glass-surface` / `.glass-surface-dark`.
+6. **STRUCTURAL, and worth its own task:** the in-workout accessibility toggles persist to a DIFFERENT
+   store than the Settings screen reads, so **the two can disagree while a workout is mounted.**
+
+### Verified baseline — 2026-08-29 20:25, lead-measured on a CONFIRMED-static tree
+`spawn_list`: all three runs `[done]`. Newest `src/` mtime 5.5 minutes old before any gate ran.
+Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **703** files (was 702; +1 = `settingsPaywallRow.test.tsx`) |
+| `npm run test:run` | **165 files / 1438 tests**, exit 0 both runs — NEW FLOOR |
+| arithmetic | 164+1=165 files; 1434+4=1438 tests, all 4 from T-050's new file. Nothing deleted, skipped or weakened. |
+| debris | e2e **13** specs, `test-results/` absent, root swept, zero scratch files |
+| tree | 9 modified + 2 new — exactly the three tasks' declared ownership, no stragglers |
+
+### Backlog after batch 17 — corrected and reduced
+**CLOSED:** light+HC · the HC unmount bug · the `CLOSE_AI_COACH` chain (the check I owed since batch 9)
+· the two dead `/paywall` links (one gated, one proven to be an unreachable component) · the onboarding
+map. **CORRECTED:** `ai_coach`/`unlimited_templates` are NOT dead — they are the client half of a live
+server contract, so this is a two-sided decision needing `fitness-data`, not a deletion.
+**STILL OPEN:** ONE screenshot round (`ReadinessReadingCard`, hidden-nutrition, new `SettingsToggle`,
+admin-gated paywall, **and now light+HC and dark+HC**) plus fixing `e2e/visual-qa.spec.ts:78,286` which
+still navigate to `/nutrition` · the onboarding REDESIGN, now planned against facts · the two
+accessibility stores that can disagree · the toggle thumb + `SettingsPrimitives` borders in light+HC ·
+`.day-cell.done.perfect-week` **1.85:1 in plain light** · 92 Band-B borders BLOCKED on re-measurement ·
+5 spinner variants (check consumers first) · 3 `ChapterBreak` call sites + delete the file ·
+`Button.tsx:425` dead `group-hover:` · the lying `db:test` · coach side has zero e2e coverage.
+
+---
+
+## [T-050] Halted cleanup closed — ACCEPTED on evidence 2026-08-29 20:22
+- status: **accepted; my authoritative verify + test:run owed once T-051 lands** (still writing to `src/`)
+- **THE TREE IS GREEN AGAIN.** One line removed at `ActiveWorkoutNew.tsx:858`; `npx tsc --noEmit` exit 0
+  immediately after. **I verified the whole family myself: `CLOSE_AI_COACH`, `onCloseAICoach`,
+  `handleCloseAICoach` → ZERO matches across `src/`.** It also checked `OPEN_AI_COACH` and
+  `showAICoach` unprompted — both 0, so the predecessor had removed the state field too and no
+  unreachable reducer `case` remained. The check I owed since batch 9 is now genuinely closed.
+- **Constraint held:** `onOpenAICoach` intact at `ActiveWorkoutNew.tsx:763` wired to
+  `handleOpenTutorial`, declarations untouched in `ExerciseDisplay.tsx` and `WorkoutHeader.tsx`.
+  The `מאמן AI` chip still reaches the app's one real model call.
+- **IT MEASURED WHICH OF ITS OWN TESTS PROVE ANYTHING, INSTEAD OF CLAIMING IT.** It temporarily flipped
+  the guard to `{true && (`, ran, observed **2 fail / 2 pass**, then restored. So it can name which half
+  is load-bearing: the two NEGATIVE assertions (non-admin, and still-loading) catch the defect; the
+  positive one and the 44px one are regression net only. That is exactly the disclosure norm I set in
+  batch 14, and this time it is empirical rather than reasoned.
+  - **Third state covered that I did not ask for:** the row must also be absent WHILE the admin lookup
+    is loading, "or the row pops in and is yanked out on every cold load for the 99% who are not admins."
+- **I verified the temporary probe was undone:** `Settings.tsx:177` reads
+  `{!appAdminLoading && isAppAdmin && (` — no `{true &&` residue anywhere in the file. Net zero, as
+  disclosed. It reported having touched the file even though the net diff is nil, which is the right call.
+- Its own gates (NOT authoritative — T-051 is running the suite concurrently): verify exit 0, **703**
+  files; test:run **165 files / 1438 tests**. 164+1 and 1434+4 — its four tests only.
+
+### ⚠️ IT REFUSED ITEM 3 AND THE REASON CORRECTS MY OWN BACKLOG
+I had `services/billing/types.ts:33`'s `ai_coach` / `unlimited_templates` on the board as **dead
+entitlement keys**. **They are not dead — they are the client half of a LIVE server contract:**
+- `supabase/functions/ai-chat/index.ts:215` calls `has_feature_access({ p_feature: 'ai_coach' })` — a
+  real runtime gate.
+- `supabase/migrations/20260726100000_billing_core.sql:300` hardcodes **both** keys in the SQL function.
+- `supabase/tests/billing_core_test.sql:86,92` asserts `ai_coach` in both directions.
+Inside `src/` there is indeed no real reader (the `PaywallScreen`/`PremiumLock` hits are COMMENTS, and
+no `<PlanGate feature="ai_coach">` exists) — **so TypeScript would have let the removal through while
+silently desyncing the client list from server enforcement, on the exact gate protecting the one real
+model call.** It stopped and reported because the cascade lands in `supabase/`, which is not its lane.
+**Backlog corrected: this is not a deletion, it is a two-sided decision, and it needs `fitness-data`.**
+
+## [T-052] Onboarding audit — ACCEPTED 2026-08-29 20:22. `plans/ONBOARDING-AUDIT.md`, 412 lines
+- status: **done** — read-only confirmed, its only write is the report. No gates, no browser, no git.
+- **Field classification: USED 7 · STORED-BUT-UNREAD 4 · DEAD 7.** So **11 of 18 fields collected in
+  the first 60 seconds have no consumer.**
+- **⚠️ THE CENTREPIECE OF STEP 3 BUYS NOTHING.** `equipment` — the four-card choice the step is built
+  around, and the ONLY field that gates progress — is read exactly once
+  (`src/services/intelligence/profile.ts:74`) and **its value is never used**: `describeProfile` omits
+  it from the AI prompt, and no exercise or template filter references it. Its entire effect is **+1/7
+  on a `completeness` score.** `preferredWorkoutDays` is read only by its own recap card on the next screen.
+- **⚠️ STEP 3 FABRICATES A HEALTH FACT WHEN THE USER SAYS NOTHING.** The step gates on `equipment` only
+  (`useOnboardingWizard.ts:86-89`), so "רמת ניסיון" is optional — but `saveOnboardingData` writes
+  `activityLevel: 'פעיל מתון'` regardless (`appOnboarding.ts:51-62,81`), **a 1.55 TDEE multiplier.**
+  A user who answered nothing is recorded as moderately active and gets calorie targets built on it.
+  **This is the invented-175cm-height defect again, in a new place** — and the same family as a recap
+  card showing `משך כל אימון — 60 דקות`, a value no step ever asks for.
+- **⚠️ NOTHING IN ONBOARDING IS REQUIRED TO LOG A WORKOUT.** The logger reads no profile field to start,
+  log or save; the single per-workout consumer (`weightKg` for the calorie estimate,
+  `WorkoutActions.tsx:293-299`) accepts null. **So all 8 questions are negotiable** — which makes the
+  churn argument directly actionable rather than theoretical.
+- **The skip promise is two-thirds a lie.** Skipping is a permanent one-way door and says
+  "אפשר להשלים זאת בהגדרות", but Settings has **no control** for `equipment`, `experienceLevel` or the
+  `primaryGoal` enum.
+- **Zero per-step telemetry** (`funnel.ts:27-40` has `onboarding_completed` and nothing else), so
+  nobody can currently say which screen loses people.
+- Shortest honest path to a first logged workout: **19 numbered actions** from cold launch.
+- **One UNVERIFIED item it flagged honestly, and it is the highest-value thing to check on a device:**
+  the number inputs commit on blur, so the hint may keep saying `הזינו את גילכם` while `30` is visibly
+  in the field. It sits on **the only required typed field in the whole flow.**
+- It named what is genuinely well built as well as what is broken, and tagged every claim
+  VERIFIED / INFERRED / UNVERIFIED with its method stated up front.
+
+
+- status: dispatched (batch 17)
+- owner: fitness-dev
+- goal: make the tree typecheck again and finish what batch 16's halt interrupted.
+- notes: **five of its six files are already COMPLETE in the working tree** — it is told to VERIFY that
+  work, not redo it. `PremiumLock.tsx` is already proven to have zero call sites, so it is explicitly
+  out of scope: nothing to fix, nobody could reach it. The `מאמן AI` chip and `onOpenAICoach` stay.
+- done when: verify exit 0; test:run >= 1434 plus a test proving the Settings paywall row is hidden for
+  a non-admin and shown for an admin; grep proof of zero `CLOSE_AI_COACH` / `onCloseAICoach` in `src/`
+
+## [T-051] The accessibility mode that damages accessibility — re-dispatch
+- status: dispatched (batch 17)
+- owner: fitness-design
+- goal: unchanged from batch 16. `light + high-contrast` is reachable by a real switch and is WORSE
+  than the default — active tab 1.25:1, pressed CTA 1.18:1, week-strip polarity inverts so the REST day
+  becomes the brightest cell. Cause: high-contrast repaints surfaces to black in BOTH themes but never
+  overrides `--fs-primary`, which in light stays navy.
+- notes: still the highest-priority defect on this board. `dark + high-contrast` currently HOLDS and
+  must keep holding. The probe's ratios are hand-derived, not sampled — re-derive before trusting.
+  Also asked to confirm the unverified claim that leaving a workout silently switches HC off.
+
+## [T-052] Onboarding audit — re-dispatch, still never mapped
+- status: dispatched (batch 17)
+- owner: fitness-qa
+- goal: the fact base for the first 60 seconds. Every step and field: USED / STORED-BUT-UNREAD / DEAD
+  with file:line, the shortest honest path to a first workout, keep/cut/defer per field.
+- notes: read-only, no gates, no browser. The redesign is the batch after, planned against facts.
+
+---
+
+# Batch 16 — HALTED BY AMIT 2026-08-28 18:35, ~4 minutes after dispatch. "נמשיך אחר כך תכבה אותם"
+
+All three workers were steered to STOP immediately, make no further edits, attempt no revert, and run
+no git. **Nothing was committed. HEAD is still `852b76a`.**
+
+### ⚠️ THE TREE IS NOT CLEAN — read this before dispatching anything next time
+Measured by me at the moment of the halt, `git status --short` + `git diff --numstat`:
+
+| file | state | whose |
+|---|---|---|
+| `plans/CREW-BOARD.md` | +55/−1 | mine (this batch's plan) |
+| `src/components/workout/core/workoutTypes.ts` | 0/−5 | T-048 |
+| `src/components/workout/active/useWorkoutHandlers.ts` | 0/−5 | T-048 |
+| `src/components/workout/active/WorkoutFlowOverlays.tsx` | +1/−9 | T-048 |
+| `src/components/workout/active/WorkoutOverlays.tsx` | 0/−2 | T-048 |
+| `src/components/workout/ActiveWorkoutNew.tsx` | 0/−1 | T-048 |
+| `src/pages/Settings.tsx` | +57/−39 | T-048 |
+
+**T-047 never touched `src/styles/tokens.css`** — the high-contrast defect is entirely unstarted.
+**T-049 never created `plans/ONBOARDING-AUDIT.md`** — the onboarding map is entirely unstarted.
+So all uncommitted `src/` work belongs to ONE task, T-048, and it is the `CLOSE_AI_COACH` deletion
+(5 files, almost pure removals) plus the Settings paywall-row gating.
+
+### What T-048 did NOT get to, so this work is NOT acceptable as-is
+- **`npm run verify` and `npm run test:run` never ran.** The floor is 164 files / 1434 tests and it is
+  unproven on this tree.
+- No test was written proving the Settings row is hidden for a non-admin and shown for an admin — that
+  was in its definition of done.
+- `src/components/billing/PremiumLock.tsx` is untouched, so **the second dead `/paywall` link is still
+  live.** Its brief told it to check that component's consumers first (an earlier audit suggests it may
+  have none at all); that check is unreported.
+- No grep proof that zero `CLOSE_AI_COACH` / `onCloseAICoach` remain in `src/`.
+
+### The decision I am holding for Amit, not taking myself
+Three ways to park this, and it matters because a modified-but-unverified tree is the exact hazard my
+own rules warn about — next session I cannot tell my work from a worker's:
+1. **`git restore` the six `src/` files** → back to a known-good `852b76a`, batch 16 starts from zero later.
+2. **Finish T-048 only** (one short worker: the missing test, `PremiumLock`, the grep proof), then gate
+   and commit, so the tree is green and closed.
+3. **Leave it parked as-is** — nothing lost, but the next batch inherits an unverified tree.
+Asked; not decided unilaterally, because option 1 throws away real work and option 3 carries real risk.
+
+## [T-047] light + high-contrast — NOT STARTED, re-dispatch as written
+- status: halted before any edit (batch 16)
+- owner: fitness-design
+- goal/brief: unchanged and still correct. `light + high-contrast` is a state a real user can switch
+  into and it is WORSE than the default — active tab 1.25:1, pressed CTA 1.18:1, week-strip polarity
+  inverts so the REST day becomes the brightest cell. Cause: high-contrast repaints surfaces to black
+  in BOTH themes but never overrides `--fs-primary`, which in light stays navy.
+- notes: it was also asked to confirm the probe's unverified claim that leaving a workout silently
+  switches high-contrast off (`useWorkoutSettings.ts:406-418`). Both items still open.
+  **This is still the highest-priority item on the board** — a real accessibility switch makes the app worse.
+
+## [T-048] Two dead paths — PARTIALLY LANDED, AND THE TREE IS RED
+- status: halted mid-run (batch 16)
+- owner: fitness-dev
+- **⚠️ THE TREE DOES NOT TYPECHECK. Verified by my own grep at 18:38, not taken on the worker's word.**
+  `src/components/workout/ActiveWorkoutNew.tsx:858` still reads `onCloseAICoach={handleCloseAICoach}`,
+  and that is the ONLY remaining match for the whole family in `src/` — so the handler's definition and
+  its destructure are both already gone. That line therefore references an undefined identifier AND
+  passes a prop whose type `WorkoutOverlays.tsx` no longer declares. **Two errors, one line.**
+  `npm run verify` and `npm run build` both fail on this tree until that line is removed.
+- **The worker disclosed this itself, precisely and unprompted** — it named the file MID-EDIT, gave both
+  line numbers, and said plainly "this file will NOT typecheck". Five of its six files it marked
+  COMPLETE. That is the disclosure that makes the state recoverable instead of a mystery.
+- **REAL FINDING WORTH KEEPING: `src/components/billing/PremiumLock.tsx` has ZERO call sites.** It
+  grepped repo-wide including tests; the only matches are inside the file itself. **So the "second dead
+  `/paywall` link" was never reachable by any user** — it is a dead component, not a live dead end.
+  That closes a backlog item and it obeyed the check-consumers-first rule instead of fixing it blind.
+- `src/pages/Settings.tsx` is COMPLETE: `useIsAppAdmin` imported, and the `/paywall` Link wrapped in
+  `{!appAdminLoading && isAppAdmin && (...)}` — the loading guard included, so the row does not flicker.
+- What is still missing: the test proving the row is hidden for a non-admin and shown for an admin, and
+  `src/services/billing/types.ts` was not looked at. No test file was created.
+- **Constraint held:** `onOpenAICoach` and the `מאמן AI` chip were never touched. It confirmed that
+  explicitly, and my grep agrees — zero hits for the open half.
+
+### The decision, corrected — "leave it parked" is no longer harmless
+1. **`git restore` the six `src/` files** → clean at `852b76a`. Throws away ~30 lines of straightforward
+   deletions plus the finished Settings gating. Cheap to redo.
+2. **One short worker: delete that ONE line, add the missing test**, then I gate and commit. The work is
+   otherwise done. This ends green and closed.
+3. **Leave it as-is** — this now means the repo cannot typecheck or build. Not a neutral park.
+I cannot fix line 858 myself: the lead does not edit files under `src/`.
+
+
+## [T-049] Onboarding audit — NOT STARTED, re-dispatch as written
+- status: halted before any write (batch 16)
+- owner: fitness-qa
+- goal/brief: unchanged. Read-only map of every onboarding step and field — USED / STORED-BUT-UNREAD /
+  DEAD with file:line, the shortest honest path to a first workout, and a keep/cut/defer verdict per field.
+- notes: still the right first move. This crew has arranged lies every time it designed before auditing.
+
+### Batch 16 ownership map — still valid, reuse it on re-dispatch
+- **T-047** → `src/styles/tokens.css` (high-contrast block only) + `useWorkoutSettings.ts`
+- **T-048** → `Settings.tsx`, `PremiumLock.tsx`, `workoutTypes.ts`, `useWorkoutHandlers.ts`,
+  `WorkoutFlowOverlays.tsx`, `WorkoutOverlays.tsx`, `ActiveWorkoutNew.tsx`
+- **T-049** → WRITES ONLY `plans/ONBOARDING-AUDIT.md`
+- NO Playwright, no build — the screenshot round runs after, on a settled tree.
+
+### Still owed after this batch, unchanged
+ONE screenshot round covering `ReadinessReadingCard`, the hidden-nutrition state, the new
+`SettingsToggle`, the admin-gated paywall — plus fixing `e2e/visual-qa.spec.ts:78,286`, which still
+navigate to `/nutrition` and will land on the dashboard.
+
+---
+
+# Batch 16 — dispatched 2026-08-28 18:31. Amit: "תריץ את שניהם במקביל" — cleanup AND onboarding together.
+
+### Why the onboarding task is an AUDIT and not a redesign
+Onboarding has **never been mapped**. Every time this crew designed before knowing what was true, it
+arranged lies — the readiness score, the weekly rings, the recovery bars, the paywall's feature table.
+Every time it audited first (Home, Progress, billing, the theme axes) the audit changed the plan.
+So T-049 is read-only. The redesign is the batch after, and it will be planned against facts.
+
+### Ownership map — disjoint, verified
+- **T-047** → `src/styles/tokens.css` (the `html.high-contrast` block only) + `useWorkoutSettings.ts`
+- **T-048** → `src/pages/Settings.tsx`, `src/components/billing/PremiumLock.tsx`,
+  `src/components/workout/core/workoutTypes.ts`, `src/components/workout/active/useWorkoutHandlers.ts`,
+  `src/components/workout/active/WorkoutFlowOverlays.tsx`,
+  `src/components/workout/active/WorkoutOverlays.tsx`, `src/components/workout/ActiveWorkoutNew.tsx`
+- **T-049** → WRITES ONLY `plans/ONBOARDING-AUDIT.md`. Read-only everywhere else.
+- **NO PLAYWRIGHT, no build** — the screenshot round runs after this batch on a settled tree, per the
+  rule that has worked since batch 10.
+
+## [T-047] The accessibility mode that damages accessibility
+- status: dispatched (batch 16)
+- owner: fitness-design
+- goal: `light + high-contrast` is a state a real user can switch into, and it is WORSE than the
+  default — active tab 1.25:1, pressed CTA 1.18:1, and the week strip's polarity inverts so the REST
+  day becomes the brightest cell. Cause, from `plans/THEME-AXES-PROBE.md`: high-contrast repaints
+  surfaces to black in BOTH themes but never overrides `--fs-primary`, which in light stays navy.
+- done when: verify green; test:run >= 1434; every surface the probe lists stated as a NUMBER before
+  and after in `light+HC`, `dark+HC` and both plain themes; dark+HC proven not to regress
+- notes: the probe's figures are hand-derived from the cascade, NOT sampled pixels — it said so itself.
+  Re-derive independently before trusting them. Also asked to CONFIRM the probe's unverified claim that
+  leaving a workout silently switches high-contrast off.
+
+## [T-048] Two dead paths, and one of them is a live dead end
+- status: dispatched (batch 16)
+- owner: fitness-dev
+- goal: (1) `Settings.tsx:163` and `PremiumLock.tsx:81` still send a normal user to `/paywall`, which
+  is now admin-gated — so they land silently on home. **My planning gap, found by T-044.** (2) The
+  `CLOSE_AI_COACH` action is a close handler for an overlay nothing can open: `OPEN_AI_COACH` was
+  deleted in batch 9 and the code carries its own note saying to remove this alongside it.
+- done when: verify green; test:run >= 1434; no dead end for a non-admin; zero `CLOSE_AI_COACH` /
+  `onCloseAICoach` left in `src/`
+- notes: **the `מאמן AI` chip in the workout screen is NOT dead — I verified it myself.** It is wired to
+  the exercise tutorial, whose ask tab is the app's one real model call. Do not touch it.
+  **Check consumers before deleting** — `PremiumLock` may have none at all.
+
+## [T-049] Onboarding audit — the first 60 seconds, never examined
+- status: dispatched (batch 16)
+- owner: fitness-qa
+- goal: the fact base for improving the app's first impression. Every step, every field: what is asked,
+  why, whether anything asked is never used later, and where a user can be lost.
+- done when: every step listed with file:line; every field classified USED / STORED-BUT-UNREAD / DEAD;
+  the shortest honest path to a first workout named; and a keep/cut/defer verdict per field
+- notes: read-only, no browser, no gates. Research context: a user who does not reach three workouts in
+  the first two weeks churns at 3-4x, so length here is not a cosmetic question.
+
+
 
 **His three rulings (2026-08-28 18:00):**
 1. **"יעדי תזונה שיהיה מוסתר"** — the trainee nutrition-goal editor STAYS hidden. That answers the open

@@ -612,6 +612,54 @@ html.high-contrast {
   --color-ink-on-accent: #000000;
   --color-ink-on-error: #000000;
 
+  /* ── Selected-state and action fills ──
+     The block above repaints every SURFACE to pure black in BOTH themes, but it
+     must not move --fs-primary: that token is dual-use — a dark-PANEL fill AND
+     the ink on --fs-signal (--color-on-mustard) — so it has to stay near-black,
+     and in light it therefore stays navy (#16292d) under a now-black page. Every
+     fill that merely ALIASED it painted near-black on black: CTA 1.39:1, pressed
+     CTA 1.18:1, active tab 1.25:1, active chip 1.39:1, trained day 1.32:1 — and
+     the week strip INVERTED, the rest day (#7e8c8d over the pale --fs-plate)
+     ending up the brightest cell of the row.
+     Fix is the one html.dark already uses on this exact class of defect: leave
+     --fs-primary alone and point the SELECTED/ACTION pair at the accent, with
+     on-accent ink. Resolves identically in light+HC and dark+HC.
+     Selected fill vs its track 15.12:1, vs card 16.82:1; ink on fill 16.82:1. */
+  --nav-pill-bg: var(--fs-accent);
+  --nav-pill-text: var(--color-ink-on-accent);
+  --btn-primary-bg: var(--fs-accent);
+  --btn-primary-text: var(--color-ink-on-accent);
+  /* #4e8a77 is --fs-accent (#8efad8) with every channel scaled 0.55 — identical
+     hue and saturation, lower value, so it still reads as "the mint button,
+     pressed". Same house technique as --btn-primary-bg-hover in html.dark (0.86)
+     and the toggle's dark ON track (0.64); 0.55 is the factor whose window clears
+     all three floors at once — 5.23:1 against the black page, 5.23:1 under the
+     black label, and 3.22:1 against the resting fill, where 0.64 reaches only
+     2.46:1 and the press stops being perceptible. */
+  --btn-primary-bg-hover: #4e8a77;
+
+  /* The bottom nav has to follow the pill: on the light theme's translucent white
+     bar (which composites to #c7c7c7 over the black page) the mint pill above
+     would land at 1.35:1 — a NEW invisible selection. Opaque here also removes
+     the one figure in this state that alpha compositing made unmeasurable.
+     Pill vs bar 16.82:1; inactive icon/label vs bar 18.76:1. */
+  --nav-bg: var(--fs-surface);
+  --nav-border: var(--color-border);
+  --nav-icon-inactive: var(--fs-muted);
+  --nav-label-inactive: var(--fs-muted);
+
+  /* Literals the light theme chose for LIGHT surfaces, which HC turns black.
+     --fs-link #1d6575 was 3.17:1 on black (it was darkened to clear AA on
+     #fff/#eef3f1/#dbe6e3 — HC introduces a fourth surface its premise never
+     contemplated). --color-surface-hover #f0f5f3 and --fs-plate #d7e0de flashed
+     near-white under white ink on hover: 1.10:1 text. --fs-steel is a boundary,
+     and at #2a2a2a in dark it was a 1.46:1 hairline on black.
+     Link 16.82:1; ink on hovered card 18.88:1; steel border vs card 21:1. */
+  --fs-link: var(--fs-accent);
+  --color-surface-hover: var(--fs-surface-2);
+  --fs-plate: var(--fs-surface-2);
+  --fs-steel: var(--color-border);
+
   /* Depth cues that rely on translucency stop carrying meaning here. */
   --fs-body-overlay: transparent;
   --fs-grid-line: transparent;

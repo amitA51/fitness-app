@@ -106,7 +106,6 @@ interface WorkoutOverlaysProps {
   tutorialNote?: string;
   onSaveTutorialNote?: (note: string) => void;
   onCloseTutorial: () => void;
-  onCloseAICoach: () => void;
 }
 
 const WorkoutOverlays: React.FC<WorkoutOverlaysProps> = (props) => (
@@ -184,7 +183,6 @@ const WorkoutOverlays: React.FC<WorkoutOverlaysProps> = (props) => (
       tutorialNote={props.tutorialNote}
       onSaveTutorialNote={props.onSaveTutorialNote}
       onCloseTutorial={props.onCloseTutorial}
-      onCloseAICoach={props.onCloseAICoach}
     />
   </>
 );

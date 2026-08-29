@@ -239,11 +239,6 @@ export type UIAction =
   | { type: 'CLOSE_QUICK_FORM' }
   | { type: 'OPEN_EXERCISE_LIBRARY' }
   | { type: 'CLOSE_EXERCISE_LIBRARY' }
-  // No-op: the AI-coach overlay state was deleted (nothing ever opened it). This
-  // member only survives because its dispatch chain (useWorkoutHandlers /
-  // WorkoutOverlays / WorkoutFlowOverlays / ActiveWorkoutNew) is outside the
-  // scope of this cleanup. Remove it together with `onCloseAICoach`.
-  | { type: 'CLOSE_AI_COACH' }
   | { type: 'OPEN_PLATE_CALC' }
   | { type: 'CLOSE_PLATE_CALC' };
 

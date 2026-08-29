@@ -465,7 +465,6 @@ export const WorkoutContent: React.FC<{
     handleCooldownComplete,
     handleCooldownSkip,
     handleCloseTutorial,
-    handleCloseAICoach,
     handleOpenSelector,
     handleGoalSelect,
   } = useWorkoutHandlers({
@@ -856,7 +855,6 @@ export const WorkoutContent: React.FC<{
         tutorialNote={derived.currentSet?.notes}
         onSaveTutorialNote={handleUpdateNotes}
         onCloseTutorial={handleCloseTutorial}
-        onCloseAICoach={handleCloseAICoach}
       />
 
       {/* Superset picker — anchored on the exercise whose chip was tapped */}

@@ -409,10 +409,17 @@ export function useAccessibilitySettings() {
       document.documentElement.classList.remove('high-contrast');
     }
 
-    // Cleanup on unmount
+    // Cleanup on unmount.
+    // Deliberately does NOT remove 'reduce-motion' / 'high-contrast': those two
+    // classes are OWNED by SettingsContext (src/contexts/SettingsContext.tsx),
+    // which sets them with classList.toggle() on an effect keyed to
+    // [highContrast, largeText, reducedAnimations, darkMode]. Removing them here
+    // on unmount changed none of those four deps, so that effect did not re-run
+    // and never put them back: entering and leaving a workout silently turned the
+    // user's high-contrast and reduced-motion settings OFF for the rest of the
+    // session, while both switches still read ON in Settings. --font-scale is
+    // written only by this hook, so this hook still cleans it up.
     return () => {
-      document.documentElement.classList.remove('reduce-motion');
-      document.documentElement.classList.remove('high-contrast');
       document.documentElement.style.removeProperty('--font-scale');
     };
   }, [get]);
