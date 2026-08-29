@@ -1099,6 +1099,348 @@ The trainee-facing surface is small, but nutrition has **three other consumers**
 - **No new admin toggle SCREEN.** That is a UI for a feature he may delete. If he later wants a
   runtime switch, the flag is the seam and it is a separate, small task.
 
+# Batch 19 — dispatched 2026-08-29 21:15. Amit: "תחליט אתה... רק שתיהיה תוצאה מצוינת."
+# Full autonomy. Tree clean at `6adaec4`, `master` untouched at `3bf1f7f`.
+
+### ⚠️ FINDING 1 — I CONFIRMED THE AUDIT'S OPEN RISK, AND IT IS WORSE THAN A THIRD WRITER
+T-056 flagged as its most valuable next check: "if the cloud mirror re-hydrates `appSettings` on a
+pull, there is a THIRD writer." **I read `src/services/localStateMirror.ts` myself. It does.**
+`MIRRORED_LOCAL_KEYS` (`:57-65`) contains **`'appSettings'`**, and the mirror stores the **raw
+localStorage string verbatim** under a `__mirroredAt` last-write-wins stamp, then **rehydrates after a
+pull — which its own docblock says "runs on every sign-in."**
+
+**So the data loss is not session-local. It is durable and it travels.** Full chain:
+1. Toggle `ניגודיות גבוהה` in the workout overlay → it persists its own stale whole-object snapshot.
+2. Tap dark mode in Settings → Settings writes ITS stale snapshot over the top. The high-contrast
+   preference is now destroyed in `localStorage`.
+3. **`mirrorLocalKey('appSettings')` faithfully uploads the destroyed value to the cloud.**
+4. Next sign-in pulls it back and rehydrates it **onto every device.**
+
+**The mirror is NOT the bug and must not be "fixed".** It copies correctly; that is its job. It is an
+AMPLIFIER — it makes a corrupt value permanent and cross-device. Fix the corruption at source and the
+mirror starts propagating a correct value. Anyone who "hardens" the mirror instead has treated the
+symptom and left the destruction intact.
+**Second-order consequence nobody has stated:** rehydrate writes to `localStorage`, and **neither
+in-memory store re-reads it** (both read exactly once at mount). So after a pull the rehydrated value
+can disagree with what is on screen — a fourth way these can diverge.
+
+### ⚠️ FINDING 2 — the `DateTimeSection` deletion really is as small as the audit said
+I re-ran the grep narrowly (`datePreferences|DatePreferences|firstDayOfWeek`): **exactly TWO files** —
+`src/services/datePreferences.ts` and `src/pages/settings/sections/DateTimeSection.tsx`. The audit's
+third hit was the false match it already labelled as one. **Confirmed: delete both files outright.**
+**But one loose end the audit missed and I found:** `MIRRORED_LOCAL_KEYS` also lists **`'date_prefs'`**
+— the service's own storage key. Delete the feature and that entry mirrors a key nothing writes or
+reads. It must go in the same task, or we ship cloud sync for a deleted feature.
+
+### Ownership map — disjoint, verified against the clean tree
+- **T-057** → `src/contexts/SettingsContext.tsx`, `src/components/workout/overlays/WorkoutSettingsOverlay.tsx`,
+  `src/components/workout/core/WorkoutProvider.tsx`, `src/components/workout/hooks/useWorkoutSettings.ts`
+  + a NEW test. **MUST NOT WRITE `src/pages/settings/**` or `src/services/localStateMirror.ts`.**
+- **T-058** → `src/pages/Settings.tsx`, all of `src/pages/settings/**`, deletion of
+  `src/services/datePreferences.ts`, and `src/services/localStateMirror.ts` (the one `date_prefs` line).
+  **MUST NOT WRITE `src/contexts/SettingsContext.tsx`.**
+- **T-059** → WRITES ONLY `reports/visual-qa-14bd.md`. Read-only everywhere else.
+- **T-060** → `src/AppRouter.tsx` + the reminder service + `supabase/` if the policy is genuinely wrong.
+- **DECLARED SEAM:** T-057 must READ `localStateMirror.ts` to understand the amplification, and T-058
+  WRITES one line in it. Reading is safe; only writing collides. T-057 is told this explicitly.
+- **NO PLAYWRIGHT, NO BUILD ANYWHERE THIS BATCH.** T-059 reads JSON and PNGs that already exist, so it
+  needs neither — which is precisely why it cannot repeat T-053's 30-minute death. The Settings
+  screenshots are a DECLARED DEBT, collected next batch on a settled tree.
+
+### Why the Settings rebuild and the bug fix can run in parallel at all
+They look like one screen but they are two disjoint layers: the bug lives in the STORE
+(`contexts/` + `components/workout/core/`), the mess lives in the VIEW (`pages/settings/**`). The
+sections are consumers of the context, not owners of it. Verified by grep before dispatching.
+
+### Why the onboarding redesign is NOT in this batch
+Not hesitation — sequencing, and I checked. `GoalsEditor.tsx` (one of the four `activityLevel`
+fabrication sites) lives at `src/pages/nutrition/components/GoalsEditor.tsx`, and the fix must also
+move `DEFAULT_PROFILE`, which feeds `user_profile` — **a key the same mirror above syncs.** Landing that
+in the same batch as a store fix touching the mirror's other key is how two workers write one
+mechanism. It goes next, on a settled tree.
+
+## [T-057] The bug that destroys a setting and then syncs the destruction
+- status: dispatched (batch 19)
+- owner: fitness-dev
+- goal: two writers persist to the same `localStorage['appSettings']` key, each reads it once at
+  mount, neither subscribes — so each overwrites the other with a stale whole-object snapshot, and the
+  cloud mirror then makes the loss permanent across devices.
+- done when: verify green; test:run >= 1438 plus a test that FAILS on the current code and proves the
+  round-trip (set A in one store, set B in the other, A survives); the three affected controls named
+- notes: **the correct wiring already exists in the same file** — `WorkoutSettingsOverlay.tsx:58`
+  wires `darkMode` correctly through `useSettings()` while the three controls below it write to the
+  workout store. That is the control group AND the answer. Discipline, not a rewrite. **Do not touch
+  the mirror** (see FINDING 1) and do not touch `src/pages/settings/**`.
+
+## [T-058] Rebuild Settings on the audit's facts
+- status: dispatched (batch 19)
+- owner: fitness-design
+- goal: Amit's stated priority. Only what is genuinely needed, coherently grouped, with `מתקדם` for
+  what most people should never see.
+- done when: verify green; test:run >= 1438 minus only tests whose subject was deleted, named one by
+  one; the new group structure reported section by section
+- notes: ORDERED, partial-in-order acceptable — (1) delete `DateTimeSection` + its service + the
+  `date_prefs` mirror entry, (2) remove the jump nav, (3) regroup 16 sections into 5.
+  **Reuse the EXISTING `AdvancedSection`** from `src/pages/progress/components/SectionCard.tsx`; a
+  second expander is a defect. Screenshots OWED, not skipped.
+
+## [T-059] The verdict the screenshot round never wrote
+- status: dispatched (batch 19)
+- owner: fitness-qa
+- goal: the sampled pixel values exist and nobody has compared them to the 28 figures T-051 derived by
+  hand. That comparison is the only thing standing between the high-contrast fix and being proven.
+- done when: `reports/visual-qa-14bd.md` states, per token, the hand-derived figure vs the sampled
+  value, and names every discrepancy with which one is right
+- notes: NO browser, NO build, NO gates — the evidence is already on disk. **`_summary.json` is STALE,
+  do not cite it.** A disagreement is the point of the task, not a failure.
+
+## [T-060] A coach's phone fires their clients' reminders at the coach
+- status: dispatched (batch 19)
+- owner: fitness-dev
+- goal: `AppRouter.tsx:848` polls `materializeDueReminders()` for every user, and the
+  `reminders_all_own` RLS policy means a coach reads their clients' rows too.
+- done when: verify green; test:run >= 1438 plus a test proving a coach does not materialize a
+  client's reminder; the chosen layer justified
+- notes: prefer the CLIENT-side filter. Tightening the RLS policy could remove a coach's legitimate
+  read of the reminders they authored — assess it, change it only if it is genuinely wrong, and say
+  which you concluded and why.
+
+---
+
+# STANDING ORDER — Amit away 2026-08-29 21:32, autonomous operation authorised
+
+**His words:** *"אני לא יהיה זמין בשעות הקרובות... תרוץ באופן עצמאי בצורה הטובה ביותר, תעשה החלטות לבד,
+אני סומך אלייך, אל תעצור ותשאל שאלות כי אני לא יכול לענות... ואם אתה מסיים המשימות תעבור לשפר את
+העיצוב וחווית המשתמש ואיכות הקוד ותשתמש בסקיל של apple... העיקר שתמשיך לרוץ ולשפר."*
+
+So: no `[OPTIONS:]` questions until he is back. Every open decision is mine. A monitor loop is armed
+(20-min interval, 8-hour budget) as a NET in case a worker completion event is lost — worker events
+already wake this session, the loop only covers the silent-death case.
+
+### DECISION I AM TAKING UNDER THIS GRANT — the onboarding cut is approved
+I asked twice for product approval on `plans/ONBOARDING-PROPOSAL.md` (11 of 18 fields cut). He has
+now delegated instead of answering, so I am proceeding, and here is the reasoning so the trail exists:
+**11 of those 18 fields have NO CONSUMER ANYWHERE.** Deleting a field that nothing reads is dead-code
+removal, not a product gamble — it is exactly his standing "מה שלא עוזר אז למחוק". The genuinely
+product-shaped parts I am NOT doing on my own authority: I will not add a question, will not reorder
+the app's first screen into something he has not seen, and will not touch stored user data (the
+already-fabricated `activityLevel` cohort stays flagged, not migrated).
+**The `activityLevel` fix must move ALL FOUR fabrication sites** — `appOnboarding.ts:81`,
+`GoalsEditor.tsx:131`, and `DEFAULT_PROFILE`'s hardcoded `activityLevel: 'פעיל מתון'` AND
+`gender: 'male'` — or "store null" silently fails and Settings keeps displaying the invented value as
+the user's own choice.
+
+### apple-design skill — READ IN FULL by me, distilled here so nobody re-reads 400 lines
+Source: `C:\Users\amit0\.kiro\skills\apple-design\SKILL.md`. The load-bearing ideas for THIS app:
+- **Interruptibility is the top principle.** Every animation must be grabbable and reversible
+  mid-flight, and must animate from the **presentation (live) value**, never the target — otherwise
+  an interrupt visibly jumps. CSS transitions and `@keyframes` are the WRONG tool for anything
+  gesture-driven; springs are right because they start from the current value by default.
+- **Springs, in two parameters, not three.** damping `1.0` / response `0.3–0.4` is the default;
+  bounce (`~0.8`) is earned ONLY when the gesture itself carried momentum. Apple's shipped drawer
+  value is damping `0.8` / response `0.3`.
+- **Velocity handoff + momentum projection.** On release, hand the pointer's velocity to the spring,
+  and pick the snap target from the PROJECTED resting point
+  (`current + (v/1000)·d/(1−d)`, `d ≈ 0.998`) — not from the release point. This is what makes a
+  flick feel thrown instead of ignored.
+- **Respond on pointer-DOWN, not on release.** Feedback must be continuous during the gesture.
+- **1:1 tracking must respect the grab offset** — snapping to an element's centre on grab breaks the
+  illusion instantly.
+- **Rubber-band at boundaries** instead of hard-stopping.
+- **Materials:** translucent chrome with content scrolling under, never a light translucent surface
+  stacked on another, and `prefers-reduced-transparency` handled as its own axis.
+- **Typography:** tracking is size-specific — large display text wants NEGATIVE tracking, body near
+  0. A single fixed `letter-spacing` is wrong somewhere by definition. Spacing in `rem`/`em` so text
+  scaling does not break layout.
+
+### ⚠️ THE SKILL EXPLAINS A DEFECT THAT HAS BEEN ON THIS BOARD FOR EIGHT BATCHES WITHOUT A CAUSE
+`html.large-text` is inert — patchy 12.5% — and T-046 found why mechanically (token type scale and
+every CSS font size are px, so only Tailwind's named sizes scale). **§15 names that as the rule being
+broken: "scale layout WITH the text — spacing in rem/em, not fixed px."** So this is not a niche
+Tailwind quirk, it is a known platform rule this app violates, and `--font-scale` being written and
+read by zero stylesheets is the same failure. That reframes it from cosmetic to a real accessibility
+defect with a named fix.
+
+### Already TRUE in this app, do not "fix" it
+`prefers-reduced-motion` IS honoured at `global.css:663` and workers have respected it for 15
+batches. A `prefers-contrast: more` block exists at `components.css:1472`.
+
+### Already KNOWN-BROKEN and apple-design-relevant, no audit needed
+The high-contrast de-translucency rule targets `.glass` / `.glass-strong` / `.glass-subtle` /
+`.glass-nav` — **ZERO call sites.** The real classes are `.glass-surface` / `.glass-surface-dark`.
+So the app's translucency-reduction path is dead code, and `prefers-reduced-transparency` is not
+handled at all. Found by T-046, never fixed.
+
+## Batch 20 — PLANNED, dispatches when batch 19 is verified and committed
+Audit-before-design one more time, because it has changed the plan every single time (Home, Progress,
+billing, theme axes, onboarding, coach, Settings) — but only ONE slot goes to the audit, because two
+of these I already have the evidence for.
+1. **`fitness-qa` — the owed screenshot round.** The rebuilt Settings screen (5 groups, `מתקדם`
+   collapsed AND expanded), plus the batch-19 store fix proven in the UI: toggle high contrast in the
+   workout overlay, leave, and photograph that Settings agrees. 390 + 1280, all four theme states.
+   **HOLDS PLAYWRIGHT AND THE BUILD — sole owner.**
+2. **`fitness-design` — apple-design AUDIT, read-only, writes `plans/MOTION-GESTURE-AUDIT.md`.**
+   Answer with file:line, per surface: do the sheets support drag-to-dismiss at all; is tracking 1:1
+   and does it respect the grab offset; is release velocity handed to a spring or discarded; is the
+   snap target chosen from a PROJECTED point; is there rubber-banding; is any gesture animated with a
+   CSS transition or `@keyframes` (i.e. non-interruptible); does feedback fire on pointer-down or on
+   click; are haptics on the same frame as the visual. Priority order: `SlideToComplete` (the app's
+   one真 gesture and on the hot path), then the bottom sheets, then `letter-spacing` across the type
+   scale. NO code, NO browser, NO gates.
+3. **`fitness-dev` — onboarding, per the approved proposal**, all four `activityLevel` sites included.
+Deliberately NOT in batch 20: the 92 Band-B borders stay BLOCKED until T-059's verdict lands, since
+their recommended replacement token was measured at 2.33:1 and the audit carrying that number has two
+proven defects.
+
+---
+
+## Batch 19 results — 3 of 4 in at 21:36. ⚠️ GATES NOT YET RUN: T-060 is still writing to `src/`.
+**Nothing is committed. No number below is mine yet.** Both dev workers self-report `test:run`
+**1443 / 166 files** (floor 1438 / 165 — closes as 1438 + 5 new single-writer tests), but the two
+suites were run against each other's moving tree, so my own double run is still owed.
+
+### ⚠️ THE TWO WORKERS DISAGREE ABOUT `verify`, AND I MUST NOT PICK A SIDE YET
+- T-057 reports `npm run verify` **exit 0**, having formatted only its own files "rather than run the
+  repo-wide formatter while other workers hold files."
+- T-058 reports `lint:check` **exit 1, 2 errors — both in T-057's files** (`SettingsContext.tsx`
+  format, `appSettingsSingleWriter.test.tsx` format + organizeImports), and zero findings in its own.
+The likely reading is that T-058 measured BEFORE T-057 formatted. **Unresolved until I run it myself
+on a static tree.** Recorded so nobody later cites "verify green" from a worker report.
+
+## [T-057] The settings-destroying bug — ACCEPTED on evidence, my gates owed
+- 3 modified + 1 new test file, exactly its ownership. `localStateMirror.ts` read but NOT written, as
+  instructed. `useWorkoutSettings.ts` was in scope and **needed no change** — it reads the workout
+  store, which the new reconcile effect keeps in step.
+- **THE FIX IS BOTH HALVES, AND IT ARGUED WHY ONE IS NOT ENOUGH.** `SettingsProvider` becomes the
+  SINGLE WRITER of `appSettings`; the workout store also OBSERVES its writes. Its reasoning:
+  single-writer alone still leaves Settings reading OFF while the app renders high-contrast, and a
+  store holding a stale copy eventually forwards that stale copy; observation alone leaves
+  last-writer-wins on every field. So the context owns the key and the workout store is kept in step.
+- **The subtle part is that it is ONE effect, not two** — "with two effects a stale forward-up could
+  still run after a downward absorb and re-destroy the value", so the outcome cannot depend on effect
+  declaration order. Convergence is by value signature using the file's own existing
+  `JSON.stringify` idiom, so the two stores cannot ping-pong on freshly allocated equal objects.
+- **IT CLOSED THE CLOUD-AMPLIFICATION PATH WITHOUT TOUCHING THE MIRROR**, which is exactly what I
+  asked for and better than I specified: a new effect ADOPTS an `appSettings` value written from
+  outside React — `storage` from another tab, and `settings-updated`, **a signal the app already
+  emits after a cloud pull** — instead of clobbering it on the next toggle. It found the existing
+  signal rather than inventing one, for the fifth batch running.
+- Added `useOptionalSettings()` (same context, `null` instead of a throw) so the workout store can
+  still mount without the provider — and in that case it correctly remains the only writer.
+- **MEASURED BOTH WAYS, not claimed:** it temporarily restored the second writer, ran, and observed
+  **4 failed / 1 passed**; with the fix, **5 passed**. Headline failure `expected false to be true` —
+  `highContrast` destroyed by the following `darkMode` write, i.e. the exact reported repro. **And it
+  explained why the 1 that passed while reverted is CORRECT:** the no-provider case has a single
+  writer, so there is nothing to corrupt. I verified `TEMP-REVERT` greps clean in its report.
+- The three controls named with OLD and NEW line numbers, all in `WorkoutSettingsOverlay.tsx`:
+  `reducedAnimations` 439→454 · `largeText` 445→460 · `highContrast` 451→466.
+- **It diagnosed the baseline dip itself:** 1434 not 1438, because `settingsPaywallRow.test.tsx`
+  could not COLLECT while `Settings.tsx` imported the `DateTimeSection` T-058 had just deleted. It
+  named the other worker as the owner and did not touch it. Correct lane discipline under a red tree.
+- **⚠️ REAL SECOND DEFECT it found and correctly left:** there are **TWO different
+  `DEFAULT_WORKOUT_SETTINGS`** — `SettingsContext.tsx:18` vs `useWorkoutSettings.ts:12` — disagreeing
+  on ~7 values (`timerDisplayMode` countup/countdown, `longRestTime` 120/180, and 5 more), and the
+  workout one has 7 keys the other lacks. **So which defaults a fresh user gets depended on which
+  store touched the key first.** Harmless now that one writer owns the merge, but it is a genuine
+  latent defect. Backlog.
+- Also flagged, not touched: `useAccessibilitySettings` (`useWorkoutSettings.ts:387`) is still a
+  second writer of the `high-contrast` / `reduce-motion` `<html>` classes its own comment says
+  `SettingsContext` owns — no longer observable now the values agree; and `SettingsContext` never
+  calls `mirrorLocalKey('appSettings')` unlike `workout_prefs` / `user_profile`.
+
+## [T-058] Settings rebuilt — ACCEPTED on evidence, my gates owed. Screenshots OWED.
+- **I CHECKED THE SCOPE OVERRUN BEFORE JUDGING IT, AND IT IS NOT ONE.** The tree shows
+  `ExportSection.tsx` DELETED (−291) and three new sections, which reads like invented features. It
+  is a **SPLIT**: 291 lines became `BackupSection` (143, CSV/backup/restore) + `WeeklyReportSection`
+  (127, דוח שבועי + share) + `ActionRow` (61, the old `ExportRow` verbatim), and
+  `CloudSyncDirectional` (84) is the one-way pair lifted out of `CloudSyncSection` (which shrank
+  −45). **Behaviour carried over unchanged; no feature added, none removed.** That is the board's own
+  "the best deletions were RELOCATIONS" pattern. Accepted as in-latitude, logged so it is not silent.
+- **THE SPLIT IS THE POINT, not decoration:** `ExportSection` was doing two unrelated jobs — data
+  safety and sharing a summary. Splitting them is what let backup go behind `מתקדם` while the weekly
+  report stays top-level. A single card could not have been placed correctly in either tier.
+- **5 groups, from 16 flat sections + an 8-chip sticky nav:** חשבון · הפרופיל שלי · תצוגה ונגישות ·
+  אימון והתראות · נתונים ופרטיות. Reused the EXISTING `AdvancedSection` in three places; no second
+  expander invented. Jump nav gone, and it left a comment recording BOTH of its defects so nobody
+  re-adds it. The intro paragraph went too — "it restated the five headings."
+- **It solved the heading-soup problem the regroup would otherwise have created:** a `showLabel` prop
+  so a group holding one card does not print the same words twice, one above the other.
+- **⚠️ IT CORRECTED MY BRIEF, AND THE CORRECTION INVERTS MY INSTRUCTION.** I said the `date_prefs`
+  blast radius was two files plus the one mirror line. There is a THIRD pointer —
+  `src/services/userScopedLocalData.ts:45` — **and it argued for LEAVING it, correctly:**
+  `localStateMirror` would have *uploaded* a deleted feature's key to the cloud, but
+  `userScopedLocalData` is the sign-out *cleanup* list, so that entry **purges** the stale key from
+  devices that already wrote one. **Removing it would strand `date_prefs` in localStorage forever.**
+  One list writes outward, the other cleans up locally — opposite verdicts for the same string.
+  **MY GREP ERROR, precisely:** I searched `datePreferences|DatePreferences|firstDayOfWeek` — the
+  service's SYMBOLS — and never its storage KEY. Same family-vs-symbol miss as `CLOSE_AI_COACH`.
+- **THREE audit verdicts it overturned with evidence:**
+  1. `ProfileEditSection` **cannot be relocated — the destination does not exist.** The audit tagged
+     it RELOCATE → "public profile screen" while admitting it never opened that surface.
+     `/u/:userId` → `PublicProfilePage.tsx:283` only READS. This is the **only** surface that can set
+     avatar, display name, bio or visibility, so relocating it would delete a live feature. Behind
+     `מתקדם` instead.
+  2. `CoachSection` → `/coach` needs files it does not own, **and it returns `null` for non-coaches**
+     (`:108`), so it contributes zero clutter to the screen Amit called מבולגן.
+  3. `DangerZoneSection` stays whole — splitting it would duplicate the guest-account explanation and
+     separate two actions users already confuse.
+- Notifications was the one section the audit's proposal never placed; it folded it into group 4 with
+  a reason rather than inventing a sixth group.
+- 10 Hebrew strings moved to the plural-imperative register, each reported old → new. Two of them are
+  real copy fixes, not register: `הקובץ יוצא בהצלחה` → `הדוח נוצר בהצלחה`, because **it was never a
+  file.** Spacing pulled back onto the 8pt scale (`mb-7` → `mb-5`) across 9 sections.
+- RTL swept clean by grep across `src/pages/settings/**`; `AdvancedSection` 44px, `ActionRow` 52px,
+  and the ~31px jump chips are gone.
+- Also named, not touched: `DataAboutSection` renders `v1.0.0` as a hardcoded literal — a version
+  string that cannot report the version; and DUP-1/DUP-2 (two name fields, two weights) survive the
+  regroup exactly as the audit predicted, DUP-2 being the one that feeds a stale weight into the
+  calorie target.
+
+## [T-059] The HC verdict — ACCEPTED. `reports/visual-qa-14bd.md`, 514 lines. **PROVEN WITH EXCEPTIONS.**
+- Read-only confirmed: one file written, no browser, no build, no gate, no git. It also found the
+  inputs were RICHER than my brief said — `measure-controls.json` / `measure-home.json` carry 148
+  readings with computed ratios, which I had not mentioned because I did not know.
+- **IT VERIFIED ITS OWN ARITHMETIC BEFORE COMPARING ANYTHING** — reproduced 3 figures this repo
+  publishes, 5 of the sampler's own luminances, and 5 sampled pixels exactly, including `color-mix`
+  results. That is what makes the rest usable.
+- **THE SCORE: 60/60 token-value comparisons AGREE. Of 38 contrast figures, 32 exact, 3 within 0.03
+  (hand rounding, no verdict changes), 3 materially disagree.**
+- **⚠️ TWO OF THOSE THREE ARE ERRORS T-051 HAD ALREADY CAUGHT IN THE PROBE — AND THE PIXELS BACK
+  T-051's CORRECTED VALUE.** So that worker's self-correction is now independently verified rather
+  than merely asserted. The crew's own audit trail held up under measurement.
+- **THE HEADLINE IS A MISSING NUMBER, NOT A WRONG ONE.** `--fs-primary` — the dual-use token T-051
+  deliberately did NOT move, and I agreed — **still paints a 32×32 icon tile on the Settings screen:
+  693 px of `#16292d` at 1.39:1 against the black page in light+HC, and 703 px of `#0a0a0a` at
+  1.06:1 in dark+HC.** Traced to `src/pages/settings/sections/ThemeSection.tsx:53-59`, **a
+  hand-rolled copy of `IconBox` — the shared component would have been HC-safe.** The glyph inside is
+  legible (12.10:1) and the tile is decorative, so it is NOT a WCAG failure. **But it falsifies
+  T-051's claim that in dark+HC "every metric meets its floor."** The architectural call to leave the
+  token alone was right; **the size of the resulting exception was never measured — 222
+  `var(--fs-primary)` references across 82 files, not the three lines the finding list named.**
+- **It resolved an apparent contradiction instead of reporting it as a defect:** the sampled
+  `tab-active` 1.01 vs the hand-derived 15.12 is a **surface mislabel** — the photographed tab is an
+  underline indicator (`CoachMessages.tsx:245`), not the filled `.tab-row .tab.active` pill, so the
+  sampler compared a backdrop with itself.
+- **⚠️ A WARNING ABOUT HOW TO READ THE EVIDENCE:** `measure-*.json`'s `inkOnFill` must NOT be taken as
+  a text verdict on small Hebrew glyphs — it reports 1.05 for the empty day cell whose label actually
+  measures **17.79:1**. Anyone citing that field without checking the label will invent a defect.
+- From the PNGs: the week strip is monotonic in all four states, both HC states are pixel-identical,
+  and all three day-cell labels clear 4.5:1. `_summary.json` confirmed STALE (mtime ~6h before the
+  batch it purports to summarise) and cited nowhere.
+- It listed 8 things it could not determine — including that **two of T-051's headline surfaces were
+  never photographed at all**, which is why the verdict is "with exceptions" rather than "proven".
+
+### Backlog changes from batch 19
+**NEW, and well-located:** `ThemeSection.tsx:53-59` should use the shared `IconBox` (closes the E1
+exception) · the two divergent `DEFAULT_WORKOUT_SETTINGS` · `DataAboutSection`'s fake `v1.0.0` ·
+photograph `.tab-row` + the active chip to close the two unphotographed surfaces.
+**UNBLOCKED:** the 92 Band-B borders now have a verdict to work from — but the 222-references-across-
+82-files count means that sweep is still file-exclusive batches, never one worker.
+
+---
+
+
+
 # Batch 18b — Amit's Settings ask, 2026-08-29 20:38. Audit dispatched immediately, redesign next batch.
 
 **His words:** Settings should hold only what is genuinely needed, arranged coherently — right now it

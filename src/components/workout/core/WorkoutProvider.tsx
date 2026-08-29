@@ -2,6 +2,7 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useImmerReducer } from 'use-immer';
+import { useOptionalSettings } from '../../../contexts/SettingsContext';
 import { webPlatform } from '../../../platform/web';
 import type { PlatformAdapter } from '../../../platform/web';
 import { createWorkoutSet } from '../../../types';
@@ -108,6 +109,12 @@ const persistState = (state: WorkoutState): boolean => {
 // HELPER FUNCTIONS
 // ============================================================
 
+/**
+ * Fallback seed for `appSettings`, used ONLY when no `SettingsProvider` is
+ * mounted above this provider. With one mounted, the context is the source of
+ * truth and is read instead — reading the key here as a second independent
+ * snapshot is what let the two stores overwrite each other.
+ */
 const loadAppSettings = (): AppSettings => {
   try {
     const stored = platform.getItem('appSettings');
@@ -124,6 +131,15 @@ const loadAppSettings = (): AppSettings => {
 // ============================================================
 
 export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children }) => {
+  // `appSettings` in localStorage has exactly ONE writer: SettingsProvider.
+  // This provider reads and writes it THROUGH that context so an in-workout
+  // change and a Settings-screen change can never overwrite each other's
+  // snapshot. Optional because the workout tree can also mount without the
+  // provider above it (error-boundary fallbacks, focused unit tests).
+  const appSettingsContext = useOptionalSettings();
+  const appSettingsContextRef = useRef(appSettingsContext);
+  appSettingsContextRef.current = appSettingsContext;
+
   // Load saved state or create new
   const loadState = useCallback((): WorkoutState | null => {
     try {
@@ -154,7 +170,10 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
   // Initialize state
   const [state, dispatch] = useImmerReducer(workoutReducer, null, () => {
     const savedState = loadState();
-    const appSettings = loadAppSettings();
+    // Prefer the context: a restored draft carries its own (older) copy of
+    // appSettings, and a second independent read of localStorage would diverge
+    // from SettingsProvider the moment either side changed a value.
+    const appSettings = appSettingsContext?.settings ?? loadAppSettings();
 
     if (savedState) {
       // Subtract the wall-time the app was closed/backgrounded from the workout
@@ -344,11 +363,61 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
   }, [state.appSettings?.workoutSettings?.soundEnabled]);
 
   // ============================================================
-  // SETTINGS PERSISTENCE
+  // SETTINGS RECONCILIATION (SettingsProvider is the single writer)
   // ============================================================
+  // This provider used to write `appSettings` itself, merging its own
+  // mount-time snapshot into the key. SettingsProvider wrote the same key from
+  // ITS mount-time snapshot. Neither observed the other, so each wrote a stale
+  // whole over the other's value: toggling ניגודיות גבוהה in the workout
+  // overlay and then מצב כהה in Settings destroyed the high-contrast
+  // preference, and services/localStateMirror mirrors this key to the cloud, so
+  // the loss was restored onto every device on the next sign-in.
+  //
+  // Both directions are reconciled here, in ONE effect, so the outcome cannot
+  // depend on effect ordering:
+  //   • the context moved  -> it wins; absorb it into the workout store
+  //   • only this store moved -> forward it to the context, the single writer
+  // Signatures are compared by value (the same JSON-signature idiom used for
+  // `lastPersistedRef` above), so the two stores cannot ping-pong forever on
+  // freshly allocated objects that hold identical values.
+  const agreedSettingsRef = useRef<{ workout: string; context: string }>({
+    workout: '',
+    context: '',
+  });
+
+  const contextWorkoutSettings = appSettingsContext?.settings.workoutSettings;
 
   useEffect(() => {
-    if (!state.appSettings?.workoutSettings) return;
+    const workoutSettings = state.appSettings?.workoutSettings;
+    if (!workoutSettings) return;
+
+    const agreed = agreedSettingsRef.current;
+    const workoutSignature = JSON.stringify(workoutSettings);
+    const contextSignature = contextWorkoutSettings ? JSON.stringify(contextWorkoutSettings) : '';
+
+    const workoutMoved = workoutSignature !== agreed.workout;
+    const contextMoved = contextSignature !== agreed.context;
+    if (!workoutMoved && !contextMoved) return;
+
+    // The context owns the key, so when it moved it wins — even if this store
+    // moved in the same commit. Absorbing first means a value changed on the
+    // Settings screen mid-workout can never be forwarded back stale.
+    if (contextMoved && contextWorkoutSettings) {
+      agreedSettingsRef.current = { ...agreed, context: contextSignature };
+      dispatch({ type: 'UPDATE_SETTINGS', payload: contextWorkoutSettings });
+      return;
+    }
+
+    agreedSettingsRef.current = { ...agreed, workout: workoutSignature };
+
+    const context = appSettingsContextRef.current;
+    if (context) {
+      context.updateWorkoutSettings(workoutSettings);
+      return;
+    }
+
+    // No SettingsProvider above us — this provider is then the only writer, so
+    // it merges into storage itself rather than dropping the change.
     try {
       const existingSettings = platform.getItem('appSettings');
       const parsed: AppSettings = existingSettings
@@ -358,14 +427,14 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
         ...parsed,
         workoutSettings: {
           ...(parsed.workoutSettings || {}),
-          ...state.appSettings.workoutSettings,
+          ...workoutSettings,
         },
       };
       platform.setItem('appSettings', JSON.stringify(updated));
     } catch {
       // Silently handle settings persistence errors
     }
-  }, [state.appSettings?.workoutSettings]);
+  }, [state.appSettings?.workoutSettings, contextWorkoutSettings, dispatch]);
 
   // ============================================================
   // WAKE LOCK

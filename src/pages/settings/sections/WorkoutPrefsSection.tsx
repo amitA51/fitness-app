@@ -18,7 +18,7 @@ interface Props {
 
 export function WorkoutPrefsSection({ workoutPrefs, commitWorkout, workoutSaved }: Props) {
   return (
-    <div className="mb-7">
+    <div className="mb-5">
       <SectionLabel trailing={<SavedIndicator saved={workoutSaved} />}>אימון</SectionLabel>
       <SettingsCard>
         {/* Rest time pills */}

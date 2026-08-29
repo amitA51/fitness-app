@@ -28,7 +28,7 @@ export function NotificationsSection({
     : 'הדפדפן לא תומך בהתראות';
 
   return (
-    <div className="mb-7">
+    <div className="mb-5">
       <SectionLabel trailing={<SavedIndicator saved={notificationsSaved} />}>התראות</SectionLabel>
       <SettingsCard>
         {/* Gates the missed-workout alert (checkMissedWorkouts). The nutrition-

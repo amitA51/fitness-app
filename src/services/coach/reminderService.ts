@@ -71,8 +71,40 @@ export const deleteReminder = async (id: string): Promise<{ error: string | null
   return { error: error?.message ?? null };
 };
 
+/** Group ids the given user is a MEMBER of (RLS: client_group_members_select_self). */
+const listMyGroupIds = async (userId: string): Promise<Set<string>> => {
+  const supabase = requireClient();
+  const { data, error } = await supabase
+    .from('client_group_members')
+    .select('group_id')
+    .eq('client_id', userId);
+  if (error) {
+    // Fail CLOSED: an unknown membership must not become a fired notification.
+    logger.db.error('listMyGroupIds failed', error);
+    return new Set();
+  }
+  return new Set((data ?? []).map((r: { group_id: string }) => r.group_id));
+};
+
+/**
+ * Reminders addressed TO the current user — the only set the local materializer
+ * may fire.
+ *
+ * RLS on `reminders` returns the UNION of two policies: `reminders_all_own`
+ * (rows the viewer AUTHORED — coach_id = auth.uid(), which the coach UI needs)
+ * and `reminders_select_target` (rows the viewer RECEIVES). A coach therefore
+ * reads their clients' reminders too, so the recipient has to be re-asserted
+ * here or a coach's device fires reminders meant for a client.
+ *
+ * The discriminator is the RECIPIENT of the row, never the role of the viewer:
+ * `client_id` (else `group_id` membership) — `coach_id` is only the author. A
+ * coach is also a trainee, so their own rows still come through. Precedence
+ * mirrors the server-side reminders-dispatch resolution (client_id wins).
+ */
 export const listMyReminders = async (): Promise<Reminder[]> => {
   const supabase = requireClient();
+  const user = await getCurrentUser();
+  if (!user) return [];
   const { data, error } = await supabase
     .from('reminders')
     .select('id, coach_id, client_id, group_id, title, body, schedule, created_at')
@@ -81,7 +113,13 @@ export const listMyReminders = async (): Promise<Reminder[]> => {
     logger.db.error('listMyReminders failed', error);
     return [];
   }
-  return (data ?? []).map(toReminder);
+  const rows = (data ?? []).map(toReminder);
+  // Only pay for the membership lookup when a group-addressed row is in play.
+  const needsGroups = rows.some((r) => !r.clientId && r.groupId);
+  const myGroupIds = needsGroups ? await listMyGroupIds(user.id) : new Set<string>();
+  return rows.filter((r) =>
+    r.clientId ? r.clientId === user.id : !!r.groupId && myGroupIds.has(r.groupId)
+  );
 };
 
 const FIRED_KEY = 'coach_reminders_fired';

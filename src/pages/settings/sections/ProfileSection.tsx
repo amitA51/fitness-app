@@ -21,7 +21,7 @@ interface Props {
 
 export function ProfileSection({ profile, updateProfile, commitProfile, profileSaved }: Props) {
   return (
-    <div className="mb-7">
+    <div className="mb-5">
       {/* "פרטים אישיים" (private metrics), distinct from the public-facing
           "פרופיל ציבורי" editor below — the two used to both read "פרופיל" with
           their own avatars, reading as a duplicate. The editable avatar now

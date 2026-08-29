@@ -85,21 +85,22 @@ vi.mock('../components/ui/PageHeader', () => ({ default: () => null }));
 vi.mock('../components/ui/ConfirmDialog', () => ({ ConfirmDialog: () => null }));
 vi.mock('../components/ui/SettingsSectionLabel', () => ({
   SectionLabel: () => null,
-  SettingsJumpNav: () => null,
 }));
 
 // Section stubs. `vi.mock` is hoisted and needs a literal path, so these are
 // written out one by one rather than looped.
 vi.mock('../pages/settings/sections/AccountSection', () => ({ AccountSection: () => null }));
+vi.mock('../pages/settings/sections/BackupSection', () => ({ BackupSection: () => null }));
 vi.mock('../pages/settings/sections/BlockedUsersSection', () => ({
   BlockedUsersSection: () => null,
+}));
+vi.mock('../pages/settings/sections/CloudSyncDirectional', () => ({
+  CloudSyncDirectional: () => null,
 }));
 vi.mock('../pages/settings/sections/CloudSyncSection', () => ({ CloudSyncSection: () => null }));
 vi.mock('../pages/settings/sections/CoachSection', () => ({ CoachSection: () => null }));
 vi.mock('../pages/settings/sections/DangerZoneSection', () => ({ DangerZoneSection: () => null }));
 vi.mock('../pages/settings/sections/DataAboutSection', () => ({ DataAboutSection: () => null }));
-vi.mock('../pages/settings/sections/DateTimeSection', () => ({ DateTimeSection: () => null }));
-vi.mock('../pages/settings/sections/ExportSection', () => ({ ExportSection: () => null }));
 vi.mock('../pages/settings/sections/GuidanceSection', () => ({ GuidanceSection: () => null }));
 vi.mock('../pages/settings/sections/LegalLinksSection', () => ({ LegalLinksSection: () => null }));
 vi.mock('../pages/settings/sections/NotificationsSection', () => ({
@@ -112,6 +113,9 @@ vi.mock('../pages/settings/sections/ProfileSection', () => ({ ProfileSection: ()
 vi.mock('../pages/settings/sections/ThemeSection', () => ({ ThemeSection: () => null }));
 vi.mock('../pages/settings/sections/UnsyncedChangesSection', () => ({
   UnsyncedChangesSection: () => null,
+}));
+vi.mock('../pages/settings/sections/WeeklyReportSection', () => ({
+  WeeklyReportSection: () => null,
 }));
 vi.mock('../pages/settings/sections/WorkoutPrefsSection', () => ({
   WorkoutPrefsSection: () => null,

@@ -61,7 +61,6 @@ export const MIRRORED_LOCAL_KEYS = [
   'workout_prefs',
   'nutrition_goals',
   'appSettings',
-  'date_prefs',
   'warmup_routine_selections',
   'cooldown_routine_selections',
 ] as const;

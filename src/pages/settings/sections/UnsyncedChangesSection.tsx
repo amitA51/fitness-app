@@ -138,7 +138,7 @@ export function UnsyncedChangesSection() {
   const primaryLabel = allOwnerless ? 'אשרו ושמרו בענן' : 'נסו לשלוח שוב';
 
   return (
-    <div className="mb-7">
+    <div className="mb-5">
       <SectionLabel tone="danger">
         {allOwnerless ? 'שינויים שנוצרו ללא חשבון מחובר' : 'שינויים שלא נשמרו בענן'}
       </SectionLabel>

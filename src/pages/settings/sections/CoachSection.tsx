@@ -114,7 +114,7 @@ export function CoachSection() {
   const NavChevron = isRTL ? ChevronLeft : ChevronRight;
 
   return (
-    <div className="mb-7">
+    <div className="mb-5">
       <SectionLabel trailing={<SavedIndicator saved={saved} />}>מאמן</SectionLabel>
       <SettingsCard>
         {/* Business name */}
@@ -139,7 +139,7 @@ export function CoachSection() {
               dir="auto"
               value={businessName}
               onChange={(e) => handleBusinessNameChange(e.target.value)}
-              placeholder="שם העסק שלך..."
+              placeholder="לדוגמה: סטודיו כוח"
               aria-label="שם העסק"
               style={{
                 width: '144px',
@@ -196,7 +196,7 @@ export function CoachSection() {
               dir="auto"
               value={bio}
               onChange={(e) => handleBioChange(e.target.value)}
-              placeholder="ספר על עצמך..."
+              placeholder="ספרו על הניסיון ועל תחומי ההתמחות שלכם"
               aria-label="אודות"
               rows={3}
               style={{

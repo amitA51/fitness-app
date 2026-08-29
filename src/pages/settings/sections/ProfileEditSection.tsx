@@ -189,7 +189,7 @@ export function ProfileEditSection() {
 
   if (loadState === 'loading') {
     return (
-      <div className="mb-7">
+      <div className="mb-5">
         <SectionLabel>פרופיל ציבורי</SectionLabel>
         <div style={CARD_STYLE} aria-busy="true">
           <div
@@ -212,7 +212,7 @@ export function ProfileEditSection() {
 
   if (loadState === 'unavailable') {
     return (
-      <div className="mb-7">
+      <div className="mb-5">
         <SectionLabel>פרופיל ציבורי</SectionLabel>
         <div style={CARD_STYLE}>
           <p style={{ ...HELPER_STYLE, marginTop: 0, fontSize: 14 }}>
@@ -226,7 +226,7 @@ export function ProfileEditSection() {
   const initials = getInitials(displayName);
 
   return (
-    <div className="mb-7">
+    <div className="mb-5">
       <SectionLabel trailing={<SavedIndicator saved={saved} />}>פרופיל ציבורי</SectionLabel>
 
       <div style={CARD_STYLE}>

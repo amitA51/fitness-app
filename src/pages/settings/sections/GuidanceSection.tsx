@@ -14,7 +14,7 @@ export function GuidanceSection() {
   const { relaunchGuidance } = useGuidance();
 
   return (
-    <div className="mb-7">
+    <div>
       <SectionLabel>הדרכה</SectionLabel>
       <SettingsCard>
         <SettingsRow icon={<HelpCircle size={15} />} label="הצגת ההדרכה מחדש" divider={false}>

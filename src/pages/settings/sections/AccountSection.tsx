@@ -8,17 +8,23 @@ import { useAuth } from '../../../contexts/AuthContext';
 interface Props {
   authEmail: string | null;
   onSignOut: () => void;
+  /**
+   * Render the "חשבון" card label. False when the enclosing SettingsGroup
+   * heading already says it — the same words twice, one above the other, is
+   * the heading soup the regroup set out to remove.
+   */
+  showLabel?: boolean;
 }
 
-export function AccountSection({ authEmail, onSignOut }: Props) {
+export function AccountSection({ authEmail, onSignOut, showLabel = true }: Props) {
   // Guests reach Settings without a Supabase session. Calling clearGuest()
   // drops auth status to "unauthenticated", which renders the Login screen —
   // the only sign-in path out of the guest state.
   const { clearGuest } = useAuth();
 
   return (
-    <div className="mb-7">
-      <SectionLabel>חשבון</SectionLabel>
+    <div className="mb-5">
+      {showLabel && <SectionLabel>חשבון</SectionLabel>}
       <SettingsCard>
         <SettingsRow
           icon={<User size={15} />}

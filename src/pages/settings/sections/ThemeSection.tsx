@@ -12,11 +12,15 @@ import { useSavedFlash } from '../hooks/useAutosave';
  * Display & accessibility section. Dark mode and the accessibility toggles
  * (reduced animations / large text / high contrast) are all owned by
  * SettingsContext, so audio/haptics/motion keep applying app-wide. This
- * section reads/writes that context directly — no localStorage of its own —
- * and flashes the shared "נשמר" indicator on each change for consistency with
- * the other autosaving sections.
+ * section reads/writes that context directly — no localStorage of its own.
+ *
+ * `showLabel` is false when the enclosing SettingsGroup heading already reads
+ * "תצוגה ונגישות". In that case the shared "נשמר" flash goes with the label,
+ * deliberately: every control here is self-evidencing — dark mode, large text
+ * and high contrast repaint the screen you are looking at — so a confirmation
+ * chip confirms nothing the user cannot already see.
  */
-export function ThemeSection() {
+export function ThemeSection({ showLabel = true }: { showLabel?: boolean }) {
   const { settings, updateSettings, updateWorkoutSettings } = useSettings();
   const { reducedAnimations, largeText, highContrast } = settings.workoutSettings;
   const { saved, flash } = useSavedFlash();
@@ -39,8 +43,10 @@ export function ThemeSection() {
   };
 
   return (
-    <div className="mb-7">
-      <SectionLabel trailing={<SavedIndicator saved={saved} />}>תצוגה ונגישות</SectionLabel>
+    <div className="mb-5">
+      {showLabel && (
+        <SectionLabel trailing={<SavedIndicator saved={saved} />}>תצוגה ונגישות</SectionLabel>
+      )}
       <SettingsCard>
         <SettingsRow
           icon={

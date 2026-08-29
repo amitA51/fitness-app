@@ -61,7 +61,7 @@ export function DangerZoneSection({ onDeleteAll }: Props) {
   };
 
   return (
-    <div className="mb-7">
+    <div className="mb-5">
       <SectionLabel tone="danger">אזור מסוכן</SectionLabel>
 
       {/* ── 1. Training data only ── */}

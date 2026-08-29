@@ -92,7 +92,7 @@ export function BlockedUsersSection() {
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loadState === 'loading') {
     return (
-      <div className="mb-7">
+      <div className="mb-5">
         <SectionLabel>משתמשים חסומים</SectionLabel>
         <div style={CARD_STYLE} aria-busy="true">
           <div
@@ -116,7 +116,7 @@ export function BlockedUsersSection() {
   // ── Error ─────────────────────────────────────────────────────────────────
   if (loadState === 'error') {
     return (
-      <div className="mb-7">
+      <div className="mb-5">
         <SectionLabel>משתמשים חסומים</SectionLabel>
         <div style={CARD_STYLE}>
           <p role="alert" style={{ ...HELPER_STYLE, color: 'var(--fs-error)' }}>
@@ -150,7 +150,7 @@ export function BlockedUsersSection() {
   // ── Empty ─────────────────────────────────────────────────────────────────
   if (users.length === 0) {
     return (
-      <div className="mb-7">
+      <div className="mb-5">
         <SectionLabel>משתמשים חסומים</SectionLabel>
         <div style={CARD_STYLE}>
           <div
@@ -169,7 +169,7 @@ export function BlockedUsersSection() {
               aria-hidden="true"
               style={{ color: 'var(--fs-muted)', opacity: 0.5 }}
             />
-            <p style={HELPER_STYLE}>לא חסמת אף אחד</p>
+            <p style={HELPER_STYLE}>לא חסמתם אף אחד</p>
           </div>
         </div>
       </div>
@@ -178,7 +178,7 @@ export function BlockedUsersSection() {
 
   // ── Success ───────────────────────────────────────────────────────────────
   return (
-    <div className="mb-7">
+    <div className="mb-5">
       <SectionLabel>משתמשים חסומים</SectionLabel>
       <div style={CARD_STYLE}>
         <ul aria-label="רשימת משתמשים חסומים" style={{ listStyle: 'none', margin: 0, padding: 0 }}>

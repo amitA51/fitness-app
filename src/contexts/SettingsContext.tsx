@@ -132,11 +132,24 @@ export const loadStoredSettings = (): AppSettings => {
   return { ...DEFAULT_SETTINGS, darkMode: systemPrefersDark() };
 };
 
-const persistSettings = (settings: AppSettings) => {
+/**
+ * Write the canonical `appSettings` value. Returns the exact string written so
+ * the provider can recognise its own value when it re-reads the key, and `null`
+ * when the write failed.
+ *
+ * This provider is the ONLY writer of `appSettings`. A second store that also
+ * wrote the key destroyed settings: each read it once at mount and then wrote a
+ * whole stale snapshot over the other's, and services/localStateMirror synced
+ * the loss to every device.
+ */
+const persistSettings = (settings: AppSettings): string | null => {
   try {
-    localStorage.setItem('appSettings', JSON.stringify(settings));
+    const raw = JSON.stringify(settings);
+    localStorage.setItem('appSettings', raw);
+    return raw;
   } catch {
     // Ignore storage errors
+    return null;
   }
 };
 
@@ -183,13 +196,52 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Persist whenever settings change, but skip the initial render so we don't
   // immediately rewrite the values we just loaded from storage.
   const hydratedRef = useRef(false);
+  // The exact string last written by this provider. Used to tell our own value
+  // apart from one written outside React (see the adopt effect below).
+  const lastWrittenRef = useRef<string | null>(null);
   useEffect(() => {
     if (!hydratedRef.current) {
       hydratedRef.current = true;
       return;
     }
-    persistSettings(settings);
+    const written = persistSettings(settings);
+    if (written !== null) lastWrittenRef.current = written;
   }, [settings]);
+
+  // Adopt a value written to `appSettings` from outside React instead of
+  // overwriting it on the next toggle.
+  //
+  // This provider owns the key, but it is not the only thing that can change it:
+  // services/localStateMirror rehydrates the raw string after a cloud pull on
+  // sign-in, and another tab can write it too. Holding the pre-pull snapshot and
+  // then persisting it is the same destroy-then-sync defect with the mirror as
+  // the other writer, so re-read on the signals the app already emits
+  // (`settings-updated` after a cloud reflection, `storage` from another tab).
+  useEffect(() => {
+    const adoptExternalWrite = () => {
+      let raw: string | null = null;
+      try {
+        raw = localStorage.getItem('appSettings');
+      } catch {
+        return;
+      }
+      // Nothing there, or it is the value we just wrote: nothing to adopt.
+      if (raw === null || raw === lastWrittenRef.current) return;
+
+      const parsed = safeJsonParse<Partial<AppSettings>>(raw);
+      if (!parsed || typeof parsed !== 'object') return;
+
+      lastWrittenRef.current = raw;
+      setSettings(mergeSettings(parsed));
+    };
+
+    window.addEventListener('storage', adoptExternalWrite);
+    window.addEventListener('settings-updated', adoptExternalWrite);
+    return () => {
+      window.removeEventListener('storage', adoptExternalWrite);
+      window.removeEventListener('settings-updated', adoptExternalWrite);
+    };
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle(
@@ -238,5 +290,16 @@ export const useSettings = (): SettingsContextValue => {
   }
   return context;
 };
+
+/**
+ * Same context, but `null` instead of a throw when no `SettingsProvider` is
+ * above the caller.
+ *
+ * For stores that must defer to this provider as the single writer of
+ * `appSettings` yet can legitimately mount without it — error-boundary
+ * fallbacks render outside the provider (see hooks/useReducedMotion), as do
+ * unit tests that mount a subtree on its own.
+ */
+export const useOptionalSettings = (): SettingsContextValue | null => useContext(SettingsContext);
 
 export default SettingsContext;

@@ -55,7 +55,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
     // Dark mode is an app-level setting (toggles the `.dark` class on <html> via
     // SettingsContext), not a workout-scoped one — so it's wired straight to the
     // global settings store rather than through onUpdateSetting.
-    const { settings: appSettings, updateSettings } = useSettings();
+    const { settings: appSettings, updateSettings, updateWorkoutSettings } = useSettings();
 
     const handleDragEnd = (_: unknown, info: PanInfo) => {
       if (info.offset.y > 100) onClose();
@@ -65,6 +65,21 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
       triggerHaptic();
       onClose();
     }, [onClose]);
+
+    // The accessibility toggles are app-wide, not workout-scoped: SettingsContext
+    // owns them (it is the single writer of the `appSettings` key and it toggles
+    // the matching classes on <html>). Write them through the context like מצב
+    // כהה above, and still notify the workout store so in-workout consumers
+    // (useAccessibilitySettings) react in the same frame instead of waiting for
+    // the value to come back down.
+    const accessibility = appSettings.workoutSettings;
+    const setAccessibility = useCallback(
+      (key: 'reducedAnimations' | 'largeText' | 'highContrast', value: boolean) => {
+        updateWorkoutSettings({ [key]: value });
+        onUpdateSetting(key, value);
+      },
+      [updateWorkoutSettings, onUpdateSetting]
+    );
 
     // Read a setting with a sensible default fallback so toggles never look
     // "stale" before the first localStorage write.
@@ -435,20 +450,20 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                   <Toggle
                     label="צמצום אנימציות"
                     description="פחות תנועה לחוויה רגועה יותר"
-                    value={get('reducedAnimations') ?? false}
-                    onChange={(v) => onUpdateSetting('reducedAnimations', v)}
+                    value={accessibility.reducedAnimations ?? false}
+                    onChange={(v) => setAccessibility('reducedAnimations', v)}
                   />
                   <Toggle
                     label="טקסט גדול"
                     description="הגדלת גודל הפונט ב‎-‎20%"
-                    value={get('largeText') ?? false}
-                    onChange={(v) => onUpdateSetting('largeText', v)}
+                    value={accessibility.largeText ?? false}
+                    onChange={(v) => setAccessibility('largeText', v)}
                   />
                   <Toggle
                     label="ניגודיות גבוהה"
                     description="הגברת ניגודיות צבעים"
-                    value={get('highContrast') ?? false}
-                    onChange={(v) => onUpdateSetting('highContrast', v)}
+                    value={accessibility.highContrast ?? false}
+                    onChange={(v) => setAccessibility('highContrast', v)}
                   />
                 </m.div>
               )}

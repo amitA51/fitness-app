@@ -3,26 +3,24 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import PageHeader from '../components/ui/PageHeader';
-import {
-  SectionLabel,
-  type SettingsJumpItem,
-  SettingsJumpNav,
-} from '../components/ui/SettingsSectionLabel';
+import { SectionLabel } from '../components/ui/SettingsSectionLabel';
 import { useIsAppAdmin } from '../hooks/useIsAppAdmin';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { deleteAllUserData } from '../services/settingsService';
 import { signOut } from '../services/supabaseAuth';
 import { logger } from '../utils/logger';
+import { AdvancedSection } from './progress/components/SectionCard';
+import { SettingsGroup } from './settings/components/SettingsGroup';
 import { useCloudSync } from './settings/hooks/useCloudSync';
 import { useSettingsState } from './settings/hooks/useSettingsState';
 import { AccountSection } from './settings/sections/AccountSection';
+import { BackupSection } from './settings/sections/BackupSection';
 import { BlockedUsersSection } from './settings/sections/BlockedUsersSection';
+import { CloudSyncDirectional } from './settings/sections/CloudSyncDirectional';
 import { CloudSyncSection } from './settings/sections/CloudSyncSection';
 import { CoachSection } from './settings/sections/CoachSection';
 import { DangerZoneSection } from './settings/sections/DangerZoneSection';
 import { DataAboutSection } from './settings/sections/DataAboutSection';
-import { DateTimeSection } from './settings/sections/DateTimeSection';
-import { ExportSection } from './settings/sections/ExportSection';
 import { GuidanceSection } from './settings/sections/GuidanceSection';
 import { LegalLinksSection } from './settings/sections/LegalLinksSection';
 import { NotificationsSection } from './settings/sections/NotificationsSection';
@@ -30,38 +28,48 @@ import { ProfileEditSection } from './settings/sections/ProfileEditSection';
 import { ProfileSection } from './settings/sections/ProfileSection';
 import { ThemeSection } from './settings/sections/ThemeSection';
 import { UnsyncedChangesSection } from './settings/sections/UnsyncedChangesSection';
+import { WeeklyReportSection } from './settings/sections/WeeklyReportSection';
 import { WorkoutPrefsSection } from './settings/sections/WorkoutPrefsSection';
 
 // ============================================================================
 // MAIN SETTINGS PAGE (thin orchestrator)
-//
-// Section order mirrors the numbered labels rendered below:
-//   01 חשבון · 02 פרופיל · 03 תצוגה ונגישות · 04 אימון ·
-//   05 התראות · 06 פרטיות ונתונים
-// Nutrition-goal editing lives in the Nutrition screen (shares the
-// "nutrition_goals" key + "settings-updated" event); coach/role lives in
-// onboarding + the coach panel — neither is duplicated here.
 // ============================================================================
-
-// Sticky jump-nav config. Each chip anchors to a section group below; the
-// matching wrapper gets `scrollMarginTop` so it lands clear of the sticky
-// header + chip row instead of underneath them.
-const JUMP_ITEMS: readonly SettingsJumpItem[] = [
-  { id: 'set-account', label: 'חשבון' },
-  { id: 'set-profile', label: 'פרופיל' },
-  { id: 'set-display', label: 'תצוגה' },
-  { id: 'set-workout', label: 'אימון' },
-  { id: 'set-coach', label: 'מאמן' },
-  { id: 'set-notifications', label: 'התראות' },
-  { id: 'set-data', label: 'נתונים' },
-  { id: 'set-legal', label: 'משפטי' },
-];
-
-// Sticky header height estimate (subtitle + title + vertical padding). The chip
-// nav sticks just below it; section anchors clear both via scroll-margin-top.
-const SETTINGS_HEADER_OFFSET = 92;
-const SETTINGS_JUMP_NAV_HEIGHT = 44;
-const SECTION_SCROLL_MARGIN = SETTINGS_HEADER_OFFSET + SETTINGS_JUMP_NAV_HEIGHT;
+// FIVE top-level groups, down from 16 flat sections and an 8-chip sticky jump
+// nav:
+//
+//   1 חשבון            — who you are signed in as, and (coaches only) the
+//                         coach business profile: becoming a coach is
+//                         account-level, it flips the whole app shell.
+//   2 הפרופיל שלי       — the seven metrics that feed TDEE/BMI, top level
+//                         because they are why the screen exists.
+//                         מתקדם: the public-facing profile editor.
+//   3 תצוגה ונגישות     — the four display/accessibility toggles.
+//                         מתקדם: replay the first-use guidance.
+//   4 אימון והתראות     — rest/timer/haptics defaults + the three notification
+//                         toggles: both answer "how does the app behave around
+//                         a workout".
+//   5 נתונים ופרטיות    — sync, weekly report, legal.
+//                         מתקדם: backup/restore, one-way sync, blocked users.
+//                         Danger zone last, after a quarantine rule.
+//
+// Progressive disclosure uses ONE idiom app-wide: `AdvancedSection` (44px
+// trigger, children unmounted while collapsed) — the same expander Progress
+// uses. A second expander pattern would be the density problem in disguise.
+//
+// Deleted outright with this rebuild: the whole date/time block (timezone, time
+// format, date format, first-day-of-week). The app is Israel-only, and all four
+// wrote to a preference NO renderer read — 40 files hardcode he-IL /
+// Asia/Jerusalem, including the useCloudSync timestamp shown inside group 5.
+// A control that silently claims to restyle every date in the app while
+// changing nothing is worse than a dead toggle, so it is gone rather than
+// demoted behind מתקדם.
+//
+// Also deleted: the sticky jump nav. A jump menu is the screen admitting it is
+// too long to scroll, which was the complaint and not the fix.
+//
+// Nutrition goals live in the Nutrition screen (shared "nutrition_goals" key)
+// and are not duplicated here.
+// ============================================================================
 
 export default function Settings() {
   const state = useSettingsState();
@@ -86,6 +94,12 @@ export default function Settings() {
   // session is NOT a usable cloud connection, so showing "מחובר לענן" there is
   // misleading. authEmail is the real auth signal already loaded in state.
   const cloudConnected = cloudSync.cloudConnected && Boolean(state.authEmail);
+
+  // Status card and the one-way pair now live in two components (the latter
+  // behind מתקדם), so the "is anything syncing" guard has to be computed here
+  // and shared — otherwise opening מתקדם mid-sync could start a second,
+  // conflicting sync.
+  const syncBusy = cloudSync.isSyncingAll || cloudSync.isSyncingUp || cloudSync.isSyncingDown;
 
   // ── Handlers that bridge state + services ──────────────────────────────────
 
@@ -147,78 +161,68 @@ export default function Settings() {
       style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
-      {/* Header — shared PageHeader SSOT. Renders the same ~92px box (safe-area
-          padding + 13/26 eyebrow+title + 2px accent border) the hand-rolled
-          header did, so SETTINGS_HEADER_OFFSET/SECTION_SCROLL_MARGIN stay valid. */}
       <PageHeader title="הגדרות" eyebrow="התאמות אישיות וסנכרון" size="large" />
 
-      <div className="px-5">
-        <SettingsJumpNav items={JUMP_ITEMS} top={SETTINGS_HEADER_OFFSET} />
-      </div>
+      <div className="px-5 pt-6">
+        {/* ── 1 · חשבון ─────────────────────────────────────────────────── */}
+        <SettingsGroup title="חשבון">
+          <AccountSection authEmail={state.authEmail} onSignOut={handleSignOut} showLabel={false} />
 
-      <div className="px-5 pt-5">
-        <p
-          style={{
-            fontFamily: 'var(--font-hebrew)',
-            fontSize: '14px',
-            color: 'var(--fs-muted)',
-            marginBottom: '20px',
-          }}
-        >
-          חשבון, פרופיל, תצוגה, אימון, התראות ונתונים במקום אחד.
-        </p>
-
-        <div id="set-account" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
-          <AccountSection authEmail={state.authEmail} onSignOut={handleSignOut} />
-        </div>
-
-        {/* Admin-only: /paywall is an AdminGuard-ed scaffold. Never offer a row
-            whose destination bounces the tapper straight back home. */}
-        {!appAdminLoading && isAppAdmin && (
-          <Link
-            to="/paywall"
-            className="active:scale-[0.98]"
-            aria-label="פרימיום — הצטרפות לרשימת ההמתנה"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12,
-              marginBottom: 28,
-              padding: '14px 16px',
-              minHeight: 44,
-              background: 'var(--fs-surface)',
-              border: '1px solid var(--fs-accent)',
-              borderRadius: 'var(--radius-asymmetric)',
-              textDecoration: 'none',
-            }}
-          >
-            <span style={{ display: 'flex', flexDirection: 'column' }}>
-              <span
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 700,
-                  fontSize: 15,
-                  color: 'var(--fs-ink)',
-                }}
-              >
-                פרימיום
+          {/* Admin-only: /paywall is an AdminGuard-ed scaffold. Never offer a
+              row whose destination bounces the tapper straight back home. */}
+          {!appAdminLoading && isAppAdmin && (
+            <Link
+              to="/paywall"
+              className="active:scale-[0.98]"
+              aria-label="פרימיום — הצטרפות לרשימת ההמתנה"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                marginBottom: 20,
+                padding: '14px 16px',
+                minHeight: 44,
+                background: 'var(--fs-surface)',
+                border: '1px solid var(--fs-accent)',
+                borderRadius: 'var(--radius-asymmetric)',
+                textDecoration: 'none',
+              }}
+            >
+              <span style={{ display: 'flex', flexDirection: 'column' }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 700,
+                    fontSize: 15,
+                    color: 'var(--fs-ink)',
+                  }}
+                >
+                  פרימיום
+                </span>
+                <span
+                  style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--fs-muted)' }}
+                >
+                  הצטרפו לרשימת ההמתנה
+                </span>
               </span>
-              <span
-                style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--fs-muted)' }}
-              >
-                הצטרפו לרשימת ההמתנה
-              </span>
-            </span>
-            <Crown
-              size={18}
-              aria-hidden="true"
-              style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
-            />
-          </Link>
-        )}
+              <Crown
+                size={18}
+                aria-hidden="true"
+                style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
+              />
+            </Link>
+          )}
 
-        <div id="set-profile" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
+          {/* Coach business profile. Renders null for trainees and while the
+              role lookup settles, so it costs the majority nothing. Grouped
+              under חשבון because becoming a coach is an account-level change —
+              it flips the whole app shell, it is not a workout preference. */}
+          <CoachSection />
+        </SettingsGroup>
+
+        {/* ── 2 · הפרופיל שלי ───────────────────────────────────────────── */}
+        <SettingsGroup title="הפרופיל שלי">
           <ProfileSection
             profile={state.profile}
             updateProfile={state.updateProfile}
@@ -226,33 +230,34 @@ export default function Settings() {
             profileSaved={state.profileSaved}
           />
 
-          <ProfileEditSection />
-        </div>
+          {/* The public-facing identity (avatar, display name, bio,
+              visibility) is a different audience from the metrics above: those
+              feed calorie and BMI maths, these are what other users see. It is
+              also the only surface in the app that can SET them — /u/:userId is
+              read-only — so it stays reachable here rather than being cut. */}
+          <AdvancedSection id="settings-public-profile" label="פרופיל ציבורי">
+            <ProfileEditSection />
+          </AdvancedSection>
+        </SettingsGroup>
 
-        <div id="set-display" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
-          <ThemeSection />
+        {/* ── 3 · תצוגה ונגישות ─────────────────────────────────────────── */}
+        <SettingsGroup title="תצוגה ונגישות">
+          <ThemeSection showLabel={false} />
 
-          <DateTimeSection />
+          {/* Replaying the first-use walkthrough is a once-or-never action. */}
+          <AdvancedSection id="settings-display-advanced">
+            <GuidanceSection />
+          </AdvancedSection>
+        </SettingsGroup>
 
-          <GuidanceSection />
-        </div>
-
-        <div id="set-workout" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
+        {/* ── 4 · אימון והתראות ─────────────────────────────────────────── */}
+        <SettingsGroup title="אימון והתראות">
           <WorkoutPrefsSection
             workoutPrefs={state.workoutPrefs}
             commitWorkout={state.commitWorkout}
             workoutSaved={state.workoutSaved}
           />
-        </div>
 
-        {/* Coach / role is account-level (become-a-coach flips the whole app
-            shell, or edits the business profile) — its own anchor so it stops
-            hiding under the "אימון" prefs chip. */}
-        <div id="set-coach" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
-          <CoachSection />
-        </div>
-
-        <div id="set-notifications" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
           <NotificationsSection
             notificationConfig={state.notificationConfig}
             toggleNotification={state.toggleNotification}
@@ -260,30 +265,18 @@ export default function Settings() {
             pushEnabled={state.pushEnabled}
             togglePush={state.togglePush}
           />
-        </div>
+        </SettingsGroup>
 
-        {/* 06 · Privacy & data — export, cloud sync and the delete danger-zone */}
-        <div id="set-data" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
-          <SectionLabel>פרטיות ונתונים</SectionLabel>
-
-          <ExportSection
-            weeklyReport={state.weeklyReport}
-            setWeeklyReport={state.setWeeklyReport}
-            copiedReport={state.copiedReport}
-            setCopiedReport={state.setCopiedReport}
-          />
-
+        {/* ── 5 · נתונים ופרטיות ────────────────────────────────────────── */}
+        <SettingsGroup title="נתונים ופרטיות">
           {isSupabaseConfigured() && (
             <CloudSyncSection
               cloudConnected={cloudConnected}
-              isSyncingUp={cloudSync.isSyncingUp}
-              isSyncingDown={cloudSync.isSyncingDown}
+              busy={syncBusy}
               isSyncingAll={cloudSync.isSyncingAll}
               syncMessage={cloudSync.syncMessage}
               pendingSyncCount={cloudSync.pendingSyncCount}
               lastSyncTime={cloudSync.lastSyncTime}
-              onSyncToCloud={cloudSync.handleSyncToCloud}
-              onPullFromCloud={cloudSync.handlePullFromCloud}
               onSyncAll={cloudSync.handleSyncAll}
             />
           )}
@@ -292,8 +285,40 @@ export default function Settings() {
               push, which is what the "retry from Settings" toast points at. */}
           <UnsyncedChangesSection />
 
+          {/* The one row here an ordinary user taps. It used to sit third in a
+              four-row card between a CSV export and a JSON restore. */}
+          <WeeklyReportSection
+            weeklyReport={state.weeklyReport}
+            setWeeklyReport={state.setWeeklyReport}
+            copiedReport={state.copiedReport}
+            setCopiedReport={state.setCopiedReport}
+          />
+
+          {/* Top level, deliberately: הצהרת נגישות is an IS 5568 obligation and
+              must not be buried, and GDPR requires withdrawing analytics
+              consent to be as easy as granting it. */}
+          <SectionLabel>משפטי ופרטיות</SectionLabel>
+          <LegalLinksSection />
+
+          <AdvancedSection id="settings-data-advanced">
+            <BackupSection />
+
+            {isSupabaseConfigured() && (
+              <CloudSyncDirectional
+                cloudConnected={cloudConnected}
+                busy={syncBusy}
+                isSyncingUp={cloudSync.isSyncingUp}
+                isSyncingDown={cloudSync.isSyncingDown}
+                onSyncToCloud={cloudSync.handleSyncToCloud}
+                onPullFromCloud={cloudSync.handlePullFromCloud}
+              />
+            )}
+
+            <BlockedUsersSection />
+          </AdvancedSection>
+
           {/* Quarantine separator — detaches the destructive zone from the
-              normal export/sync cards so it doesn't read as just another card.
+              normal sync/report cards so it doesn't read as just another card.
               Kept ABOVE DangerZoneSection so the deleteError negative-margin
               hug below stays intact. */}
           <div
@@ -301,7 +326,7 @@ export default function Settings() {
             style={{
               height: 1,
               background: 'var(--fs-surface-2)',
-              margin: '4px 0 24px',
+              margin: '24px 0',
             }}
           />
 
@@ -323,18 +348,9 @@ export default function Settings() {
               {deleteError}
             </p>
           )}
-        </div>
+        </SettingsGroup>
 
-        {/* Legal & privacy hub — terms, privacy, accessibility + tracking
-            consent + blocked users. Now jump-nav reachable (was scroll-only). */}
-        <div id="set-legal" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
-          <SectionLabel>משפטי ופרטיות</SectionLabel>
-          <LegalLinksSection />
-
-          <BlockedUsersSection />
-
-          <DataAboutSection />
-        </div>
+        <DataAboutSection />
       </div>
 
       <ConfirmDialog
