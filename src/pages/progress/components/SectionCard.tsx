@@ -106,7 +106,14 @@ export const AdvancedSection = memo(function AdvancedSection({
           fontFamily: 'var(--font-hebrew)',
           fontSize: 13,
           fontWeight: 600,
-          color: 'var(--fs-accent)',
+          // Accent-coloured label on a light PAGE surface — so it must be the
+          // text-safe accent, not the raw fill mint. Raw --fs-accent measured
+          // 1.75:1 here in the default light theme (reports/visual-qa-s20.md F1);
+          // --fs-accent-text is the same hue scaled 0.55 and clears AA, while
+          // resolving BACK to --fs-accent in dark and both high-contrast states,
+          // where the mint already passes. The chevron below inherits it via
+          // currentColor.
+          color: 'var(--fs-accent-text)',
           transition: 'transform 0.1s var(--ease-out, ease-out)',
         }}
       >

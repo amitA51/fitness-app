@@ -445,7 +445,10 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
                 fontWeight: 700,
                 fontSize: 72,
                 lineHeight: 1,
-                letterSpacing: '-0.02em',
+                // Display tracking, not body tracking: the graded display scale is
+                // -0.022em @48px → -0.028em @88px, so 72px reads -0.026em. It was
+                // -0.02em (a body value) on the largest number in the app.
+                letterSpacing: '-0.026em',
                 color: isFinalCountdown ? 'var(--fs-warn)' : 'var(--fs-ink)',
                 fontVariantNumeric: 'tabular-nums',
               }}

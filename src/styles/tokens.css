@@ -26,6 +26,21 @@
      white and fails WCAG AA as body text, so links use a darkened brand teal that
      clears AA (≥4.5:1) on every light surface (#fff / #eef3f1 / #dbe6e3). */
   --fs-link: #1d6575;
+  /* The accent used AS TEXT (not as a fill, and not a link) — accent-coloured
+     labels on a light PAGE surface. Distinct from --color-ink-on-accent, which is
+     the ink placed ON an accent fill.
+     #256d5b is --fs-accent (#43c7a5) with every channel scaled 0.55 — identical
+     hue and saturation, lower value, so an accent label still reads as "the mint
+     one". Same house technique as --btn-primary-bg-hover in html.dark (0.86) and
+     html.high-contrast (0.55), and the toggle's dark ON track (0.64). 0.55 is the
+     factor that clears 4.5:1 on all three light surfaces at once: 6.15:1 on #fff,
+     5.48:1 on --fs-bg #eef3f1, 5.11:1 on the accent-mesh-tinted page (#dceee9,
+     the measured Settings surface) and 4.81:1 on --fs-surface-2 #dbe6e3 — where
+     0.64 reaches only 4.02:1 over the mesh and still fails.
+     Raw --fs-accent must NOT be used for text here: 1.88 / 2.11 / 1.65:1
+     (reports/04-A11Y-RTL-HEBREW.md:21). Dark and both high-contrast states
+     re-point this token at --fs-accent below, where the mint already clears AA. */
+  --fs-accent-text: #256d5b;
   /* Accent as raw RGB channels — enables rgba(var(--fs-accent-rgb), <alpha>) */
   --fs-accent-rgb: 67, 199, 165;
   --fs-signal: #e2fb70;
@@ -404,6 +419,10 @@ html.dark {
   --fs-accent-2: #38b5c9;
   /* On dark surfaces the brand mint already clears AA (~11:1), so links reuse it. */
   --fs-link: var(--fs-accent);
+  /* Same reason: the mint IS the legible choice on near-black, so accent text is
+     the accent itself here. Keeps this state byte-identical to before the token
+     existed (12.27:1 on --fs-bg #000, 11.03:1 on --fs-surface #111). */
+  --fs-accent-text: var(--fs-accent);
   --fs-accent-rgb: 77, 220, 187;
   --fs-signal: #e2fb70;
   --fs-warn: #ff8a65;
@@ -656,6 +675,12 @@ html.high-contrast {
      and at #2a2a2a in dark it was a 1.46:1 hairline on black.
      Link 16.82:1; ink on hovered card 18.88:1; steel border vs card 21:1. */
   --fs-link: var(--fs-accent);
+  /* --fs-accent-text #256d5b is the same trap one token over: it is --fs-accent
+     scaled 0.55 to clear AA on the LIGHT page, and on this state's black page it
+     lands at 4.42:1 — under the 4.5:1 floor. The bright HC mint is the legible
+     choice here, so accent text is the accent itself: 16.82:1 on #000. Applies to
+     light+HC and dark+HC alike (this block wins over html.dark by source order). */
+  --fs-accent-text: var(--fs-accent);
   --color-surface-hover: var(--fs-surface-2);
   --fs-plate: var(--fs-surface-2);
   --fs-steel: var(--color-border);

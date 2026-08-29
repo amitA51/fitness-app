@@ -1769,6 +1769,161 @@ miss I have now made three times — the proposal counted the *writers* and neve
   all three matched by hand.
 - Findings: **2 high, 3 medium, 2 low, 2 info.**
 
+## [T-065] The gesture — ACCEPTED 2026-08-29 22:47. Steps 2 and 3 done, Step 1 BLOCKED correctly
+- 3 files, exactly its ownership. `components.css` **untouched** — and that is the right outcome, see below.
+- **⚠️⚠️ IT CAUGHT A UNIT BUG IN MY OWN BRIEF THAT WOULD HAVE MADE THE WHOLE FIX A NO-OP.** I wrote
+  `projected = current + (velocity/1000) * 0.499`. With velocity in px/s that is `v * 0.000499`, so a
+  2500 px/s flick projects **1.2px** — and my own definition of done would have been **unreachable**.
+  It kept `d = 0.998` and `0.499` exactly and made the units consistent: `projected = offset + v_px_s *
+  0.499`. **My error. It noticed instead of failing silently or weakening the test to pass.**
+- **⚠️ IT ALSO CORRECTED THE AUDIT'S STEP-1 ROW.** The audit says both large numbers inherit
+  `-0.01em`. **Only one does.** The 72px rest timer sets `letterSpacing: '-0.02em'` **inline** on the
+  same element as the class (`InlineRestTimer.tsx:448` vs `:442`), and an inline style beats a class —
+  so `.kinetic-number` never reaches it and no `components.css` edit can, short of `!important`.
+- **AND IT REFUSED BOTH AVAILABLE HACKS, WITH REASONS.** The 56px PR number does inherit, but reaching
+  it from CSS needs either a class in a file it did not own (my STOP rule) or a selector hack. It
+  rejected `:is(h1,h2,h3) .kinetic-number` because **`h3` in this app is often an 11px kicker** — it
+  named three files — so the rule would tighten small numbers; and rejected
+  `[style*="font-size: 56px"]` as coupling CSS to React's style serialisation. **It wrote neither, left
+  `components.css` clean, and handed me the exact two-line diff with values off the app's own graded
+  curve** (`-0.026em` and `-0.023em`, from `-0.022em @48px` → `-0.028em @88px`). Correct behaviour: it
+  hit the STOP instruction and stopped rather than inventing a workaround.
+- **⚠️ A SYSTEMIC TESTING GAP IT FOUND AND PROVED WITH A PROBE: jsdom ships NO `PointerEvent`
+  constructor.** `fireEvent.pointerMove(el, { clientX })` therefore falls back to a bare `Event` and
+  **silently drops `clientX` AND `pointerId`.** So **any pointer-position test in this repo without a
+  polyfill is asserting on `undefined`.** It polyfilled locally in the file it owns and named the right
+  home (the shared vitest setup) which it does not own. **This needs a sweep — some existing tests may
+  prove nothing.**
+- **MEASURED BOTH WAYS, TWICE, and the control tests are the good part:** reverting only the projection
+  → **9 passed / 1 failed**, the failure being exactly the flick test — **and the crawl and
+  stopped-finger tests still passed under the revert**, so they are not mirroring the flick. Reverting
+  only the re-grab fix → 9/1 with `expected 'translateX(0px)' to be 'translateX(100px)'`, the teleport
+  caught. Numbers: the flick moves 100px of a 232px track (43%, vs a 174px position gate) in 40ms =
+  2500 px/s → projected 1347px; the control crawls the same 100px at ~83 px/s → projected ~142px, no
+  commit.
+- **It caught its own test being wrong:** the re-grab test's "crawl" was itself fast enough to commit
+  (166 px/s → projected 183 > 174), so it slowed it to match the control.
+- Interruptibility is proven by the same test — the second `pointerDown` calls `stopSnap()` on the live
+  `animate()` handle and the value continues from where it was. **A CSS `transition` structurally
+  cannot do that**, which is why the string is gone and thumb + fill now read `transition: 'none'`.
+- **Reduced motion honoured:** no springs run under it; both `snapHome` and `settle` write 0
+  synchronously; the swipe drops the follow entirely. `global.css:663` untouched.
+- **Reasoned change I would have missed:** `MAX_DURATION = 400` now applies only to the untracked
+  (reduced-motion) path — with the surface following the finger, snapping back after a deliberate 700ms
+  drag would be "the old nothing-happened bug in a new costume".
+- Disclosed its own slip: it ran `git status --short`. Read-only, but I said never run git. Self-reported.
+- Left alone with reasons: `SlideToComplete` still hard-clamps at both ends (no rubber-band), the GSAP
+  commit fling is still a fixed timeline, and `ExerciseSelector/index.tsx:187` still uses the linear
+  `info.velocity.y * 0.18` projection. All outside (a)/(b)/(c).
+
+## [T-066] Onboarding — ACCEPTED 2026-08-29 22:47. All three steps done. 19 → 14 actions.
+- 18 modified + 2 deleted + 1 new test. **All six fabrication sites closed** — and it **deleted the
+  derivation rather than guarding it**, which killed three at once.
+- **`?? 1.55` is gone** from `tdee.ts`: unknown activity now returns an all-zero `UNKNOWN_TDEE`, reusing
+  the file's own insufficient-input pattern. `calculateBMR` also returns 0 for an unknown sex, because
+  **the BMR sex term is worth ±166 kcal and is not guessable.**
+- **⚠️ TWO DETAILS THAT WOULD HAVE SILENTLY DEFEATED THE FIX, both found by it:**
+  1. **`SettingsSelect` falls back to `options[0]`.** So widening the type was not enough — without an
+     explicit `לא נבחר` row, an unanswered profile would still have rendered **`זכר` as if the user
+     had chosen it.** It added the row to both option lists.
+  2. **`normalizeProfile` used `??` for gender**, so the `''` sentinel leaked through as a **POPULATED**
+     field and **inflated `completeness`**. Changed to `||`. A latent bug nobody had named.
+- **Both consequences I flagged were handled:** `equipment` is **out of the completeness denominator
+  (7 → 6) but still READ** for existing users, via a typed `LegacyOnboardingKeys` interface rather than
+  a cast — so the ceiling does not silently drop to 5/6 for everyone. And **`coachBrief` was CONFIRMED,
+  not assumed:** a new user reaches exactly **3/6 = 0.50**, which still clears its `>= 0.5` gate, and it
+  noted the value sits **ON** the boundary — "do not treat that as designed."
+- **A REAL BUG IT INTRODUCED AND THEN CAUGHT ITSELF.** Auto-advancing on the terminal goal step would
+  have called `onComplete` with a **stale closure**, silently dropping the goal the user just tapped. It
+  changed `goNext` to accept the answer. That is the class of defect that ships and is never traced.
+- Test accounting exact: baseline **1448** → **1462**. Its net **+10** (new file +10, `onboardingFlow.
+  logic` 3→6, equipment file −3) plus T-065's +4. **The 3 removed tests are named individually with
+  what each asserted**, and their subject — the equipment step and its gate — no longer exists.
+- `CompleteStep` deleted with its reason recorded: its two CTAs both routed to `'/'` while promising
+  different things, and 2 of its 3 recap cards displayed values nobody chose. Loss: one success haptic,
+  named and accepted.
+- **⚠️⚠️ IT DISCLOSED A LIVE UX DEFECT IT CREATED, INSTEAD OF HIDING IT.** For a user with no activity
+  level, `חשב מהפרופיל (TDEE)` now **silently does nothing** rather than filling in invented numbers.
+  It judged this inside my hard limit (no element added, removed or moved; nothing displayed changed)
+  and said so — but stated plainly: **"a button that silently no-ops is a real UX defect and it is now
+  live."** That is the honest cost of refusing to fabricate. **It goes in batch 22.**
+- **It went one step beyond and flagged it for my decision:** that same expression substituted **SIX**
+  invented values, not one — weight 70 / height 175 / age 25 / gender male / activity / weight goal. It
+  removed all six, reasoning that fixing only activity would leave the button presenting **an invented
+  25-year-old 70 kg body as the user's own**. Offered to restore the other five. **MY RULING: leave
+  them removed.** Its reasoning is the same rule the whole batch is built on.
+- One file outside its declared list, disclosed: `src/services/intelligence/profile.ts` — STEP 2's
+  denominator requirement lives only there. Not on the must-not-write list. Accepted, logged.
+- **I verified the deleted symbol myself rather than taking it on report:** `getActivityLevelFromOnboarding`
+  → **exactly ONE match in `src/`, and it is the comment at `appOnboarding.ts:51`** recording why the
+  function is gone. Zero call sites. (The check I owed after the `CLOSE_AI_COACH` miss, done by habit now.)
+
+### Verified baseline — 2026-08-29 22:47, MINE, on a confirmed-static tree
+All 17 runs terminal. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **706** files (707 − 2 deleted + 1 new = 706) |
+| `npm run test:run` | **167 files / 1462 tests**, exit 0 both runs — **NEW FLOOR** |
+| arithmetic | 1448 + 10 (T-066 net) + 4 (T-065) = 1462. Files 167 unchanged: −1 deleted test file, +1 new. **The only drop is the 3 equipment-gate tests, each named.** |
+| `npx playwright test --list` | **88 tests / 14 files**, exit 0 |
+| debris | e2e **14** specs, zero scratch, `test-results/` + `playwright-report/` swept |
+| commit | **`51e53ac`** on `feat/ux-templates-picker`, pushed, 22 files. `master` untouched at `3bf1f7f`. Tree clean. |
+
+---
+
+# Batch 22 — dispatched 2026-08-29 22:52. Autonomous. Tree clean at `51e53ac`.
+
+### Everything in this batch was surfaced BY batch 21, which is the point
+Two of the three are defects the last batch either created or exposed. Fixing them now, while the
+evidence is fresh and the files are settled, is cheaper than letting them join the backlog.
+
+### Ownership map — disjoint
+- **T-067** → `src/pages/progress/components/SectionCard.tsx`, `src/pages/settings/components/**`,
+  `src/components/workout/components/InlineRestTimer.tsx`, `src/components/workout/WorkoutSummary.tsx`.
+- **T-068** → `src/pages/nutrition/components/GoalsEditor.tsx` + its test.
+- **T-069** → WRITES ONLY `plans/POINTER-TEST-AUDIT.md`. Read-only. No browser, no gates.
+- **NO PLAYWRIGHT, NO BUILD.** The re-shoot needs the corrected harness AND a settled tree, so it is
+  batch 23 — and per the standing split rule its verdict will be a separate browser-free worker.
+
+## [T-067] The expander nobody can see, and two number-tracking values
+- status: dispatched (batch 22)
+- owner: fitness-design
+- goal: in the DEFAULT light theme the Settings rebuild's expander triggers are **1.75:1** against a
+  4.5:1 floor, using a token `reports/04-A11Y-RTL-HEBREW.md:21` already declares unusable for text on
+  light surfaces. Plus the two `.kinetic-number` tracking values T-065 was correctly blocked from.
+- done when: verify green; test:run >= 1462; the trigger stated as a number in all FOUR theme states
+  before and after, with dark and both HC states proven not to regress
+- notes: T-065 measured the tracking values and handed over an exact diff — `-0.026em` for the 72px
+  rest timer (replacing an inline `-0.02em`) and `-0.023em` for the 56px PR number. Apply those, do not
+  re-derive. Screenshots OWED.
+
+## [T-068] The button that now does nothing
+- status: dispatched (batch 22)
+- owner: fitness-dev
+- goal: T-066 correctly stopped `חשב מהפרופיל (TDEE)` from inventing six body values — but for a user
+  with no activity level it now **silently no-ops**, which is a live UX defect.
+- done when: verify green; test:run >= 1462 plus a test proving the no-input case is explained rather
+  than silent; nothing fabricated
+- notes: **Do NOT re-add a fallback value, and do NOT add a new question to the nutrition screen.** The
+  honest fix is to say what is missing and where to set it. Replacing silence with an explanation is
+  not adding a feature; adding an inline profile form is.
+
+## [T-069] Are some of our pointer tests asserting on nothing?
+- status: dispatched (batch 22)
+- owner: fitness-qa
+- goal: T-065 proved with a probe that **jsdom ships no `PointerEvent`**, so
+  `fireEvent.pointerMove(el, { clientX })` silently drops `clientX` and `pointerId`. Any pointer test
+  without a polyfill is asserting on `undefined` — i.e. passing while proving nothing.
+- done when: every pointer-event test in `src/` listed with a verdict (REAL / VACUOUS / UNAFFECTED) and
+  the evidence for each; plus the correct one-time home for the polyfill named with its file
+- notes: read-only, writes ONE plan file. A test that passes both before and after a fix is decoration
+  — that is exactly what this hunts. If nothing is vacuous, say so plainly.
+
+---
+
+
+
 
 
 ## [T-065] The app's one real gesture, and two tracking values

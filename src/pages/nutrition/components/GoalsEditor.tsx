@@ -1,5 +1,6 @@
 import { Droplets, GlassWater, Lock, Zap } from 'lucide-react';
 import { memo, useState } from 'react';
+import { showToast } from '../../../components/ui/GlobalToast';
 import { Sheet } from '../../../components/ui/Sheet';
 import { computeMacrosFromProfile } from '../../../services/settingsService';
 import { getWaterSettings, saveWaterSettings } from '../../../services/waterService';
@@ -23,6 +24,30 @@ interface StoredProfile {
   gender?: 'male' | 'female' | 'other' | '';
   activityLevel?: string;
   weightGoal?: string;
+}
+
+/** Present, finite and positive — what Mifflin-St Jeor accepts as an answer. */
+const isMeasured = (value: number | '' | undefined): boolean =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0;
+
+/**
+ * The profile rows the calorie target genuinely depends on, labelled exactly as
+ * Settings labels them under "פרטים אישיים". Each has its own "not answered"
+ * state (`''` or absent), so the refusal can name the rows that are actually
+ * empty instead of a generic "details missing" the user cannot act on.
+ */
+function missingProfileFields(stored: StoredProfile): string[] {
+  const missing: string[] = [];
+  if (!isMeasured(stored.weight)) missing.push('משקל');
+  if (!isMeasured(stored.height)) missing.push('גובה');
+  if (!isMeasured(stored.age)) missing.push('גיל');
+  // 'other' IS an answer — calculateBMR applies the +5 term to it. Only '' or
+  // an absent field means the user never told us.
+  if (stored.gender !== 'male' && stored.gender !== 'female' && stored.gender !== 'other') {
+    missing.push('מין');
+  }
+  if (!stored.activityLevel) missing.push('רמת פעילות');
+  return missing;
 }
 
 const FIELDS: {
@@ -137,7 +162,25 @@ export const GoalsEditor = memo(function GoalsEditor({
       activityLevel: stored.activityLevel ?? '',
       weightGoal: stored.weightGoal ?? 'שמירה על משקל',
     });
-    if (macros.calories <= 0) return;
+    if (macros.calories <= 0) {
+      // Withholding the NUMBER is right; withholding the REASON was not — the
+      // button did nothing at all. Name the rows that are genuinely empty and
+      // where to fill them, through the app's canonical toast (GlobalToast,
+      // already the feedback channel for this screen via useNutritionData).
+      const missing = missingProfileFields(stored);
+      showToast(
+        missing.length > 0
+          ? `כדי לחשב יעד צריך להשלים בפרופיל: ${missing.join(', ')}`
+          : 'לא הצלחנו לחשב יעד מהפרטים שבפרופיל',
+        {
+          variant: 'info',
+          // Longer than the 3s default: the message names fields and a screen.
+          duration: 6000,
+          description: 'השלימו בהגדרות, בקטע "פרטים אישיים", ואז לחצו שוב.',
+        }
+      );
+      return;
+    }
     setDraft({
       calories: macros.calories,
       protein: macros.protein,

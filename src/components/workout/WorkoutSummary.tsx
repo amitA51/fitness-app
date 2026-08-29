@@ -641,6 +641,11 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                       fontVariantNumeric: 'tabular-nums',
                       fontSize: 56,
                       fontWeight: 700,
+                      // Display tracking for a display-size number. Without this it
+                      // inherited -0.01em from .kinetic-number, a body value; the
+                      // graded display scale (-0.022em @48px → -0.028em @88px)
+                      // puts 56px at -0.023em.
+                      letterSpacing: '-0.023em',
                       display: 'inline-block',
                     }}
                   >
