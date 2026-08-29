@@ -1920,6 +1920,216 @@ evidence is fresh and the files are settled, is cheaper than letting them join t
 - notes: read-only, writes ONE plan file. A test that passes both before and after a fix is decoration
   — that is exactly what this hunts. If nothing is vacuous, say so plainly.
 
+## [T-067] The invisible expander + two tracking values — ACCEPTED 2026-08-29 23:03
+- 4 files, exactly its ownership. **Method verified against SIX figures this repo already publishes**
+  before it measured anything new — including `visual-qa-s20.md`'s own **1.75:1** crop figure. Six for six.
+- **THE FIX IS A NEW SEMANTIC PAIR, NOT A MOVED ACCENT.** `--fs-accent-text` = `--fs-accent` with every
+  channel scaled **0.55** — the house uniform-factor technique (0.86 dark hover, 0.64 dark toggle track,
+  0.55 HC press), so hue and saturation are identical and **no third accent enters the palette.**
+  Light **1.75 → 5.11:1** on the real composited surface (5.48 on the raw token surface).
+- **⚠️ IT CAUGHT THAT THE HIGH-CONTRAST OVERRIDE IS LOAD-BEARING, NOT DECORATION.** Without it,
+  **light+HC would have inherited the light literal `#256d5b` onto a black page at 4.42:1** — under the
+  floor. It would have traded one failure for another. Instead `html.dark` AND `html.high-contrast` both
+  re-point the token back at `--fs-accent`, so all three passing states are **byte-identical BY
+  CONSTRUCTION** (12.27 / 16.82 / 16.82), not by measurement luck. It also checked the source-order
+  question: `html.high-contrast` (:587) follows `html.dark` (:381) at equal specificity, so it wins in dark+HC.
+- **IT REJECTED THE TOKEN report 04 ITSELF OFFERS.** `--fs-link` `#1d6575` is **not a uniform scale** of
+  the accent (0.43/0.51/0.71 per channel), so it would have put a **teal** label on the mint idiom — the
+  third-hue bug `PRODUCT.md` names. And it explained why **0.55 and not 0.64**: 0.64 reaches only
+  **4.02:1** over the mesh-tinted surface and still fails. 0.55 is the factor clearing all three light
+  surfaces at once.
+- **⚠️ IT CONFIRMED THE SURFACE ITSELF AND FOUND WHY THE TWO PUBLISHED FIGURES DISAGREED.** The Settings
+  page carries `ambient-mesh`, whose first radial is `color-mix(--fs-accent 28%)` (`components.css:1547`).
+  That accent wash over `#eef3f1` composites to `#dceee9` — a **paler** mint. **So the token-only 1.88:1
+  was the OPTIMISTIC number and the real composite is worse at 1.75:1.** Nobody had reconciled those two.
+- **ONE DECLARATION FIXES FIVE CALL SITES** — `Settings.tsx:238,248`, `OverviewTab.tsx:366`,
+  `WorkoutsTab.tsx:181`, `ExerciseDetail.tsx:285` — precisely because `AdvancedSection` is deliberately
+  the app's ONE disclosure idiom. The chevron follows via `currentColor`; 44px and the ARIA wiring untouched.
+- Step 2 applied exactly as handed over, no re-derivation: `InlineRestTimer.tsx:448` inline `-0.02em` →
+  **`-0.026em`**; `WorkoutSummary.tsx:644` gains **`-0.023em`**.
+- **⚠️ ITS `verify` CAME BACK EXIT 1 AND IT ATTRIBUTED IT CORRECTLY** — two `TS6133` unused-symbol errors
+  plus a format diff, all in `GoalsEditor.tsx` and its new test, i.e. **T-068's in-flight edit.** It named
+  the file and the owner and did not touch it. Correct lane discipline; my own run confirms the tree ends green.
+- Flagged, correctly not touched: **`PaywallScreen.tsx:161-185`** paints the same banned pairing at
+  **1.65:1** (open since report 04's P1) — **and now `--fs-accent-text` exists, so it is a one-word fix** ·
+  `PlanSetRow.tsx:108-110` puts `--fs-heading` on an accent fill at **1.50:1 in dark**, against the ban
+  written next to that token itself · `SegmentedControl.tsx:29-40` has RTL arrow-key semantics **inverted**
+  (`ArrowRight` advances), mirrored in `Progress.tsx` and `Nutrition.tsx` · the ambient mesh being an accent
+  wash on a page arguably breaks `DESIGN.md`'s "clean solid body canvas" — a design call it declined to make alone.
+
+## [T-068] The button that did nothing — ACCEPTED 2026-08-29 23:03
+- 1 modified + 1 new test file, exactly its ownership. `tdee.ts`, `settingsService.ts` and
+  `src/pages/settings/**` read but **never written** — the honest calculation was left honest.
+- **It reused the app's EXISTING channel rather than inventing feedback:** `showToast` from
+  `GlobalToast.tsx`, which **this very screen already uses** via `useNutritionData.ts:2`. Toast z-index
+  1500 vs the sheet's 1100, so it renders above the open editor, and it lands in an `aria-live` region.
+  No new UI on the nutrition surface, no inline inputs, button stays enabled.
+- **THE FIELD ATTRIBUTION MIRRORS WHAT THE FORMULA ACTUALLY ACCEPTS, not what the type says.**
+  **`gender: 'other'` counts as ANSWERED** because `calculateBMR` applies the `+5` term to it — only
+  `''`/absent means unanswered. And **`weightGoal` is deliberately EXCLUDED** from the missing list
+  because `getMacroGoalsForGoal` already resolves an unknown goal to maintain, **so it can never be the
+  reason a target is withheld.** Naming it would have sent the user to fix an irrelevant row.
+- **It handled the unattributable case honestly:** if stored data diverges from the option unions, the
+  copy says it could not compute and still points at `פרטים אישיים`, rather than blaming a specific field.
+- **MEASURED BOTH WAYS:** with the branch reverted to a bare `return;` → **4 failed / 2 passed**; with the
+  fix → **6 passed**. And it named which 2 pass either way — the fully-populated controls, pinning
+  `2711 / 203 / 271 / 91` so the working path is proven unchanged.
+- Disclosed, and it is a real coupling worth tracking: **`missingProfileFields` duplicates the
+  "what counts as answered" rule that lives inside `calculateBMR`.** If `tdee.ts` later moves a bound, the
+  attribution drifts and the generic fallback is what shows. Also: the toast is transient by design, so a
+  user who taps and looks away misses it. No navigation action button (would need routing + sheet-closing).
+
+## [T-069] Pointer tests — ACCEPTED 2026-08-29 23:03. `plans/POINTER-TEST-AUDIT.md`, 290 lines
+- **VERDICT: PASS — NOTHING IN THIS REPO IS VACUOUS.** Read-only confirmed; its probe is deleted and
+  I verified the absence myself (`src/test/` holds only its 4 real files).
+- **The premise is completely true and it proved it twice** — empirically (`window.PointerEvent` is
+  `undefined`; `fireEvent.pointerMove(el, {clientX:42})` arrives as `ctor: "Event"` with
+  **`'clientX' in e === false`**) and at source (`@testing-library/dom/dist/events.js:56` falls back to
+  `window.Event`, and only `dataTransfer`/`clipboardData` are re-attached). jsdom 23.2.0.
+- **But the blast radius is ONE file, and it is the one already carrying the polyfill.**
+- **⚠️ THREE THINGS THAT CHANGED THE ANSWER, none of which I anticipated:**
+  1. **`user-event` is IMMUNE.** It ships its own fallback (`createEvent.js:85`:
+     `window.PointerEvent ?? class PointerEvent extends MouseEvent {}`) and then explicitly assigns
+     `pointerId`/`pointerType`/`isPrimary`. Probed: `userEvent.click()` delivered `clientX: 0,
+     pointerId: 1` with **no polyfill installed**. **That clears all 14 `userEvent` files at once.**
+  2. **Pointer capture fails LOUDER than coordinates.** jsdom has no `setPointerCapture` on
+     `HTMLElement.prototype` at all — it **throws `TypeError`, it does not no-op.** `SlideToComplete.tsx:364`
+     is the only caller in `src/`, which is why its test stubs it. **That stub must travel with the
+     polyfill or it becomes the next trap.**
+  3. **No test would start failing if the polyfill moves to `src/test/setup.ts`** (the sole `setupFiles`
+     entry in `vitest.config.ts`; `vite.config.ts` has no `test` block). It checked all three routes,
+     including that **no source file feature-detects `PointerEvent`**, so no app branch flips. So the
+     most valuable thing I sent it to hunt — a test whose new failure would be the truth arriving —
+     **does not exist here.** Its truth arrived when the polyfill was written.
+- **The finding worth keeping: TWO assertions in the protected file are the canonical vacuous shape and
+  are safe only because the polyfill is local** — `does NOT complete on a slow CRAWL` (`:330`) and the
+  stopped-finger test (`:355`). Without coordinates `e.clientX - startXRef.current` is `NaN`, every commit
+  gate **fails closed**, and both would pass against a component **with the momentum logic deleted.**
+  Their FAST FLICK sibling is the control that catches that. Now on record.
+- **A clean result, honestly demonstrated, rather than padded** — exactly what I asked for.
+
+### Verified baseline — 2026-08-29 23:03, MINE, on a confirmed-static tree
+All 20 runs terminal. Newest `src/` mtime 100s old before any gate ran. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **707** files (706 + 1 new test file) |
+| `npm run test:run` | **168 files / 1468 tests**, exit 0 both runs — **NEW FLOOR** |
+| arithmetic | 167+1=168 files; 1462 + 6 (T-068's new file) = 1468. T-067 and T-069 added none. **Nothing deleted, skipped or weakened.** |
+| `npx playwright test --list` | **88 tests / 14 files**, exit 0 |
+| debris | e2e **14** specs, zero probe leftovers, `test-results/` + `playwright-report/` swept. **The one `*probe*` match is `plans/THEME-AXES-PROBE.md` — a real batch-15 plan doc, not debris.** |
+| commit | **`d6f1979`** on `feat/ux-templates-picker`, pushed, 8 files. `master` untouched at `3bf1f7f`. Tree clean. |
+
+---
+
+# Batch 23 — dispatched 2026-08-29 23:05. Autonomous. Tree clean at `d6f1979`.
+
+### The screenshot debt is now the biggest liability on this board, and the harness is finally understood
+Two rounds died at the wall; a third produced evidence that was **truncated at 1500px** because the
+scroll box is `#main-content`, not the document — so 2 of the 5 Settings groups have **never been seen**,
+the `מתקדם` **expanded** state has never been seen, and 24 crops were **mislabelled**. T-067 just changed
+that trigger's colour in all four theme states, so this round now has two jobs, not one.
+**Per the standing split rule the capture worker does NOT analyse — its verdict is batch 24.**
+
+### Ownership map — disjoint
+- **T-070** → WRITES `visual-qa/**` + `e2e/settings-s20.spec.ts` only. Read-only in `src/`.
+  **HOLDS PLAYWRIGHT AND THE BUILD — sole owner. CAPTURE ONLY, NO ANALYSIS.**
+- **T-071** → WRITES ONLY `plans/TEXT-SCALING-PLAN.md`. Read-only. No browser, no gates.
+- **T-072** → UPDATES ONLY `plans/FS-PRIMARY-EXPOSURE.md`. Read-only. No browser, no gates.
+- **NOBODY WRITES `src/` THIS BATCH.** That is what keeps T-070's build trustworthy — the lesson from
+  six previous batches.
+
+## [T-070] The corrected capture round
+- status: dispatched (batch 23)
+- owner: fitness-qa
+- goal: photograph what three rounds have failed to photograph, with the harness bug fixed.
+- done when: raw PNGs + ONE measurement JSON on disk covering — the 2 never-seen groups
+  (`אימון והתראות`, `נתונים ופרטיות`), `מתקדם` COLLAPSED **and EXPANDED**, the newly-fixed trigger in all
+  four theme states, and the round trip at 1280
+- notes: **`fullPage` LIES and a tall viewport is NOT enough — scroll `#main-content` explicitly and
+  stitch, or capture the scroll-container element.** Build FIRST. Wipe localStorage AND IndexedDB per
+  combo. Dark is the `html.dark` CLASS; HC is `html.high-contrast` and STACKS. **Label every crop from
+  its verified text content** — the last round's 24 `advanced-trigger` crops were all
+  `פרופיל ציבורי`. **Edit budget: the spec only. Do NOT write a report.**
+
+## [T-071] The accessibility switch that does almost nothing
+- status: dispatched (batch 23)
+- owner: fitness-design
+- goal: `html.large-text` has been on this board for EIGHT batches with a measured **12.5%** effect and no
+  plan. The cause is now named: the token type scale and every CSS font size are `px`, so only Tailwind's
+  named sizes scale — and apple-design §15 names that exact rule ("scale layout WITH the text, spacing in
+  rem/em, not fixed px"). `--font-scale` is written by one file and read by **zero** stylesheets.
+- done when: `plans/TEXT-SCALING-PLAN.md` gives the full px inventory by file with counts, says which
+  conversions are safe vs which would break layout, and groups the work into file-exclusive batches
+- notes: read-only, ONE plan file, no gates. **Do not convert anything.** A number that must stay px
+  (hairlines, 1px borders, icon boxes) is a finding, not an oversight — say which and why.
+
+## [T-071] Text scaling — ACCEPTED 2026-08-29 23:16. `plans/TEXT-SCALING-PLAN.md`, 301 lines
+- status: **done** — read-only confirmed, one file written, no build/test/browser/git as instructed.
+- **⚠️ IT CORRECTED MY BRIEF'S SCOPE.** I scoped the inventory to `src/styles/**`. There are **six**
+  stylesheets with font-size declarations, and one is outside that path —
+  `src/components/workout/exercise-library.css`. My grep boundary would have left it behind.
+- **⚠️⚠️ THE FINDING THAT CHANGES THE SIZE OF THIS JOB: 889 of the 1121 inline `fontSize:` sites are
+  UNITLESS NUMBERS** (`fontSize: 13`), which **a px-based search never matches.** A naive `px` grep
+  finds only the 213 quoted ones. Real exposure is **1102 px-equivalent inline sites in 205 files**,
+  not ~200. **This is the family-vs-symbol search error I have now made four times — and this time a
+  worker pre-empted it instead of inheriting it.** Its regexes are documented in the file so the counts
+  are re-runnable.
+- CSS side, counted: **69** font-size declarations — 40 px literals, 24 through the px token scale,
+  4 already rem. Plus **25** Tailwind arbitrary `text-[Npx]` in 11 files.
+- **⚠️ A SECOND, INDEPENDENT ACCESSIBILITY DEFECT NOBODY HAD NAMED:** `typography.css:14` hard-pins
+  `html { font-size: 16px }`. **So the app also overrides the user's own BROWSER font-size setting** —
+  a person who set 20px system-wide gets 16px here regardless. One-token fix (`100%`), and it is the
+  precondition that makes every rem conversion mean anything at all.
+- **THE CONVERSION TABLE ALREADY EXISTS AND IS ALREADY AGREED:** `tailwind.config.js:102-119` mirrors
+  the px token scale **exactly, in rem**. That is what makes Batch 1 mechanical rather than a
+  judgement call. It found the house answer instead of inventing one, for the sixth batch running.
+- **⚠️ THE SHARPEST RISK IS OCCLUSION, NOT CLIPPING — and it is a hard ORDERING constraint.**
+  `--nav-height: 64px` is a constant, and `components.css:998` uses it to compute the page's bottom
+  padding — while the nav's own labels are text. **Scale the labels and the nav grows, but the padding
+  that clears it does not, so content hides behind the nav.** Therefore **B1 (tokens) makes the nav row
+  WORSE before better**, and B1 → B2 (`BottomNav`/`Button`) cannot be reordered or split.
+- **THE `must stay px` CATEGORY IS BIGGER THAN I EXPECTED, AND ITS DISTINCTION IS THE GOOD PART:**
+  **`min-height` is a FLOOR and is safe; `height` is a CEILING and clips.** Every 44/48/52px
+  `min-height` touch target stays px — **converting them would let a target fall BELOW the WCAG floor
+  for a user who REDUCES text size.** That is the direction nobody thinks about.
+- **`--font-scale`: DELETE, on four grounds** — zero stylesheet readers; its only writer mounts at
+  exactly one call site (`ActiveWorkoutNew.tsx:336`) and is removed on unmount; its `1.2`
+  **contradicts the class's `1.125`**; and adopting it would mean rewriting 1102 inline sites as
+  `calc(13px * var(--font-scale))` — strictly more work than rem, **and it still would not scale
+  spacing**, which is the actual §15 remedy. Accepted.
+- **MY RULING on the multiplier question it raised: keep `1.125`, delete the `1.2`.** Reason: `1.125`
+  is the value that actually ships today (the class), and `--font-scale`'s `1.2` has zero readers, so
+  choosing 1.125 changes nothing observable while removing the contradiction. Not a design call worth
+  spending on now — revisit only if the switch reads as too weak once it genuinely works.
+- **Also found, and it belongs to a family we already fixed once:** the `טקסט גדול` switch is
+  **DUPLICATED** — `ThemeSection.tsx:87` and `WorkoutSettingsOverlay.tsx:459` — writing through **two
+  different hooks.** That is how the two multipliers drifted apart in the first place, and it is the
+  same shape as the batch-19 dual-writer bug that destroyed a setting.
+- **Honest about its limits:** §6 labels every overflow claim as SOURCE-INFERRED (it had no browser),
+  names the 14 inline sites it could not classify, and flags `clamp(48px, 14vw, 92px)`
+  (`components.css:1647`) as viewport-relative — a design decision, not a conversion.
+
+
+
+## [T-072] De-risk the 9-batch token sweep before it starts
+- status: dispatched (batch 23)
+- owner: fitness-qa
+- goal: `plans/FS-PRIMARY-EXPOSURE.md` is the authority for 118 broken sites across 63 files, but it
+  disclosed that it **read the actual surface at only ~40 of 211 sites** and assigned the rest by class.
+  **And I noticed its class counts sum to 209, not 211 — two live sites are unaccounted for.**
+- done when: the 2 missing sites are found and classified; every site the audit assigned BY CLASS is
+  confirmed against its real surrounding surface; the 6 flagged-for-human-look sites get a verdict; and
+  any site that moves between class rows is named with its old and new row
+- notes: read-only, UPDATES the existing doc. `--fs-primary` must NOT move (dual-use: a dark-panel fill
+  AND the ink on `--fs-signal`). `--color-border-strong` is DISQUALIFIED (2.10–2.35:1).
+  **`--fs-accent-text` now exists as a proven precedent for this exact shape** — a new semantic token,
+  re-pointed per theme state, light byte-identical. Judge the audit's proposal against it.
+
+---
+
+
+
 ---
 
 
