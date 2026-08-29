@@ -24,7 +24,6 @@ import {
 } from 'react-router-dom';
 import { PageLoader, type PageLoaderVariant } from './AppPageLoader';
 import {
-  getActivityLevelFromOnboarding,
   getWeightGoalFromOnboarding,
   saveOnboardingData,
   savePartialOnboardingData,
@@ -230,7 +229,10 @@ export function AppRouter() {
           weight: data.weight,
           gender: data.gender,
           weightGoal: getWeightGoalFromOnboarding(data.primaryGoal),
-          activityLevel: getActivityLevelFromOnboarding(data.experienceLevel),
+          // No activityLevel: this seed used to re-derive it from
+          // experienceLevel, so the fabrication survived here even after the
+          // save path stopped writing it. Activity volume is never collected in
+          // onboarding, so there is nothing to recover.
         })
       );
     }
@@ -238,7 +240,6 @@ export function AppRouter() {
       localStorage.setItem(
         'workout_prefs',
         JSON.stringify({
-          defaultRestTime: data.restBetweenSets,
           autoStartRest: true,
           hapticsEnabled: true,
         })
@@ -248,10 +249,12 @@ export function AppRouter() {
 
   const handleOnboardingComplete = useCallback((data: OnboardingData) => {
     saveOnboardingData(data);
-    // Activation step: the denominator for every later funnel rate. The role a
-    // user picks here is reported only — coach status is granted by the app
-    // owner on the server (profiles.role), never by the client.
-    trackFunnel('onboarding_completed', { role: data.role ?? 'trainee' });
+    // Activation step: the denominator for every later funnel rate. Onboarding
+    // has no role step — coach status is granted by the app owner on the server
+    // (profiles.role) — so the role is a literal, not a read of a field nobody
+    // sets. The old `data.role ?? 'trainee'` emitted "" for every user, because
+    // `??` does not catch the empty-string sentinel the field defaulted to.
+    trackFunnel('onboarding_completed', { role: 'trainee' });
     setOnboardingDone(true);
   }, []);
 

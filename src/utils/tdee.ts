@@ -30,42 +30,72 @@ const GOAL_MAP: Record<string, WeightGoal> = {
   'עלייה במסה': 'gain',
 };
 
+/**
+ * "We cannot compute this" — returned whenever an input the formula genuinely
+ * needs is missing, instead of substituting a plausible value. Callers must
+ * treat a zero result as "no target" and show nothing, mirroring the Progress
+ * page's rule for BMI: a health claim built on an assumed input is worse than
+ * no claim, because it changes the category and not just the digit.
+ */
+const UNKNOWN_TDEE: TDEEResult = {
+  bmr: 0,
+  tdee: 0,
+  cut: 0,
+  maintain: 0,
+  bulk: 0,
+  protein: 0,
+  carbs: 0,
+  fat: 0,
+};
+
 // Mifflin-St Jeor: BMR = 10 × weight(kg) + 6.25 × height(cm) - 5 × age - s
 // s = +5 for males, -161 for females
 export function calculateBMR(
-  weightKg: number,
-  heightCm: number,
-  age: number,
-  gender: 'male' | 'female' | 'other'
+  weightKg: number | null,
+  heightCm: number | null,
+  age: number | null,
+  gender: 'male' | 'female' | 'other' | ''
 ): number {
+  // The sex term is worth ±166 kcal, so an unknown sex cannot be quietly read
+  // as male — that is a fabricated health input, not a rounding choice.
+  if (gender === '') return 0;
   // Mifflin-St Jeor is only defined for positive weight/height/age; guard so
   // bad input can't produce a negative/NaN BMR that propagates into macros.
+  // `null` (the "not answered" sentinel) fails Number.isFinite by design.
   if (
     !Number.isFinite(weightKg) ||
     !Number.isFinite(heightCm) ||
     !Number.isFinite(age) ||
-    weightKg <= 0 ||
-    heightCm <= 0 ||
-    age <= 0
+    (weightKg as number) <= 0 ||
+    (heightCm as number) <= 0 ||
+    (age as number) <= 0
   ) {
     return 0;
   }
   const s = gender === 'female' ? -161 : 5;
-  return Math.round(10 * weightKg + 6.25 * heightCm - 5 * age + s);
+  return Math.round(
+    10 * (weightKg as number) + 6.25 * (heightCm as number) - 5 * (age as number) + s
+  );
 }
 
 export function calculateTDEE(
-  weightKg: number,
-  heightCm: number,
-  age: number,
-  gender: 'male' | 'female' | 'other',
+  weightKg: number | null,
+  heightCm: number | null,
+  age: number | null,
+  gender: 'male' | 'female' | 'other' | '',
   activityLevel: string
 ): TDEEResult {
   const bmr = calculateBMR(weightKg, heightCm, age, gender);
   if (bmr <= 0) {
-    return { bmr: 0, tdee: 0, cut: 0, maintain: 0, bulk: 0, protein: 0, carbs: 0, fat: 0 };
+    return UNKNOWN_TDEE;
   }
-  const multiplier = ACTIVITY_MAP[activityLevel] ?? 1.55;
+  // No fallback multiplier. The previous `?? 1.55` meant an unrecorded activity
+  // level silently became "moderately active" HERE, so deleting the stored
+  // field alone would only have moved the fabrication one layer down.
+  const multiplier = ACTIVITY_MAP[activityLevel];
+  if (multiplier === undefined) {
+    return UNKNOWN_TDEE;
+  }
   const tdee = Math.round(bmr * multiplier);
 
   const cut = tdee - 500;

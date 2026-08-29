@@ -8,6 +8,7 @@
 // a small radial spark burst fires from the thumb center. onComplete fires at
 // the lock-in instant so the next set is never gated on the cosmetic tail.
 
+import { type AnimationPlaybackControls, animate } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { memo, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useReducedMotion } from '../../../hooks/useReducedMotion';
@@ -37,6 +38,24 @@ const HOLD_MOVE_TOLERANCE = 8;
 // Haptic ramp ticks during the hold fill (fraction of progress → light buzz).
 const HOLD_HAPTIC_MARKS = [0.33, 0.66] as const;
 
+// --- Momentum -------------------------------------------------------------
+// A release used to be a pure POSITION test, so a fast flick let go at 70% was
+// discarded exactly like an abandoned crawl at 70%. The release now decides from
+// a PROJECTED resting point (Apple's decelerating-scroll model): where the thumb
+// WOULD come to rest, not where the finger happened to lift.
+// d / (1 - d) for d = 0.998 → 499ms, expressed in seconds so it pairs directly
+// with a velocity in px/s.
+const PROJECTION_S = 0.499;
+// Position samples older than this no longer describe the release.
+const VELOCITY_WINDOW_MS = 100;
+// A finger that came to rest before lifting carries no momentum: that gesture
+// was abandoned, not thrown, so it must not be credited with a projection.
+const STALE_RELEASE_MS = 80;
+// Snap-home springs, two-parameter form. Bounce is EARNED by momentum: a real
+// gesture that fell short gets it, a tap or a crawl does not.
+const SPRING_TAP = { type: 'spring', bounce: 0, duration: 0.35 } as const;
+const SPRING_MOMENTUM = { type: 'spring', bounce: 0.2, duration: 0.3 } as const;
+
 const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disabled }) => {
   const trackRef = useRef<HTMLButtonElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
@@ -47,6 +66,17 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
   const maxOffsetRef = useRef(0);
   const flingFromRef = useRef(0);
   const finishTickRef = useRef(0);
+  // The offset currently ON SCREEN. Every animation and every re-grab starts
+  // from this presentation value, never from the target: seeding a re-grab from
+  // `offset` state (already 0 while the thumb was still visually mid-return)
+  // is what used to teleport the thumb to the finger.
+  const offsetRef = useRef(0);
+  // Position + timestamp history for the drag, trimmed to the recent window and
+  // used to derive release velocity.
+  const samplesRef = useRef<{ x: number; t: number }[]>([]);
+  // Handle on the snap-home spring so a re-grab can interrupt it mid-flight —
+  // the thing a CSS transition structurally cannot do.
+  const snapAnimRef = useRef<AnimationPlaybackControls | null>(null);
   // Tap-and-hold quick-complete bookkeeping: the rAF id driving the fill, the
   // hold start timestamp, and which haptic ramp marks have already fired.
   const holdRafRef = useRef<number | null>(null);
@@ -81,6 +111,50 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     maxOffsetRef.current = Math.max(0, w - THUMB_SIZE - TRACK_PAD * 2);
   }, []);
 
+  // Single writer for the thumb position: keeps the presentation-value mirror
+  // and the rendered state in step. Clamped at the rail — a spring settling
+  // through zero must not render the thumb outside its housing, even though the
+  // spring's own trajectory continues underneath.
+  const writeOffset = useCallback((next: number) => {
+    const clamped = next > 0 ? next : 0;
+    offsetRef.current = clamped;
+    setOffset(clamped);
+  }, []);
+
+  const stopSnap = useCallback(() => {
+    snapAnimRef.current?.stop();
+    snapAnimRef.current = null;
+  }, []);
+
+  /**
+   * Return the thumb to the rail from wherever it is right now.
+   *
+   * A spring rather than a CSS transition, because a transition cannot be
+   * grabbed and reversed mid-flight and a gesture must always be interruptible.
+   * `velocity` is handed to the spring so there is no seam between the finger
+   * and the animation; bounce is only spent when the release carried momentum.
+   */
+  const snapHome = useCallback(
+    (velocity: number) => {
+      stopSnap();
+      setThresholdAnnounce('');
+      if (prefersReducedMotion || offsetRef.current === 0) {
+        writeOffset(0);
+        return;
+      }
+      const earned = velocity !== 0;
+      snapAnimRef.current = animate(offsetRef.current, 0, {
+        ...(earned ? { ...SPRING_MOMENTUM, velocity } : SPRING_TAP),
+        onUpdate: writeOffset,
+        onComplete: () => {
+          writeOffset(0);
+          snapAnimRef.current = null;
+        },
+      });
+    },
+    [prefersReducedMotion, stopSnap, writeOffset]
+  );
+
   useEffect(() => {
     recalcMax();
     window.addEventListener('resize', recalcMax);
@@ -94,6 +168,8 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     // onComplete a second time and advancing two sets from one gesture.
     if (finishedRef.current) return;
     finishedRef.current = true;
+    // A commit takes the thumb over from any in-flight snap-home.
+    stopSnap();
     // The press is over once a commit locks in; clear the drag flag so a later
     // pointerUp from the same gesture bails on its `if (!isDragging) return`.
     setIsDragging(false);
@@ -102,40 +178,52 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     // its visual confirmation, so self-buzzing would double/triple the vibration.
     if (prefersReducedMotion) {
       setIsComplete(true);
-      setOffset(maxOffsetRef.current);
+      writeOffset(maxOffsetRef.current);
       onComplete();
-      setOffset(0);
+      writeOffset(0);
       setIsComplete(false);
       finishedRef.current = false;
       return;
     }
     // Hand the thumb transform off to GSAP: remember where the drag ended, flag
     // flinging (so React stops writing translateX), and trigger the timeline.
-    flingFromRef.current = offset;
+    // The hand-off point is the LIVE on-screen offset, so a commit that
+    // interrupts a snap-home starts from where the thumb actually is.
+    flingFromRef.current = offsetRef.current;
     setIsComplete(true);
     setIsFlinging(true);
     finishTickRef.current += 1;
     setFinishTick(finishTickRef.current);
-  }, [onComplete, prefersReducedMotion, offset]);
+  }, [onComplete, prefersReducedMotion, stopSnap, writeOffset]);
 
   // Cancel an in-progress hold fill (early release or drag). Resets the thumb
   // back to the rail and clears the ramp bookkeeping (rAF for the animated fill,
   // or the timeout used under reduced motion).
-  const cancelHold = useCallback(() => {
-    if (holdRafRef.current !== null) {
-      cancelAnimationFrame(holdRafRef.current);
-      holdRafRef.current = null;
-    }
-    if (holdTimeoutRef.current !== null) {
-      clearTimeout(holdTimeoutRef.current);
-      holdTimeoutRef.current = null;
-    }
-    if (!isHoldingRef.current) return;
-    isHoldingRef.current = false;
-    holdHapticIdxRef.current = 0;
-    setOffset(0);
-    setThresholdAnnounce('');
-  }, []);
+  // `springHome` glides the fill back for a RELEASE; a drag taking over resets
+  // instantly, because the same pointer-move writes the finger position next and
+  // a spring would fight it.
+  const cancelHold = useCallback(
+    (springHome = false) => {
+      if (holdRafRef.current !== null) {
+        cancelAnimationFrame(holdRafRef.current);
+        holdRafRef.current = null;
+      }
+      if (holdTimeoutRef.current !== null) {
+        clearTimeout(holdTimeoutRef.current);
+        holdTimeoutRef.current = null;
+      }
+      if (!isHoldingRef.current) return;
+      isHoldingRef.current = false;
+      holdHapticIdxRef.current = 0;
+      if (springHome) {
+        snapHome(0);
+        return;
+      }
+      writeOffset(0);
+      setThresholdAnnounce('');
+    },
+    [snapHome, writeOffset]
+  );
 
   // Begin the tap-and-hold quick-complete ramp. Drives `offset` from 0 → max
   // over HOLD_FILL_MS with a light haptic at each ramp mark, then locks in via
@@ -164,7 +252,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     const step = () => {
       const elapsed = performance.now() - holdStartRef.current;
       const ratio = Math.min(1, elapsed / HOLD_FILL_MS);
-      setOffset(maxOffsetRef.current * ratio);
+      writeOffset(maxOffsetRef.current * ratio);
 
       // Light haptic ramp at the configured marks (once each).
       const nextMark = HOLD_HAPTIC_MARKS[holdHapticIdxRef.current];
@@ -183,10 +271,16 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
       holdRafRef.current = requestAnimationFrame(step);
     };
     holdRafRef.current = requestAnimationFrame(step);
-  }, [recalcMax, finish, prefersReducedMotion]);
+  }, [recalcMax, finish, prefersReducedMotion, writeOffset]);
 
-  // Tear down any pending hold rAF on unmount.
-  useEffect(() => () => cancelHold(), [cancelHold]);
+  // Tear down any pending hold rAF and any in-flight snap spring on unmount.
+  useEffect(
+    () => () => {
+      cancelHold();
+      stopSnap();
+    },
+    [cancelHold, stopSnap]
+  );
 
   // GSAP fling + spark stamp, fired when finishTick advances (after the render
   // that sets isFlinging, so the React transform is already off the thumb).
@@ -239,7 +333,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
         )
         .add(() => {
           gsap.set(thumb, { clearProps: 'transform' });
-          setOffset(0);
+          writeOffset(0);
           setIsComplete(false);
           setIsFlinging(false);
           // Re-arm for the next set: the commit's cosmetic tail has played out.
@@ -257,8 +351,14 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     // keyboard activation lands on the slider, not the previous control.
     e.currentTarget.focus();
     recalcMax();
+    // A re-grab during the snap-home must continue from the thumb's LIVE
+    // position: stop the spring, then seed the grab offset from the presentation
+    // value. Seeding from `offset` state (already 0) is what made the thumb
+    // teleport to the finger.
+    stopSnap();
     startXRef.current = e.clientX;
-    startOffsetRef.current = offset;
+    startOffsetRef.current = offsetRef.current;
+    samplesRef.current = [{ x: offsetRef.current, t: performance.now() }];
     setIsDragging(true);
     triggerHaptic('light');
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -279,21 +379,47 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     // While the hold ramp owns `offset`, don't let small in-tolerance jitter
     // from the same press fight it — the ramp drives the fill until cancelled.
     if (isHoldingRef.current) return;
-    setOffset((prev) => {
-      const next = Math.max(0, Math.min(maxOffsetRef.current, startOffsetRef.current + delta));
-      const prevRatio = maxOffsetRef.current > 0 ? prev / maxOffsetRef.current : 0;
-      const nextRatio = maxOffsetRef.current > 0 ? next / maxOffsetRef.current : 0;
-      if (nextRatio >= THRESHOLD && prevRatio < THRESHOLD) {
-        // One-shot at the cross into the committed zone: firmer impact haptic
-        // + a polite SR announcement so non-visual users know they can release.
-        triggerHapticEffect('impact', 'medium');
-        setThresholdAnnounce('אפשר לשחרר — הסט יסומן');
-      } else if (nextRatio < THRESHOLD && prevRatio >= THRESHOLD) {
-        // Dropped back below the threshold — clear so the next cross re-announces.
-        setThresholdAnnounce('');
-      }
-      return next;
-    });
+
+    const prev = offsetRef.current;
+    const next = Math.max(0, Math.min(maxOffsetRef.current, startOffsetRef.current + delta));
+
+    // Position + time history for the release velocity, trimmed to the recent
+    // window (one sample of history is always kept so a single fast move still
+    // yields a velocity).
+    const now = performance.now();
+    const samples = samplesRef.current;
+    samples.push({ x: next, t: now });
+    while (samples.length > 2) {
+      const second = samples[1];
+      if (!second || now - second.t <= VELOCITY_WINDOW_MS) break;
+      samples.shift();
+    }
+
+    const prevRatio = maxOffsetRef.current > 0 ? prev / maxOffsetRef.current : 0;
+    const nextRatio = maxOffsetRef.current > 0 ? next / maxOffsetRef.current : 0;
+    if (nextRatio >= THRESHOLD && prevRatio < THRESHOLD) {
+      // One-shot at the cross into the committed zone: firmer impact haptic
+      // + a polite SR announcement so non-visual users know they can release.
+      triggerHapticEffect('impact', 'medium');
+      setThresholdAnnounce('אפשר לשחרר — הסט יסומן');
+    } else if (nextRatio < THRESHOLD && prevRatio >= THRESHOLD) {
+      // Dropped back below the threshold — clear so the next cross re-announces.
+      setThresholdAnnounce('');
+    }
+    writeOffset(next);
+  };
+
+  /** Release velocity in px/s over the sample window; 0 for a stopped finger. */
+  const releaseVelocity = () => {
+    const samples = samplesRef.current;
+    const first = samples[0];
+    const last = samples[samples.length - 1];
+    samplesRef.current = [];
+    if (!first || !last) return 0;
+    if (performance.now() - last.t > STALE_RELEASE_MS) return 0;
+    const dt = last.t - first.t;
+    if (dt <= 0) return 0;
+    return ((last.x - first.x) / dt) * 1000;
   };
 
   const onPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
@@ -308,15 +434,19 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     // commit. cancelHold() resets the fill; if the ramp already locked in,
     // isHoldingRef is false and this no-ops.
     if (isHoldingRef.current) {
-      cancelHold();
+      cancelHold(true);
       return;
     }
-    const ratio = maxOffsetRef.current > 0 ? offset / maxOffsetRef.current : 0;
+    // Decide from the PROJECTED resting point, not the release position: a fast
+    // flick let go at 40% is a thrown gesture and completes, while a crawl
+    // abandoned at 74% carries no momentum and still does not.
+    const velocity = releaseVelocity();
+    const projected = offsetRef.current + velocity * PROJECTION_S;
+    const ratio = maxOffsetRef.current > 0 ? projected / maxOffsetRef.current : 0;
     if (ratio >= THRESHOLD) {
       finish();
     } else {
-      setOffset(0);
-      setThresholdAnnounce('');
+      snapHome(velocity);
     }
   };
 
@@ -330,10 +460,14 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
   };
 
   const progress = maxOffsetRef.current > 0 ? offset / maxOffsetRef.current : 0;
-  const snap =
-    prefersReducedMotion || isDragging || isFlinging
-      ? 'none'
-      : 'transform 280ms cubic-bezier(0.16, 1, 0.3, 1), width 280ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease';
+  // The thumb and the fill are driven frame-by-frame — by the finger, by the
+  // hold ramp, or by the snap-home spring. A CSS transition on transform/width
+  // would be a SECOND animation on the same value, and a CSS transition cannot
+  // be grabbed and reversed mid-flight, which is exactly what the return journey
+  // has to allow. So: no transition on the tracked properties, and none on the
+  // opacities that are derived from them either, or they would lag a frame-
+  // accurate position by 200ms.
+  const liveMotion = isDragging || isFlinging || offset > 0;
 
   // Pattern fill for track background
   const patternFill =
@@ -383,7 +517,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
           background: 'var(--fs-accent)',
           opacity: 0.12 + progress * 0.2,
           borderRadius: 999,
-          transition: snap,
+          transition: 'none',
         }}
       />
 
@@ -397,7 +531,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
           letterSpacing: '-0.01em',
           color: 'var(--color-ink-on-dark)',
           opacity: 1 - progress * 0.85,
-          transition: isDragging ? 'none' : 'opacity 200ms ease',
+          transition: liveMotion ? 'none' : 'opacity 200ms ease',
           padding: `0 ${THUMB_SIZE + TRACK_PAD * 4}px`,
         }}
       >
@@ -413,7 +547,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
           insetInlineEnd: 14,
           color: 'color-mix(in srgb, var(--fs-accent) 40%, transparent)',
           opacity: 1 - progress,
-          transition: isDragging ? 'none' : 'opacity 200ms ease',
+          transition: liveMotion ? 'none' : 'opacity 200ms ease',
         }}
         aria-hidden
       >
@@ -438,7 +572,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
           background: 'var(--fs-accent)',
           color: 'var(--color-ink-on-accent)',
           borderRadius: 999,
-          transition: snap,
+          transition: 'none',
           pointerEvents: 'none',
           boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
         }}

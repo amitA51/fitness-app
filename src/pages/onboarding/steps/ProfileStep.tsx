@@ -1,5 +1,6 @@
 import { m } from 'framer-motion';
 import { User } from 'lucide-react';
+import { useId } from 'react';
 import { MobileInput } from '../components/MobileInput';
 import { StepHeader } from '../components/ProgressDots';
 import type { OnboardingData } from '../types';
@@ -10,16 +11,22 @@ interface ProfileStepProps {
   direction?: number;
 }
 
+const EXPERIENCE_OPTIONS = [
+  { value: 'beginner', label: 'מתחיל' },
+  { value: 'intermediate', label: 'בינוני' },
+  { value: 'advanced', label: 'מנוסה' },
+] as const;
+
 export function ProfileStep({ data, onChange, direction = 1 }: ProfileStepProps) {
+  // Associates the experience buttons with their heading. They previously sat
+  // under a bare <span> with no group association and no aria-pressed, so a
+  // screen-reader user heard "מתחיל / בינוני / מנוסה" with no context and no
+  // selected state — unlike the goal cards, which already do this correctly.
+  const experienceLabelId = useId();
+
   // Inline range errors mirror the wizard's advance-gate (useOnboardingWizard),
   // so a bad value shows a message under the offending field instead of passing
   // silently. Only shown once a value has been entered.
-  const ageError =
-    data.age !== '' && (data.age < 10 || data.age > 100) ? 'גיל לא תקין (10–100)' : undefined;
-  const heightError =
-    data.height !== '' && (data.height < 100 || data.height > 250)
-      ? 'גובה לא תקין (100–250)'
-      : undefined;
   const weightError =
     data.weight !== '' && (data.weight < 30 || data.weight > 300)
       ? 'משקל לא תקין (30–300)'
@@ -36,98 +43,19 @@ export function ProfileStep({ data, onChange, direction = 1 }: ProfileStepProps)
       exit={{ opacity: 0, x: direction >= 0 ? 20 : -20 }}
       className="flex flex-col h-full"
     >
-      <StepHeader
-        title="קצת עליך"
-        subtitle="נזדקק למידע הבסיסי כדי להתאים את המערכת אליך"
-        icon={<User size={24} />}
-      />
+      <StepHeader title="בואו נכיר" subtitle="שני פרטים, ואפשר להתחיל." icon={<User size={24} />} />
 
       <div className="flex-1 px-4 space-y-5 overflow-y-auto pb-4">
         <MobileInput
           type="text"
           value={data.name}
           onChange={(val) => onChange({ name: val as string })}
-          placeholder="השם שלך"
+          placeholder="איך לקרוא לכם?"
           label="שם"
         />
 
-        {/* Gender */}
-        <div>
-          <span
-            className="block mb-3 px-1"
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '11px',
-              color: 'var(--fs-muted)',
-              letterSpacing: '-0.01em',
-            }}
-          >
-            מגדר
-          </span>
-          <div className="flex gap-3">
-            {(
-              [
-                { value: 'male', label: 'זכר' },
-                { value: 'female', label: 'נקבה' },
-                { value: 'other', label: 'אחר' },
-              ] as const
-            ).map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => onChange({ gender: opt.value })}
-                aria-pressed={data.gender === opt.value}
-                className="flex-1 min-h-[56px] transition-ui flex items-center justify-center"
-                style={{
-                  background: data.gender === opt.value ? 'var(--fs-accent)' : 'var(--fs-surface)',
-                  border:
-                    data.gender === opt.value
-                      ? '2px solid var(--fs-accent)'
-                      : '1px solid var(--fs-surface-2)',
-                  borderRadius: 'var(--radius-card)',
-                  // Selected-text-on-accent unified to the on-accent ink token
-                  // (was --fs-primary) to match the card selectors across the flow.
-                  color:
-                    data.gender === opt.value ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: data.gender === opt.value ? 700 : 500,
-                  fontSize: '16px',
-                }}
-              >
-                <span>{opt.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Age & Height — items-start so a validation error under one input
-            cannot push its neighbour's label up (labels stay level). */}
-        <div className="grid grid-cols-2 gap-4 items-start">
-          <MobileInput
-            type="number"
-            value={data.age}
-            onChange={(val) => onChange({ age: val as number })}
-            placeholder="—"
-            label="גיל"
-            unit="שנה"
-            min={10}
-            max={100}
-            error={ageError}
-          />
-          <MobileInput
-            type="number"
-            value={data.height}
-            onChange={(val) => onChange({ height: val as number })}
-            placeholder="—"
-            label="גובה"
-            unit="ס״מ"
-            min={100}
-            max={250}
-            error={heightError}
-          />
-        </div>
-
-        {/* Weight */}
+        {/* Weight — the strongest consumer in the app: every workout save reads
+            it for the calorie estimate. Ungated; the estimate accepts null. */}
         <MobileInput
           type="number"
           value={data.weight}
@@ -141,6 +69,74 @@ export function ProfileStep({ data, onChange, direction = 1 }: ProfileStepProps)
           step="0.1"
           error={weightError}
         />
+        <p
+          className="px-1"
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 12,
+            lineHeight: 1.5,
+            color: 'var(--fs-muted)',
+            margin: 0,
+          }}
+        >
+          לפי המשקל נחשב את הקלוריות בכל אימון.
+        </p>
+
+        {/* Experience level — optional, and never turned into an activity level.
+            It feeds the AI's "ניסיון" line only. */}
+        <div>
+          <h3
+            id={experienceLabelId}
+            className="block mb-3 px-1"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              fontWeight: 500,
+              letterSpacing: '-0.01em',
+              color: 'var(--fs-muted)',
+            }}
+          >
+            רמת ניסיון
+          </h3>
+          <div className="grid grid-cols-3 gap-2" role="group" aria-labelledby={experienceLabelId}>
+            {EXPERIENCE_OPTIONS.map((lvl) => {
+              const selected = data.experienceLevel === lvl.value;
+              return (
+                <button
+                  key={lvl.value}
+                  type="button"
+                  onClick={() => onChange({ experienceLevel: lvl.value })}
+                  aria-pressed={selected}
+                  className="min-h-[48px] transition-ui flex items-center justify-center focus-ring"
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: 600,
+                    fontSize: 14,
+                    background: selected ? 'var(--fs-accent)' : 'var(--fs-surface)',
+                    color: selected ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
+                    border: selected
+                      ? '2px solid var(--fs-accent)'
+                      : '1px solid var(--fs-surface-2)',
+                    borderRadius: 12,
+                  }}
+                >
+                  {lvl.label}
+                </button>
+              );
+            })}
+          </div>
+          <p
+            className="mt-2 px-1"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 12,
+              color: 'var(--fs-muted)',
+              margin: 0,
+            }}
+          >
+            לא חובה — משפיע על ההמלצות בלבד.
+          </p>
+        </div>
 
         {/* Health disclaimer at the point of body-data collection (D28). The
             app computes training loads from these numbers; it does not diagnose

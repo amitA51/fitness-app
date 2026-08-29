@@ -14,11 +14,17 @@ import { clearUserScopedLocalData } from './userScopedLocalData';
 
 // ─── TDEE / Macro orchestration ─────────────────────────────────────────────
 
+/**
+ * Profile inputs for the macro calculation. `null` / `''` mean "the user never
+ * gave us this", and they are deliberately representable: the calculation must
+ * be able to report that it cannot produce a target, instead of the caller
+ * inventing a plausible body to make the numbers appear.
+ */
 export interface ComputeMacrosInput {
-  weightKg: number;
-  heightCm: number;
-  age: number;
-  gender: 'male' | 'female' | 'other';
+  weightKg: number | null;
+  heightCm: number | null;
+  age: number | null;
+  gender: 'male' | 'female' | 'other' | '';
   activityLevel: string;
   weightGoal: string;
 }
@@ -30,6 +36,11 @@ export interface MacroResult {
   fat: number;
 }
 
+/**
+ * Macro targets from the stored profile, or an all-zero result when any input
+ * the formula needs is missing. Callers MUST treat zero as "no target" and show
+ * nothing — see GoalsEditor.handleAutoCalc.
+ */
 export function computeMacrosFromProfile(input: ComputeMacrosInput): MacroResult {
   const tdee = calculateTDEE(
     input.weightKg,

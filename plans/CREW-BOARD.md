@@ -1726,6 +1726,51 @@ miss I have now made three times — the proposal counted the *writers* and neve
   theme states, whether the round-trip shots prove the preference survives, and every defect with its PNG
 - notes: shots `06` and `07` are the load-bearing ones. `_summary.json` is STALE — do not cite it.
 
+## [T-064] The s20 verdict — ACCEPTED 2026-08-29 22:41. `reports/visual-qa-s20.md`, 478 lines
+- status: **done** — one file written, no browser, no build, no gate, no git. Its three probe scripts
+  lived in temp and are deleted. **THE SPLIT SHAPE WORKED ON THE FIRST ATTEMPT**, inside budget, and it
+  produced a better report than either timed-out round would have. The standing rule is validated.
+- **VERDICT: THE BUG FIX PASSES. THE SCREEN FAILS QA.** Two separate things, and it kept them separate.
+- **✅ THE ROUND TRIP IS PROVEN — AND IT PROVED IT BY GEOMETRY, NOT BY SQUINTING.** This is the part
+  that makes the verdict trustworthy: it first derived the ON/OFF drawing convention from the labelled
+  `hc-toggle-{on,off}-*` crops, then **CALIBRATED that convention against a frame whose state the DOM
+  independently reports** — on `s20-settings-dark-hc-390.png` (two switches on) its ON-track scan
+  returned exactly two bands, and on the all-off light page it returned **zero**. No false positives,
+  so the reading of the two load-bearing frames is a measurement:
+  - **Shot 06:** one switch ON at y1296 = switch row 4 = `ניגודיות גבוהה`. Row 1 `מצב כהה` absent,
+    correctly still off. **So Settings AGREES after the user left the workout.**
+  - **Shot 07:** TWO switches ON — y1074 (`מצב כהה`) and y1296 (`ניגודיות גבוהה`), same frame, same
+    x-geometry. **The preference SURVIVED the dark-mode toggle that used to destroy it.**
+  - Corroborated independently by the row crops: 06b's bright-pixel distribution is **identical
+    (297/733)** to the labelled light-HC ON crop, and 07b shows that row's track recoloured
+    `#8efad8` → `#318d78`, never the `#111111`+white OFF signature.
+  **The batch-19 store fix is now observed end-to-end in a browser. That loop is closed.**
+- **⚠️ HIGH FINDING 1 — WE SHIPPED A TOKEN OUR OWN REPORT ALREADY BANNED.** In the **default light
+  theme** the expander triggers — *the rebuild's entire depth mechanism* — are mint on pale mint at
+  **1.75:1** against a 4.5:1 floor. And `reports/04-A11Y-RTL-HEBREW.md:21` **already declares that
+  token unusable for text on light surfaces.** Dark and both HC states pass at 10.7–15.7:1, so this is
+  light-only and it is the theme a first-time user meets. Real defect, cheap fix, next batch.
+- **⚠️ HIGH FINDING 2 — THE EVIDENCE IS TRUNCATED, AND THAT IS MY BRIEFING GAP.** All eight full-page
+  captures plus 06 and 07 paint only their **first 1500px**, then ~1980px of blank canvas. **The spec's
+  own header names the cause: the scrolling box is `#main-content`, not the document.** So the groups
+  `אימון והתראות` and `נתונים ופרטיות` appear in **no frame at all** — **2 of the 5 groups I asked
+  about cannot be judged.**
+  **MY ERROR, precisely:** the board's long-standing rule says `fullPage` lies here and to use a tall
+  viewport, and I passed that on. But a tall viewport is not sufficient — with an inner scroll
+  container the content below the fold never enters the canvas. **The rule must become: scroll
+  `#main-content` explicitly and stitch, or capture the scroll container element rather than the page.**
+  Corrected in the board's host-traps section.
+- **⚠️ The 24 `advanced-trigger` crops are MISLABELLED** — every one is of `פרופיל ציבורי`, not
+  `מתקדם`, so the two real `מתקדם` triggers were never measured. Carried forward with the re-shoot.
+- **MY `inkOnFill` WARNING WAS RIGHT, AND IT WOULD HAVE HIDDEN A REAL DEFECT:** that field's 0.5%
+  share floor discards every glyph colour in a 350×45 button, **which is exactly how a 1.75:1 control
+  got recorded as 1.08.** So the field does not merely invent defects — it also conceals them.
+- Method verified before use against **three** ratios this repo publishes (16.19 / 15.12 / 10.98:1),
+  all three matched by hand.
+- Findings: **2 high, 3 medium, 2 low, 2 info.**
+
+
+
 ## [T-065] The app's one real gesture, and two tracking values
 - status: dispatched (batch 21)
 - owner: fitness-design

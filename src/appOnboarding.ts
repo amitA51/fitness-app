@@ -48,18 +48,15 @@ export function getWeightGoalFromOnboarding(goal: string): string {
   }
 }
 
-export function getActivityLevelFromOnboarding(level: string): string {
-  switch (level) {
-    case 'beginner':
-      return 'פעיל מעט';
-    case 'intermediate':
-      return 'פעיל מתון';
-    case 'advanced':
-      return 'פעיל מאוד';
-    default:
-      return 'פעיל מתון';
-  }
-}
+// NOTE: there is deliberately no getActivityLevelFromOnboarding() any more.
+// It mapped an EXPERIENCE self-report onto an ACTIVITY-VOLUME multiplier
+// ('advanced' -> 'פעיל מאוד' -> 1.725), which is a category error even when the
+// user answers: an experienced lifter who trains once a week is not very
+// active. Its `default` branch additionally returned 'פעיל מתון' (1.55) for the
+// empty case, so a user who answered nothing about activity was recorded as
+// moderately active and every calorie target was built on it.
+// activityLevel now has exactly one source: the user picking it directly in
+// Settings › פרטים אישיים › רמת פעילות.
 
 export function saveOnboardingData(data: OnboardingData) {
   localStorage.setItem('onboarding_data', JSON.stringify(data));
@@ -78,7 +75,8 @@ export function saveOnboardingData(data: OnboardingData) {
       weight: data.weight,
       gender: data.gender,
       weightGoal: getWeightGoalFromOnboarding(data.primaryGoal),
-      activityLevel: getActivityLevelFromOnboarding(data.experienceLevel),
+      // activityLevel is intentionally absent: onboarding never asks about
+      // activity volume, so it has nothing truthful to write here.
     })
   );
   const existingPrefs =
@@ -87,7 +85,6 @@ export function saveOnboardingData(data: OnboardingData) {
     'workout_prefs',
     JSON.stringify({
       ...existingPrefs,
-      defaultRestTime: data.restBetweenSets,
       autoStartRest: true,
       hapticsEnabled: true,
     })
@@ -117,27 +114,15 @@ export function savePartialOnboardingData(data: OnboardingData) {
   if (isFilled(data.primaryGoal)) {
     profile.weightGoal = getWeightGoalFromOnboarding(data.primaryGoal);
   }
-  if (isFilled(data.experienceLevel)) {
-    profile.activityLevel = getActivityLevelFromOnboarding(data.experienceLevel);
-  }
+  // No activityLevel here either. This path was already the honest one for the
+  // EMPTY case (it wrote only when experienceLevel was filled), but the
+  // experience -> activity derivation it used was wrong whether or not the user
+  // answered, so the whole write is gone rather than guarded.
 
   // Merge onto any existing profile so we never clobber previously saved values
   // with nothing — immutable build, single write.
   if (Object.keys(profile).length > 0) {
     const existing = safeJsonParse<Record<string, unknown>>(localStorage.getItem('user_profile'));
     localStorage.setItem('user_profile', JSON.stringify({ ...(existing ?? {}), ...profile }));
-  }
-
-  // restBetweenSets always has a sensible default in the wizard, so the workout
-  // prefs are worth persisting even on skip.
-  if (isFilled(data.restBetweenSets)) {
-    localStorage.setItem(
-      'workout_prefs',
-      JSON.stringify({
-        defaultRestTime: data.restBetweenSets,
-        autoStartRest: true,
-        hapticsEnabled: true,
-      })
-    );
   }
 }

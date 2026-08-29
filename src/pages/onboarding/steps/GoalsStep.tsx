@@ -5,11 +5,16 @@ import type { OnboardingData } from '../types';
 
 interface GoalsStepProps {
   data: OnboardingData;
-  onChange: (updates: Partial<OnboardingData>) => void;
+  /**
+   * Answer and advance in one tap. Goals is the terminal question and a card tap
+   * is unambiguous, so there is no separate "הבא". The value is passed up rather
+   * than written first, because the finish payload is built from it.
+   */
+  onSelect: (goal: OnboardingData['primaryGoal']) => void;
   direction?: number;
 }
 
-export function GoalsStep({ data, onChange, direction = 1 }: GoalsStepProps) {
+export function GoalsStep({ data, onSelect, direction = 1 }: GoalsStepProps) {
   const goals = [
     {
       value: 'strength' as const,
@@ -54,11 +59,11 @@ export function GoalsStep({ data, onChange, direction = 1 }: GoalsStepProps) {
       exit={{ opacity: 0, x: direction >= 0 ? 20 : -20 }}
       className="flex flex-col h-full"
     >
-      <StepHeader
-        title="מה המטרה שלך?"
-        subtitle="בחרו את המטרה העיקרית"
-        icon={<Target size={24} />}
-      />
+      {/* The title asks the question, so the old subtitle "בחרו את המטרה
+          העיקרית" only restated it — and it clashed with a singular title
+          ("מה המטרה שלך?") two lines above. Title fixed to plural, subtitle
+          deleted rather than half-patched. */}
+      <StepHeader title="מה המטרה שלכם?" subtitle="" icon={<Target size={24} />} />
 
       <div className="flex-1 px-4 space-y-3 overflow-y-auto pb-4">
         {goals.map((goal) => (
@@ -66,7 +71,8 @@ export function GoalsStep({ data, onChange, direction = 1 }: GoalsStepProps) {
             key={goal.value}
             type="button"
             whileTap={{ scale: 0.98 }}
-            onClick={() => onChange({ primaryGoal: goal.value })}
+            onClick={() => onSelect(goal.value)}
+            aria-pressed={data.primaryGoal === goal.value}
             className={`w-full p-4 transition-ui flex items-center gap-4 text-right template-card magnetic-card ${
               data.primaryGoal === goal.value ? 'accent-glow' : ''
             }`}

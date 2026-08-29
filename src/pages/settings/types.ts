@@ -5,8 +5,15 @@ import { safeJsonParseOr } from '../../utils/safeJson';
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export type WeightGoal = 'ירידה במשקל' | 'שמירה על משקל' | 'עלייה במסה';
-export type ActivityLevel = 'לא פעיל' | 'פעיל מעט' | 'פעיל מתון' | 'פעיל מאוד' | 'ספורטאי';
-export type Gender = 'male' | 'female' | 'other';
+/**
+ * `''` is the "not answered" state, matching the `| ''` sentinel age/height/
+ * weight already use. It exists because the TDEE activity multiplier used to be
+ * fabricated (`'פעיל מתון'` = 1.55) for users who never answered, which moved a
+ * ~300 kcal/day error into every calorie target.
+ */
+export type ActivityLevel = '' | 'לא פעיל' | 'פעיל מעט' | 'פעיל מתון' | 'פעיל מאוד' | 'ספורטאי';
+/** `''` = not answered. The BMR sex term is worth ±166 kcal, so it is not guessable. */
+export type Gender = '' | 'male' | 'female' | 'other';
 
 export interface UserProfile {
   name: string;
@@ -34,8 +41,12 @@ export interface WorkoutPrefs {
   hapticsEnabled: boolean;
 }
 
-// Gender option labels for the profile form (value -> Hebrew label).
+// Gender option labels for the profile form (value -> Hebrew label). The
+// leading not-answered entry keeps SettingsSelect honest: its display label
+// falls back to options[0] when no option matches, so without an explicit
+// "לא נבחר" row an unanswered profile would render "זכר" as if chosen.
 export const GENDER_OPTIONS: ReadonlyArray<{ value: Gender; label: string }> = [
+  { value: '', label: 'לא נבחר' },
   { value: 'male', label: 'זכר' },
   { value: 'female', label: 'נקבה' },
   { value: 'other', label: 'אחר' },
@@ -50,7 +61,10 @@ export const WEIGHT_GOAL_OPTIONS: ReadonlyArray<{ value: WeightGoal; label: stri
 ] as const;
 
 // Activity-level options (feeds the TDEE multiplier in the Nutrition screen).
+// "לא נבחר" is a real state, not a placeholder: it is what a profile looks like
+// before the user picks, and the calorie target stays unavailable until then.
 export const ACTIVITY_LEVEL_OPTIONS: ReadonlyArray<{ value: ActivityLevel; label: string }> = [
+  { value: '', label: 'לא נבחר' },
   { value: 'לא פעיל', label: 'לא פעיל' },
   { value: 'פעיל מעט', label: 'פעיל מעט' },
   { value: 'פעיל מתון', label: 'פעיל מתון' },
@@ -60,14 +74,18 @@ export const ACTIVITY_LEVEL_OPTIONS: ReadonlyArray<{ value: ActivityLevel; label
 
 // ─── Defaults ───────────────────────────────────────────────────────────────
 
+// Every field defaults to the empty "not answered" sentinel. gender and
+// activityLevel used to default to 'male' / 'פעיל מתון', which the Settings
+// screen then displayed as the user's own selection and the TDEE calc consumed
+// as fact. A default is not an answer.
 export const DEFAULT_PROFILE: UserProfile = {
   name: '',
   age: '',
   height: '',
   weight: '',
-  gender: 'male',
+  gender: '',
   weightGoal: 'שמירה על משקל',
-  activityLevel: 'פעיל מתון',
+  activityLevel: '',
 };
 
 export const DEFAULT_NUTRITION: NutritionGoals = {

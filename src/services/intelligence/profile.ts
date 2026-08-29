@@ -29,9 +29,24 @@ export interface AthleteProfile {
   primaryGoal: PrimaryGoal | null;
   /** Direction of the bodyweight goal (drives goal-aware nutrition adherence). */
   weightDirection: WeightDirection | null;
+  /**
+   * Read from a legacy stored `onboarding_data` only — onboarding no longer asks
+   * where the user trains, because nothing filtered on the answer. Kept so
+   * existing users do not lose it and so re-introducing the question is a UI
+   * change rather than a re-design.
+   */
   equipment: EquipmentAccess | null;
-  /** Fraction of the seven tracked fields that are populated (0..1). */
+  /** Fraction of the six tracked fields that are populated (0..1). */
   completeness: number;
+}
+
+/**
+ * Keys that a persisted `onboarding_data` payload written by an older build may
+ * still carry, but which are no longer part of `OnboardingData`. Declared rather
+ * than cast so the back-compat read stays type-checked.
+ */
+export interface LegacyOnboardingKeys {
+  equipment?: EquipmentAccess | '';
 }
 
 const WEIGHT_GOAL_TO_DIRECTION: Record<string, WeightDirection> = {
@@ -51,12 +66,15 @@ const toNumberOrNull = (v: unknown): number | null =>
  */
 export function normalizeProfile(
   userProfile: Partial<UserProfile> | null,
-  onboarding: Partial<OnboardingData> | null
+  onboarding: (Partial<OnboardingData> & LegacyOnboardingKeys) | null
 ): AthleteProfile {
   const age = toNumberOrNull(userProfile?.age) ?? toNumberOrNull(onboarding?.age);
   const weightKg = toNumberOrNull(userProfile?.weight) ?? toNumberOrNull(onboarding?.weight);
   const heightCm = toNumberOrNull(userProfile?.height) ?? toNumberOrNull(onboarding?.height);
-  const gender = userProfile?.gender ?? (onboarding?.gender || null) ?? null;
+  // `||` not `??`: both stores use '' as their "not answered" sentinel, and `??`
+  // would let that empty string through as a populated gender — counting it in
+  // `completeness` and typing wrong against the union below.
+  const gender = userProfile?.gender || onboarding?.gender || null;
 
   const experienceLevel = onboarding?.experienceLevel || null;
 
@@ -73,7 +91,11 @@ export function normalizeProfile(
 
   const equipment = (onboarding?.equipment || null) as EquipmentAccess | null;
 
-  const fields = [age, weightKg, heightCm, gender, experienceLevel, primaryGoal, equipment];
+  // `equipment` is deliberately NOT counted. It is no longer collected, so
+  // leaving it in the denominator would cap every new user at 5/6 and quietly
+  // redefine what "complete" means. It is still read above for the users who
+  // already have one stored.
+  const fields = [age, weightKg, heightCm, gender, experienceLevel, primaryGoal];
   const present = fields.filter((f) => f !== null).length;
 
   return {
@@ -95,7 +117,7 @@ export function readAthleteProfile(): AthleteProfile {
     return normalizeProfile(null, null);
   }
   const userProfile = safeJsonParse<Partial<UserProfile>>(localStorage.getItem('user_profile'));
-  const onboarding = safeJsonParse<Partial<OnboardingData>>(
+  const onboarding = safeJsonParse<Partial<OnboardingData> & LegacyOnboardingKeys>(
     localStorage.getItem('onboarding_data')
   );
   return normalizeProfile(userProfile ?? null, onboarding ?? null);

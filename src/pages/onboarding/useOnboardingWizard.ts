@@ -45,14 +45,28 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
     setData((prev) => ({ ...prev, ...updates }));
   }, []);
 
-  const goNext = useCallback(() => {
-    setDirection(1);
-    if (safeStep < activeSteps.length - 1) {
-      setCurrentStep(safeStep + 1);
-    } else {
-      onComplete(data);
-    }
-  }, [safeStep, activeSteps.length, data, onComplete]);
+  /**
+   * Advance one step, or finish the wizard on the last one.
+   *
+   * `updates` exists for the auto-advancing terminal step: a goal-card tap both
+   * answers and advances, and passing the answer through here is what keeps it
+   * out of the finish payload's stale closure. Calling `updateData` and then
+   * `goNext` in the same handler would complete onboarding with the PREVIOUS
+   * data, silently dropping the goal the user just picked.
+   */
+  const goNext = useCallback(
+    (updates?: Partial<OnboardingData>) => {
+      setDirection(1);
+      const next = updates ? { ...data, ...updates } : data;
+      if (updates) setData(next);
+      if (safeStep < activeSteps.length - 1) {
+        setCurrentStep(safeStep + 1);
+      } else {
+        onComplete(next);
+      }
+    },
+    [safeStep, activeSteps.length, data, onComplete]
+  );
 
   const goBack = useCallback(() => {
     setDirection(-1);
@@ -64,32 +78,22 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
   // Per-step reason the user cannot advance yet — null when the step is valid.
   // Surfaced near the disabled "הבא" button so the block is explained, not silent.
   // Keyed by step id (not index) so it survives any reordering of the list.
+  //
+  // The name is the ONLY gate in the flow. gender and age used to gate the
+  // profile step; neither is collected here any more (both have their own row in
+  // Settings › פרטים אישיים, and age is asked again seconds later as a date of
+  // birth by the age gate). Goals has no gate either — it auto-advances on a
+  // card tap, so there is no disabled button to explain. Weight and height stay
+  // optional but, when entered, must be sane: a decorative min/max used to let
+  // weight 999 through and poison every downstream calculation.
   const validationHint = useCallback((): string | null => {
-    switch (stepId) {
-      case 'profile':
-        if (data.name.trim().length === 0) return 'הזינו את שמכם כדי להמשיך';
-        if (data.gender === '') return 'בחרו מגדר כדי להמשיך';
-        if (data.age === '') return 'הזינו את גילכם כדי להמשיך';
-        // Range gates: min/max on the inputs were decorative, so age 5 or weight
-        // 999 passed silently and poisoned every downstream AI/program calc.
-        // Height & weight stay optional but, when entered, must be sane.
-        if (data.age < 10 || data.age > 100) return 'הזינו גיל בין 10 ל-100';
-        if (data.height !== '' && (data.height < 100 || data.height > 250))
-          return 'הזינו גובה בין 100 ל-250 ס״מ';
-        if (data.weight !== '' && (data.weight < 30 || data.weight > 300))
-          return 'הזינו משקל בין 30 ל-300 ק״ג';
-        return null;
-      case 'goals':
-        return data.primaryGoal === '' ? 'בחרו מטרה עיקרית כדי להמשיך' : null;
-      case 'experience':
-        return data.experienceLevel === '' ? 'בחרו רמת ניסיון כדי להמשיך' : null;
-      case 'equipment':
-        return data.equipment === undefined || data.equipment === ''
-          ? 'בחרו את הציוד הזמין כדי להמשיך'
-          : null;
-      default:
-        return null;
-    }
+    if (stepId !== 'profile') return null;
+    if (data.name.trim().length === 0) return 'הזינו שם כדי להמשיך';
+    if (data.height !== '' && (data.height < 100 || data.height > 250))
+      return 'הזינו גובה בין 100 ל-250 ס״מ';
+    if (data.weight !== '' && (data.weight < 30 || data.weight > 300))
+      return 'הזינו משקל בין 30 ל-300 ק״ג';
+    return null;
   }, [stepId, data]);
 
   const canProceed = useCallback(() => validationHint() === null, [validationHint]);

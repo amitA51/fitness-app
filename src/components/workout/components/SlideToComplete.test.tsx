@@ -36,7 +36,10 @@ vi.mock('../../../lib/gsap', () => {
   };
 });
 vi.mock('../../../lib/gsapSparks', () => ({ fireSparks: vi.fn() }));
-vi.mock('../../../utils/haptics', () => ({ triggerHaptic: vi.fn() }));
+vi.mock('../../../utils/haptics', () => ({
+  triggerHaptic: vi.fn(),
+  triggerHapticEffect: vi.fn(),
+}));
 // Reduced-motion is controllable per-test: default true (calm path used by the
 // existing suites); the default/animated-path suite flips it to false.
 let mockReducedMotion = true;
@@ -54,6 +57,21 @@ beforeAll(() => {
   if (!proto.setPointerCapture) {
     proto.setPointerCapture = () => {};
     proto.releasePointerCapture = () => {};
+  }
+  // jsdom 23 ships NO PointerEvent constructor, so fireEvent.pointerDown/Move
+  // falls back to a bare Event and silently DROPS clientX and pointerId — which
+  // would make every position- and velocity-based assertion below pass while
+  // testing nothing. Provide the minimum faithful shape: a MouseEvent (which
+  // carries clientX) plus pointerId.
+  if (typeof window.PointerEvent === 'undefined') {
+    class TestPointerEvent extends MouseEvent {
+      pointerId: number;
+      constructor(type: string, init: MouseEventInit & { pointerId?: number } = {}) {
+        super(type, init);
+        this.pointerId = init.pointerId ?? 0;
+      }
+    }
+    window.PointerEvent = TestPointerEvent as unknown as typeof PointerEvent;
   }
 });
 
@@ -238,5 +256,206 @@ describe('SlideToComplete tap-and-hold quick-complete (default / animated motion
 
     rafSpy.mockRestore();
     nowSpy.mockRestore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Release MOMENTUM. The release used to be a pure position test: a fast flick
+// let go at 43% of the track was discarded exactly like a crawl abandoned at
+// 43%. The release now decides from a PROJECTED resting point
+// (offset + velocity * 0.499), so a thrown thumb completes the set and a
+// creeping one still does not.
+//
+// Track width 300 → maxOffset = 300 - 60 (thumb) - 8 (padding) = 232px.
+// The position gate is THRESHOLD 0.75 → 174px, so every gesture below stops at
+// 100px: under the old position gate ALL of them failed.
+// ---------------------------------------------------------------------------
+describe('SlideToComplete release momentum', () => {
+  const TRACK_RECT = {
+    width: 300,
+    height: 68,
+    top: 0,
+    left: 0,
+    right: 300,
+    bottom: 68,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  } as DOMRect;
+
+  let rectSpy: { mockRestore: () => void };
+  let nowSpy: { mockRestore: () => void };
+  let clock = 0;
+
+  beforeEach(() => {
+    clock = 0;
+    rectSpy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(TRACK_RECT);
+    // Velocity is derived from performance.now() deltas, so the clock has to be
+    // deterministic — the gesture speed IS the thing under test.
+    nowSpy = vi.spyOn(performance, 'now').mockImplementation(() => clock);
+  });
+  afterEach(() => {
+    rectSpy.mockRestore();
+    nowSpy.mockRestore();
+  });
+
+  it('completes on a FAST FLICK released well short of the position threshold', () => {
+    // Arrange
+    const onComplete = vi.fn();
+    render(<SlideToComplete label="החליקו לסיום סט 1" onComplete={onComplete} />);
+    const slider = screen.getByRole('button', { name: 'החליקו לסיום סט 1' });
+
+    // Act — 100px in 40ms = 2500px/s. Projected rest:
+    // 100 + 2500 * 0.499 = ~1347px, far past the 174px commit point.
+    act(() => {
+      fireEvent.pointerDown(slider, { pointerId: 1, clientX: 0 });
+    });
+    clock += 40;
+    act(() => {
+      fireEvent.pointerMove(slider, { pointerId: 1, clientX: 100 });
+    });
+    clock += 10; // released while still moving — momentum is real
+    act(() => {
+      fireEvent.pointerUp(slider, { pointerId: 1, clientX: 100 });
+    });
+
+    // Assert — a thrown thumb completes the set from 43% of the track.
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT complete on a slow CRAWL to the same distance', () => {
+    // Arrange — the control that proves the gate is momentum, not a lowered
+    // distance threshold.
+    const onComplete = vi.fn();
+    render(<SlideToComplete label="החליקו לסיום סט 1" onComplete={onComplete} />);
+    const slider = screen.getByRole('button', { name: 'החליקו לסיום סט 1' });
+
+    // Act — the same 100px, but over 1.2s: ~83px/s, projecting only ~41px more.
+    act(() => {
+      fireEvent.pointerDown(slider, { pointerId: 1, clientX: 0 });
+    });
+    for (const x of [25, 50, 75, 100]) {
+      clock += 300;
+      act(() => {
+        fireEvent.pointerMove(slider, { pointerId: 1, clientX: x });
+      });
+    }
+    clock += 10;
+    act(() => {
+      fireEvent.pointerUp(slider, { pointerId: 1, clientX: 100 });
+    });
+
+    // Assert — no momentum, no commit.
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it('gives a finger that STOPPED before lifting no momentum credit', () => {
+    // Arrange — a fast drag that comes to rest before release is an abandoned
+    // gesture, not a throw. Stale samples must not be credited.
+    const onComplete = vi.fn();
+    render(<SlideToComplete label="החליקו לסיום סט 1" onComplete={onComplete} />);
+    const slider = screen.getByRole('button', { name: 'החליקו לסיום סט 1' });
+
+    // Act — 100px in 40ms (fast), then the finger rests 200ms before lifting.
+    act(() => {
+      fireEvent.pointerDown(slider, { pointerId: 1, clientX: 0 });
+    });
+    clock += 40;
+    act(() => {
+      fireEvent.pointerMove(slider, { pointerId: 1, clientX: 100 });
+    });
+    clock += 200; // held still — the throw was called off
+    act(() => {
+      fireEvent.pointerUp(slider, { pointerId: 1, clientX: 100 });
+    });
+
+    // Assert
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Interruptible snap-home, and the presentation-value rule.
+//
+// The return journey used to be a CSS transition, which cannot be grabbed
+// mid-flight, and the re-grab seeded its start offset from `offset` STATE that
+// had already been set to 0 — so the thumb teleported to the finger. It is a
+// spring now, and the grab is seeded from the live on-screen value.
+// ---------------------------------------------------------------------------
+describe('SlideToComplete re-grab during the snap-home', () => {
+  const TRACK_RECT = {
+    width: 300,
+    height: 68,
+    top: 0,
+    left: 0,
+    right: 300,
+    bottom: 68,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  } as DOMRect;
+
+  let rectSpy: { mockRestore: () => void };
+  let nowSpy: { mockRestore: () => void };
+  let clock = 0;
+
+  beforeAll(() => {
+    mockReducedMotion = false; // the spring path is the one under test
+  });
+  afterAll(() => {
+    mockReducedMotion = true;
+  });
+  beforeEach(() => {
+    clock = 0;
+    rectSpy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(TRACK_RECT);
+    nowSpy = vi.spyOn(performance, 'now').mockImplementation(() => clock);
+  });
+  afterEach(() => {
+    rectSpy.mockRestore();
+    nowSpy.mockRestore();
+  });
+
+  /** The thumb is the only element carrying a translateX transform. */
+  const thumbOf = (slider: HTMLElement) =>
+    Array.from(slider.querySelectorAll('div')).find((d) =>
+      d.style.transform.includes('translateX')
+    );
+
+  it('continues from the live thumb position instead of jumping to the finger', () => {
+    // Arrange
+    render(<SlideToComplete label="החליקו לסיום סט 1" onComplete={vi.fn()} />);
+    const slider = screen.getByRole('button', { name: 'החליקו לסיום סט 1' });
+
+    // Act 1 — crawl to 100px and release short of the threshold (~83px/s
+    // projects only ~41px more, well under the 174px commit point): the
+    // snap-home spring takes the thumb, starting from 100px.
+    act(() => {
+      fireEvent.pointerDown(slider, { pointerId: 1, clientX: 0 });
+    });
+    for (const x of [25, 50, 75, 100]) {
+      clock += 300;
+      act(() => {
+        fireEvent.pointerMove(slider, { pointerId: 1, clientX: x });
+      });
+    }
+    clock += 10;
+    act(() => {
+      fireEvent.pointerUp(slider, { pointerId: 1, clientX: 100 });
+    });
+    expect(thumbOf(slider)?.style.transform).toBe('translateX(100px)');
+
+    // Act 2 — grab again mid-return, at a completely different screen x, and
+    // move 10px. The grab must interrupt the spring and continue from the live
+    // 100px, NOT restart from 0 (which is what the state-seeded version did).
+    act(() => {
+      fireEvent.pointerDown(slider, { pointerId: 2, clientX: 200 });
+    });
+    clock += 16;
+    act(() => {
+      fireEvent.pointerMove(slider, { pointerId: 2, clientX: 210 });
+    });
+
+    // Assert — 100 (live) + 10 (finger), not 10.
+    expect(thumbOf(slider)?.style.transform).toBe('translateX(110px)');
   });
 });

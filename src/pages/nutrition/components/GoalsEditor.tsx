@@ -20,7 +20,7 @@ interface StoredProfile {
   weight?: number;
   height?: number | '';
   age?: number | '';
-  gender?: 'male' | 'female' | 'other';
+  gender?: 'male' | 'female' | 'other' | '';
   activityLevel?: string;
   weightGoal?: string;
 }
@@ -124,18 +124,20 @@ export const GoalsEditor = memo(function GoalsEditor({
 
   const handleAutoCalc = () => {
     const stored = safeJsonParse<StoredProfile>(localStorage.getItem('user_profile')) ?? {};
-    const weightKg = typeof stored.weight === 'number' ? stored.weight : 70;
-    const heightCm = typeof stored.height === 'number' ? stored.height : 175;
-    const age = typeof stored.age === 'number' ? stored.age : 25;
-    const gender = stored.gender ?? 'male';
+    // No substituted values. This used to supply weight 70 / height 175 / age 25
+    // / gender male / activityLevel 'פעיל מתון' / weightGoal 'שמירה על משקל' —
+    // six invented inputs behind one button — and present the result as the
+    // user's own macros. computeMacrosFromProfile now returns zeros when it
+    // cannot honestly compute, and we publish nothing rather than a guess.
     const macros = computeMacrosFromProfile({
-      weightKg,
-      heightCm,
-      age,
-      gender,
-      activityLevel: stored.activityLevel ?? 'פעיל מתון',
+      weightKg: typeof stored.weight === 'number' ? stored.weight : null,
+      heightCm: typeof stored.height === 'number' ? stored.height : null,
+      age: typeof stored.age === 'number' ? stored.age : null,
+      gender: stored.gender ?? '',
+      activityLevel: stored.activityLevel ?? '',
       weightGoal: stored.weightGoal ?? 'שמירה על משקל',
     });
+    if (macros.calories <= 0) return;
     setDraft({
       calories: macros.calories,
       protein: macros.protein,

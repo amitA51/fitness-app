@@ -41,7 +41,8 @@ export function ProgressDots({ currentStep, totalSteps }: ProgressDotsProps) {
 
 export interface StepHeaderProps {
   title: string;
-  subtitle: string;
+  /** Omitted when the title already asks the whole question (see GoalsStep). */
+  subtitle?: string;
   icon?: React.ReactNode;
 }
 
@@ -82,9 +83,11 @@ export function StepHeader({ title, subtitle, icon }: StepHeaderProps) {
       >
         {title}
       </h2>
-      <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--fs-muted)' }}>
-        {subtitle}
-      </p>
+      {subtitle && (
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--fs-muted)' }}>
+          {subtitle}
+        </p>
+      )}
     </m.div>
   );
 }
