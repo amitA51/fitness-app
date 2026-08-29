@@ -503,9 +503,16 @@ export default function PaywallScreen() {
               border: '1px solid var(--color-separator)',
             }}
           >
+            {/* Raw --fs-accent here was 1.65:1 on --fs-surface-2 in light — the
+                surviving third of the waitlist defect in
+                reports/04-A11Y-RTL-HEBREW.md:45 (its text and border were already
+                moved to --fs-muted / --color-separator). This is the accent used
+                AS A MARK on a light surface, not ink on an accent fill, so it
+                takes --fs-accent-text (4.81:1). Dark and both HC states re-point
+                that token at --fs-accent, so they stay byte-identical. */}
             <Zap
               size={16}
-              style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
+              style={{ color: 'var(--fs-accent-text)', flexShrink: 0 }}
               aria-hidden="true"
             />
             <span

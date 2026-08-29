@@ -630,6 +630,13 @@ textarea {
 }
 
 /* Hero Card — cinematic dark block (Apple Fitness+ session card) */
+/* --fs-panel, NOT --fs-primary: a deliberate dark band, which is exactly what
+   --fs-panel is for. Stops vs a --fs-surface card: stop1 15.71:1 light
+   (byte-identical) / 1.20 dark (was 1.05) / 1.55 both HC (was 1.34, 1.06);
+   stop2 16.36 / 1.15 (was 1.04) / 1.42 (was 1.28, 1.07). The hardcoded #fff ink
+   below still clears 4.5:1 on the new stops: 16.36 / 16.35 / 14.74 / 14.74.
+   NOTE: this class has no consumer anywhere in src/ — the backdrop above is the
+   documented intent, not an observed parent. */
 .hero-card {
   position: relative;
   overflow: hidden;
@@ -639,8 +646,8 @@ textarea {
   color: #fff;
   background: linear-gradient(
     160deg,
-    color-mix(in srgb, var(--fs-primary) 92%, #000) 0%,
-    color-mix(in srgb, var(--fs-primary) 70%, #111) 100%
+    color-mix(in srgb, var(--fs-panel) 92%, #000) 0%,
+    color-mix(in srgb, var(--fs-panel) 70%, #111) 100%
   );
   box-shadow: var(--shadow-elevated);
 }
@@ -1772,7 +1779,14 @@ textarea {
 .premium-dark-surface {
   position: relative;
   overflow: hidden;
-  /* Always a dark surface (derived from --fs-primary) — text must be light in both modes */
+  /* Always a dark surface (derived from --fs-panel) — text must be light in both modes */
+  /* --fs-panel, NOT --fs-primary: its live consumer (WorkoutSummary.tsx:600) sits
+     on the summary sheet's own background: var(--fs-bg) — a PAGE backdrop, which
+     is what --fs-panel is declared for, not a --fs-surface-2 one (that would be
+     1.00:1 in dark). Stops vs that sheet: stop1 13.75:1 light (byte-identical) /
+     1.36 dark (was 1.06) / 1.59 both HC (was 1.36, 1.06); stop2 11.34 / 1.83
+     (was 1.33) / 1.92 light+HC / 2.17 dark+HC (was 1.65, 1.33). --color-ink-on-dark
+     on the stops: 15.42 / 13.54 / 13.18 / 11.57 and 12.71 / 10.05 / 10.91 / 8.48. */
   color: var(--color-ink-on-dark);
   background: radial-gradient(
       circle at 18% 12%,
@@ -1786,8 +1800,8 @@ textarea {
     ),
     linear-gradient(
       135deg,
-      color-mix(in srgb, var(--fs-primary) 96%, #000),
-      color-mix(in srgb, var(--fs-primary) 84%, var(--fs-accent-2))
+      color-mix(in srgb, var(--fs-panel) 96%, #000),
+      color-mix(in srgb, var(--fs-panel) 84%, var(--fs-accent-2))
     );
 }
 

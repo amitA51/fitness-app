@@ -9,6 +9,7 @@
 import { ChevronLeft } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SettingsToggle } from '../../../components/ui/SettingsToggle';
 import { getTrackingConsent, setTrackingConsent } from '../../../services/tracking/trackingConsent';
 
 const CARD_STYLE: React.CSSProperties = {
@@ -61,39 +62,12 @@ export function LegalLinksSection() {
       <div style={DIVIDER} />
 
       <div style={ROW_STYLE}>
-        <span id="track-pref-label">מעקב אנליטיקה ויציבות</span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={analytics}
-          aria-labelledby="track-pref-label"
-          onClick={toggleAnalytics}
-          className="active:scale-[0.98]"
-          style={{
-            width: 52,
-            height: 30,
-            borderRadius: 999,
-            border: 'none',
-            cursor: 'pointer',
-            position: 'relative',
-            background: analytics ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
-            transition: 'background 0.15s ease',
-          }}
-        >
-          <span
-            aria-hidden="true"
-            style={{
-              position: 'absolute',
-              top: 3,
-              insetInlineStart: analytics ? 25 : 3,
-              width: 24,
-              height: 24,
-              borderRadius: '50%',
-              background: analytics ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
-              transition: 'inset-inline-start 0.15s ease',
-            }}
-          />
-        </button>
+        <span>מעקב אנליטיקה ויציבות</span>
+        <SettingsToggle
+          checked={analytics}
+          onChange={toggleAnalytics}
+          label="מעקב אנליטיקה ויציבות"
+        />
       </div>
     </div>
   );

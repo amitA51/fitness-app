@@ -2373,6 +2373,214 @@ element-screenshot path MANDATED.
   is cheap. `prefers-reduced-motion` IS honoured at `global.css:663` and must stay honoured.
   **FORBIDDEN: all of `src/styles/**`** — T-074 owns the tokens this batch.
 
+## [T-075] Five sheets migrated — ACCEPTED 2026-08-30 00:14. **IT FOUND TWO BUGS IN THE HOUSE LAYER.**
+- 6 modified + 2 new tests, exactly its ownership. `src/styles/**` untouched as instructed.
+- **⚠️⚠️ THE REFERENCE IMPLEMENTATION I CALLED "GENUINELY GOOD" WAS ITSELF WRONG.**
+  `ModalOverlay`'s `projectMomentum` used `decel = 0.995`, which resolves to **`v × 0.199`** — so
+  **every flick on all 16 already-migrated sheets was under-credited by 2.5×.** Fixed to `0.998` =
+  exactly `v × 0.499`. **And it documented the shape trap in the code:** the `/1000` is CANCELLED by
+  `d/(1-d)`, so writing both terms projects a 2500 px/s flick to **1.2px** — a silent no-op. That is
+  precisely the error I made in the T-065 brief. It is now recorded where it cannot recur.
+- **⚠️ A SECOND HOUSE BUG, AND IT IS AN ACCESSIBILITY DEFECT NOBODY HAD FOUND.** `ModalOverlay` read
+  **Framer's** `useReducedMotion`, which consults only the OS media query. This app has its own
+  `הפחתת אנימציות` switch reflected as `html.reduce-motion`. **So every sheet kept sliding for users
+  who had turned that switch on** — the in-app preference suppressed CSS and nothing else. Now reads
+  the app-wide hook.
+- **Its reduced-motion call is a judgement I would not have specified, and it argued it:** it KEPT the
+  drag (direct manipulation is not vestibular motion) and skipped only the spring, writing the resting
+  value synchronously — because removing a dismissal route would take it from "exactly the users least
+  able to chase a small close button". **And the revert proves the old state was worse than unsprung:
+  the drag layer did not render at all, so the gesture was absent.**
+- **All FIVE migrated, no exceptions.** Four pinned both constraints at 0 with `dragElastic` 0.4–0.5;
+  `NumpadOverlay` had **no `drag` prop at all**. `ExerciseReorder` had also reimplemented the portal,
+  scrim, focus trap and a hardcoded `z-index: 9999` — all now inherited.
+- **THE ENABLING DETAIL IS SMALL AND EASY TO MISS:** a pointer-down on a control is a tap, never a
+  grab, **even inside chrome marked as a handle.** Without that guard, marking a header draggable hands
+  the pointer to Framer, **which swallows the click — the close button goes dead and the sheet reads as
+  stuck open.** With it, a full navy header is a handle while its buttons keep working.
+- **Gesture vs content separated in THREE inherited layers, not one invented one:** drag only from
+  `[data-sheet-drag-handle]` via `dragControls` + `dragListener={false}`; the handle carries
+  `touch-action: none`; the body keeps `pan-y`. Verified per surface — a numpad key gives
+  `transform: none`, the reorder header's close button still fires, and **`ExerciseReorder`'s internal
+  `Reorder.Group` no longer competes with the sheet for vertical pointers**, which it previously did.
+- **MEASURED BOTH WAYS with FIVE things reverted: 12 failed / 4 passed → 16 passed.** The failure
+  VALUES are the evidence: `projectMomentum(2500)` → **497.5** not 1247.5 · 160px of finger →
+  **`translateY(80px)`, exactly half** · 150px → **75px on all four elastic sheets** · reduced motion →
+  transform **`''`** · a control inside handle chrome **drags instead of tapping**.
+- **It spiked the test mechanism FIRST** — whether Framer's drag engine tracks at all in jsdom —
+  because that decided the whole strategy. It also found and fixed **cross-test pointer-session
+  leakage** in its own harness. Copied both the `PointerEvent` polyfill AND the `setPointerCapture`
+  stub from `SlideToComplete.test.tsx`, exactly as T-069's audit said was required.
+- Side effects worth having: **five physical-direction RTL violations deleted** with the hand-rolled
+  wrappers, and three sheets lost a `damping 28 / stiffness 350` (ζ≈0.75) **overshoot on a tap-opened
+  sheet** — bounce that was never earned.
+- **⚠️ ONE REAL VISUAL DELTA IT DISCLOSED:** the migrated sheets are now capped at `max-w-lg` (512px)
+  like every canonical sheet, where they were previously full-bleed. **Identical at 390px; on desktop
+  they become centred cards.** Convergence on the house standard, but it must be photographed.
+- **⚠️ ONE CLAIM OF ITS OWN THAT IS WRONG, AND I CHECKED RATHER THAN RECORDING IT.** It reports
+  "`SlideToComplete` still has zero velocity handling (`SlideToComplete.tsx:314`)". **False** — my grep
+  finds `PROJECTION_S = 0.499`, `VELOCITY_WINDOW_MS = 100` and the projected-resting-point comment,
+  all landed by T-065 in batch 21. **It cited `plans/MOTION-GESTURE-AUDIT.md`, which PREDATES that
+  fix, without re-reading the file.**
+  → **NEW RULE: our own audit documents now contain claims later batches have closed.** Either mark
+  closed items in the audit, or tell every worker that an audit is a snapshot and the file wins.
+- Flagged and correctly NOT done: the snap-home spring is the one case my own rule says EARNS
+  `{bounce: 0.2, duration: 0.3}`, but changing it moves feel for 16 already-good sheets, so it left it
+  as its own item · the `velocity.y > 850` escape hatch is now largely redundant but removing it
+  narrows behaviour · sheet open duration `max(…, 0.45)` sits above the skill's 0.3–0.4 band, a
+  house-wide one-liner it declined to take alone · `ExerciseReorder`'s close button is 36×36, under 44.
+
+### Verified baseline — 2026-08-30 00:14, MINE, on a confirmed-static tree
+All 26 runs terminal. Newest `src/` mtime 4 minutes old before any gate ran. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **709** files (707 + 2 new test files) |
+| `npm run test:run` | **170 files / 1484 tests**, exit 0 both runs — **NEW FLOOR** |
+| arithmetic | 168+2=170 files; 1468 + 16 (T-075) = 1484. T-073 and T-074 added none. **Nothing deleted, skipped or weakened.** |
+| `npx playwright test --list` | **92 tests / 14 files**, exit 0 |
+| debris | zero scratch, `test-results/` + `playwright-report/` swept. **`__spike.test.tsx` that T-074 flagged is ABSENT — it was a transient file, which explains T-074's 169/1469.** |
+| commit | **`bfffc94`** on `feat/ux-templates-picker`, pushed, 11 files. `master` untouched at `3bf1f7f`. Tree clean. |
+
+---
+
+# Batch 25 — dispatched 2026-08-30 00:18. Autonomous. Tree clean at `bfffc94`.
+
+### Why the capture round is deferred AGAIN, and it is the same reasoning that has worked
+Three of the five sheets' desktop width just changed, the 12 token sites are about to change, and two
+hand-rolled component copies are about to be replaced. **Photographing now would photograph a tree
+about to change again** — the mistake batches 10-12 avoided by shooting once on a settled tree.
+Batch 26 is the capture round, and it now owes: dark, dark+HC and 1280 for Settings, PLUS the five
+migrated sheets, PLUS the `max-w-lg` desktop delta. Element-screenshot MANDATED, stitching FORBIDDEN.
+
+### Ownership map — disjoint, three fix tasks, nobody holds the browser
+- **T-076** → `src/styles/global.css` + `src/styles/components.css` ONLY.
+- **T-077** → `src/pages/settings/sections/**` (the hand-rolled component copies).
+- **T-078** → `src/pages/billing/**`, `src/components/workout/overlays/SettingsPrimitives.tsx`, and
+  wherever `PlanSetRow` lives.
+- **NO PLAYWRIGHT, NO BUILD, NO SERVER anywhere this batch.**
+
+## [T-076] The 12 token sites my own fence blocked
+- status: dispatched (batch 25)
+- owner: fitness-design
+- goal: Batch 1 of the `--fs-primary` sweep declared the two new tokens but converted zero sites,
+  because I forbade the only two files those sites live in. Convert them.
+- done when: verify green; test:run >= 1484; each of the 12 sites stated as a number in all four theme
+  states before and after; light byte-identical; both HC states not regressed
+- notes: T-074 listed all 12 with CURRENT line numbers — use those, the doc's have drifted.
+  **`global.css:594` `.text-gradient` must NOT go to `--fs-panel` — it is TEXT.** And the consumption
+  rule is written next to the token: `--fs-panel` on a `--fs-surface-2` backdrop is **1.00:1 in dark**.
+
+## [T-076] The 12 token sites — ACCEPTED 2026-08-30 00:30. **8 converted, 1 REFUSED with arithmetic.**
+- 2 files, exactly its ownership. Method verified against **TWELVE** published figures, exactly.
+- **⚠️⚠️ IT REFUSED ONE SITE AND THE REFUSAL IS THE MOST VALUABLE THING IN THE BATCH — MY BRIEF WOULD
+  HAVE MADE IT WORSE.** `global.css:318` `.tab-item.active` sets `background: --fs-primary` **AND
+  `color: --fs-accent` on the same rule.** Converting the fill to `--fs-edge` fixes the fill
+  (1.06 → 3.95 dark) but **destroys the label**: the accent ink on the new light edge falls to
+  **3.11 dark / 1.25 light+HC / 1.25 dark+HC.**
+  **So it trades a 3-of-4 failure at the 3:1 NON-TEXT floor for a 3-of-4 failure at the 4.5:1 TEXT
+  floor, and the new numbers are worse than the old ones.** `--fs-edge` is light in three of four
+  states BY DESIGN — that is what makes it a findable edge — so it cannot sit under ink chosen for a
+  near-black fill. **This is the dual-use trap one token over.**
+  - **And it named why the plan doc's own assurance did not cover this:** §2's claim that "no site
+    converts from passes-at-3:1 to fails-at-4.5:1" was derived with the fill *staying* `--fs-primary`.
+    It never considered a light token going under that accent ink.
+- **MY RULING: use `--nav-pill-bg` + `--nav-pill-text`.** Reasons: (1) this board already established
+  that **`--nav-pill-*` is the SELECTED pair and `--btn-primary-*` is the ACTION pair — a tab is a
+  selection**; (2) T-040 applied exactly that to `.tab-row .tab.active` and `.chip-fs.active` in batch
+  13, so **`.tab-item.active` is the last member of that family still on `--fs-primary`**; (3) two
+  comments in `components.css` **already claim it uses that pair**, so this makes them true instead of
+  stale. Accepted cost: light is NOT byte-identical — the ink goes mint → white. That constraint was
+  for the two NEW tokens, not an absolute. Mitigating: its only consumer is `Nutrition.tsx:214`, a
+  screen currently hidden behind the nutrition flag, so the visible blast radius is admin-only today.
+- **IT ESTABLISHED THE BACKDROP FOR EVERY `--fs-panel` SITE BY READING THE CONSUMERS** — exactly the
+  consumption rule I asked for, and one answer surprised me:
+  - `.masthead` → its one live consumer sits on a CARD. Permitted. 1.05 → **1.25** dark, 1.39/1.06 →
+    **1.64** both HC.
+  - **`.chapter-break` → all three consumers NEST it inside a dark panel, and it is 1.00:1 against its
+    parent today BY INTENT** — the visible separator is an inline 1px `rgba(255,255,255,.1)` border,
+    not a fill step. **So following the parent PRESERVES the 1.00:1, and NOT converting would BREAK
+    it** — a `#0a0a0a` strip inside a `#262626` panel. It converted, and disclosed the interim state
+    until Batch 3 moves the two remaining `--fs-primary` parents.
+  - `.premium-dark-surface` → consumer sits on `--fs-bg`, a PAGE. Permitted.
+  - **`.hero-card` has NO consumer anywhere in `src/`** — 45 lines of dead CSS including two
+    pseudo-elements. Converted anyway (zero risk), and it disclosed the backdrop is documented intent
+    rather than an observed parent.
+- **⚠️ IT FOUND TWO COMMENTS THAT ARE CURRENTLY FALSE.** `components.css:1135-1144` and `:615-624` both
+  assert `--nav-pill-*` is the pair `.tab-item.active` uses. It does not. My ruling above makes them
+  true; whoever applies it must also fix the wording.
+- Also named: **`--fs-accent-2` and `--color-ink-on-dark` are undeclared in `html.high-contrast`**, so
+  they inherit `html.dark`'s value in dark+HC and `:root`'s in light+HC — harmless at every site it
+  measured, but it means `.premium-dark-surface`'s second stop is a **different colour in the two HC
+  states** · `.chapter-break`'s three consumers supply inconsistent separator borders.
+- The three named traps left alone as instructed, `.text-gradient` included.
+
+## [T-078] Three accent-fill defects — ACCEPTED 2026-08-30 00:30. **TWO WERE ALREADY FIXED.**
+- 2 files, exactly its ownership. `src/styles/**` read but never written.
+- **⚠️⚠️ MY BRIEF AND A REPORT WERE BOTH STALE AGAINST THE TREE.** `PlanSetRow.tsx` (mtime 26/07)
+  **already carried `--color-ink-on-accent`** with the 1.50:1 rationale, and `PaywallScreen.tsx`
+  (mtime 28/08) **had already inverted the joined banner.** My line hints AND
+  `reports/04-A11Y-RTL-HEBREW.md:30,45` describe code that no longer exists.
+- It fixed what was genuinely live: **the surviving third of site 1** — the waitlist note's ICON, still
+  raw accent at **1.65 → 4.81** in light — and **`SettingsPrimitives.tsx`**, which was untouched.
+- **⚠️ SITE 3 NEEDED A CONDITIONAL, NOT A FLAT SWAP, AND IT MEASURED THE COUNTERFACTUAL.** One `color`
+  declaration served BOTH chip states. Flattening to on-accent ink measures **light 18.79 / dark 1.01 /
+  light+HC 1.00 / dark+HC 1.00** — **it would have traded one invisible state for three.** So the ink
+  follows the fill: `active ? --color-ink-on-accent : --fs-heading`. Active chip **1.50/1.25/1.25 →
+  8.90 / 10.98 / 16.82 / 16.82**; inactive untouched.
+- **It argued the token choice per site and why the other one would be wrong:** `--color-ink-on-accent`
+  on a light surface reads near-black and **destroys the "this is the mint one" signal**, and in dark it
+  would be 1.24:1. So the icon takes `--fs-accent-text`, the fills take on-accent ink.
+- **⚠️ IT FOUND A WRONG NUMBER IN A COMMENT T-067 WROTE LAST BATCH.** `tokens.css:721` claims `#256d5b`
+  on `#000` = 4.42:1; it computes **3.42:1**. **And it checked that the conclusion still holds** — the
+  real figure is FURTHER under the floor, so the HC re-point is still correct. Transcription slip, not a
+  design error. Forbidden file, so it named it and stopped. (`tokens.css:~505`'s 8.09 vs 8.07 is rounding.)
+- **It caught its own comment being wrong** (wrote 1.10:1 where the counterfactual measured 1.01:1) and
+  corrected it before finishing.
+- Named, not touched: `PaywallScreen.tsx:132`'s comparison-table check icon (same raw-accent-as-mark
+  pairing, a fourth instance) · `PurchasePanel.tsx:136,169` · `SettingsPrimitives.tsx:162`'s
+  `--fs-primary` border, which belongs to the sweep's Batch 3.
+
+### ⚠️ SYSTEMIC — TWO WORKERS IN ONE BATCH HIT THE SAME PROBLEM: OUR OWN DOCS ARE DRIFTING
+T-075 cited `MOTION-GESTURE-AUDIT.md` for a defect batch 21 had already fixed. T-078 found my brief AND
+`reports/04-A11Y-RTL-HEBREW.md` describing two fixes that were already in the tree. **Three instances in
+two batches.** The rule I wrote last batch ("an audit is a snapshot, the file wins") is necessary but not
+sufficient — a worker cannot know which claims are stale without re-reading everything.
+**Decision: the next read-only slot goes to a doc-freshness pass** — walk every claim in the audit and
+report files, mark each CLOSED / STILL-OPEN / WRONG against the current tree. That is cheaper than every
+future worker re-deriving it, and it is exactly the kind of work that gets skipped until it costs a round.
+
+
+
+## [T-077] The hand-rolled copies of shared components
+- status: dispatched (batch 25)
+- owner: fitness-design
+- goal: three separate rounds have now found a component that hand-copies a shared primitive, and in
+  **every case the shared one was correct and the copy was not.** Fix by USING the shared component.
+- done when: verify green; test:run >= 1484; each defect stated as a number before and after; a test
+  proving the privacy toggle now renders the shared component
+- notes: (1) `ThemeSection.tsx:53-59` copies `IconBox` and paints **1.06:1 in dark+HC**. (2) the
+  privacy card's switch copies `SettingsToggle` — its ON knob is dark while the canonical ON knob is
+  WHITE, so **on one screen a dark knob means ON in one card and OFF in another**, and the copy is
+  52×30 where the shared one has an explicit 44×44 target. (3) verify `WorkoutPrefsSection.tsx:65`
+  against `IconBox.tsx:20` — an audit conflated them and had its fill and ink backwards.
+
+## [T-078] Three accent-fill defects, one of which is now a one-word fix
+- status: dispatched (batch 25)
+- owner: fitness-design
+- goal: three places put theme-varying ink on an accent fill, against the ban written next to the
+  token itself. `--fs-accent-text` now exists, which makes the first one trivial.
+- done when: verify green; test:run >= 1484; all three stated as numbers in all four theme states
+  before and after; nothing else recoloured
+- notes: `PaywallScreen.tsx:161-185` at **1.65:1** (open since report 04's P1) · `PlanSetRow.tsx:108-110`
+  puts `--fs-heading` on an accent fill at **1.50:1 dark** · `SettingsPrimitives.tsx:162` the same
+  shape at **1.50:1 dark and 1.25:1 in BOTH HC states** — and the token sweep's Batch 3 walks straight
+  past it. Do NOT touch `--color-ink-on-accent`, `--fs-signal`, `--color-on-mustard`, `--color-scrim`.
+
+---
+
+
+
 ---
 
 

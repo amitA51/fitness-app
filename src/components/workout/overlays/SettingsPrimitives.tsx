@@ -161,7 +161,14 @@ export const ChipSelector = memo<{
               borderRadius: 12,
               border: '1.5px solid var(--fs-primary)',
               background: active ? 'var(--fs-accent)' : 'var(--fs-surface)',
-              color: 'var(--fs-heading)',
+              // tokens.css bans --fs-heading on an accent fill: in dark it
+              // resolves to --fs-ink (#f0f0f0) at 1.50:1 on the mint, and #ffffff
+              // on the HC mint is 1.25:1. The ink has to follow the fill, so the
+              // ACTIVE chip takes --color-ink-on-accent (8.90 / 10.98 / 16.82 /
+              // 16.82). The inactive chip stays on --fs-surface and keeps
+              // --fs-heading unchanged — flattening both to on-accent ink would
+              // paint #071412 on #111111 (1.01:1) in dark and 1.00:1 in both HC.
+              color: active ? 'var(--color-ink-on-accent)' : 'var(--fs-heading)',
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
               letterSpacing: '-0.01em',

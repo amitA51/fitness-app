@@ -50,16 +50,9 @@ export function ThemeSection({ showLabel = true }: { showLabel?: boolean }) {
       <SettingsCard>
         <SettingsRow
           icon={
-            <div
-              className="w-8 h-8 shrink-0 flex items-center justify-center"
-              style={{
-                backgroundColor: 'var(--fs-primary)',
-                border: '2px solid var(--fs-primary)',
-                borderRadius: 12,
-              }}
-            >
-              <Moon size={16} style={{ color: 'var(--fs-accent)' }} strokeWidth={2.5} />
-            </div>
+            <IconBox>
+              <Moon size={16} strokeWidth={2.5} />
+            </IconBox>
           }
           label="מצב כהה"
           divider={true}

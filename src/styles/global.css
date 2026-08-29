@@ -117,17 +117,26 @@ body {
   }
 
   /* Card — Outlined (editorial) */
+  /* --fs-edge, NOT --fs-primary: the outline IS this card — it has no fill step
+     away from --fs-surface, so when --fs-primary stopped inverting the card lost
+     its bounds entirely (1.05:1 dark, 1.39:1 light+HC, 1.06:1 dark+HC against its
+     own fill, all under 1.4.11's 3:1). --fs-edge: 15.12:1 light (byte-identical,
+     it aliases --fs-primary there) / 4.10:1 dark / 21:1 both HC. */
   .card-outlined {
     background-color: var(--fs-surface);
-    border: 2px solid var(--fs-primary);
+    border: 2px solid var(--fs-edge);
     border-radius: 18px;
     padding: var(--space-5);
   }
 
   /* Card — Interactive */
+  /* Same --fs-edge swap as .card-outlined, and it matters more here: this card is
+     a control, so its outline is the only thing marking a tap target. Border vs
+     its own fill 15.12:1 light / 4.10:1 dark / 21:1 both HC; vs the :hover fill
+     (--fs-surface-2) 11.83 / 3.89 / 18.88 / 18.88. All clear 3:1. */
   .card-interactive {
     background-color: var(--fs-surface);
-    border: 2px solid var(--fs-primary);
+    border: 2px solid var(--fs-edge);
     border-radius: 18px;
     padding: var(--space-5);
     cursor: pointer;
@@ -311,9 +320,16 @@ body {
   }
 
   /* Masthead — dark block. Text must stay readable on the navy/obsidian
-     primary surface in BOTH modes — never var(--fs-ink) (dark-on-dark in light). */
+     primary surface in BOTH modes — never var(--fs-ink) (dark-on-dark in light).
+     --fs-panel, NOT --fs-primary: its only live consumer (WorkoutGoalSelector)
+     sits on a CARD (--fs-surface), which is the backdrop --fs-panel is declared
+     for. Band vs that card 15.12:1 light (byte-identical) / 1.25:1 dark (was
+     1.05) / 1.64:1 both HC (was 1.39 light+HC, 1.06 dark+HC) — no WCAG floor
+     applies to a decorative band, but it stops being a hole. Ink is unchanged and
+     still clears 4.5:1: --color-ink-on-dark 15.12 / 13.28 / 12.80 / 11.23, the
+     --fs-accent kicker 7.16 / 8.84 / 10.25 / 10.25. */
   .masthead {
-    background: var(--fs-primary);
+    background: var(--fs-panel);
     color: var(--color-ink-on-dark);
     padding: 20px 24px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -339,8 +355,17 @@ body {
   }
 
   /* Chapter Break Strip */
+  /* --fs-panel, NOT --fs-primary. All three consumers nest this strip INSIDE a
+     dark panel — PreWorkoutScreen.tsx:279 and WarmupCooldownSelectionStep.tsx:47
+     inside a --fs-primary masthead, WorkoutSummary.tsx:605 inside
+     .premium-dark-surface — so it is welded to its parent at 1.00:1 in every
+     state today, by intent: the visible separator is the 1px rgba(255,255,255,.1)
+     border each consumer supplies inline, not a fill step. Following the parent
+     to --fs-panel PRESERVES that 1.00:1; leaving it on --fs-primary would break
+     it, painting a #0a0a0a strip inside a #262626 panel (1.31:1) once the parents
+     migrate. Ink --color-ink-on-dark on it: 15.12 / 13.28 / 12.80 / 11.23. */
   .chapter-break {
-    background: var(--fs-primary);
+    background: var(--fs-panel);
     color: var(--color-ink-on-dark);
     padding: 16px 20px;
     display: flex;
