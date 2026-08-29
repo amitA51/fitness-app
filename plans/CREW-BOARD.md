@@ -1437,6 +1437,327 @@ photograph `.tab-row` + the active chip to close the two unphotographed surfaces
 **UNBLOCKED:** the 92 Band-B borders now have a verdict to work from — but the 222-references-across-
 82-files count means that sweep is still file-exclusive batches, never one worker.
 
+## [T-060] The coach's own device firing client reminders — ACCEPTED 2026-08-29 21:41
+- 1 modified + 1 new test, exactly its ownership. **`src/AppRouter.tsx` deliberately UNCHANGED** and
+  **`supabase/` untouched** — both correct, see below.
+- **⚠️ IT CORRECTED MY DIAGNOSIS, AND ITS VERSION IS BETTER.** I wrote that `reminders_all_own` lets a
+  coach read rows "beyond their own". **False.** That policy exposes only rows the viewer AUTHORED
+  (`coach_id = auth.uid()`). The real mechanism: RLS returns the **UNION** of two policies — the
+  author policy plus `reminders_select_target` (rows the viewer RECEIVES) — and `listMyReminders()`
+  issued a **bare `select` with no recipient filter**, so the authored set and the received set
+  arrived indistinguishable and every one of them got materialized.
+- **It assessed the policy and refused to change it, with the reason I asked for:** narrowing
+  `reminders_all_own` would break `listCoachReminders`, `createReminder` and `deleteReminder` — i.e.
+  the coach's own reminders box. Quoted the policy from
+  `supabase/migrations/20260529000000_coach_platform.sql:383` rather than paraphrasing it.
+- **Its framing of the layer choice is the good part:** "the bug is a wrong QUERY, not a wrong GRANT —
+  same rows, two legitimate purposes (author → coach UI, recipient → notifications), and only the
+  reader knows which purpose it serves." So the fix lives in `listMyReminders`, whose only consumer is
+  `materializeDueReminders`.
+- **IT AVOIDED THE OPPOSITE BUG I WARNED ABOUT.** The discriminator is `client_id` (falling back to
+  `group_id` membership when null) — **never `coach_id`, and never the viewer's role**, because a
+  coach is also a trainee and must still receive their own. `AppRouter`'s poll therefore stays as-is.
+- **AND IT WENT ONE STEP FURTHER THAN THE BRIEF:** precedence and the group fallback **mirror
+  `supabase/functions/reminders-dispatch/index.ts`** (`client_id` wins over `group_id`), so the
+  open-app path and the closed-app push path cannot disagree about who a reminder is for. Nobody asked
+  for that and it is exactly right.
+- `listMyGroupIds` **fails CLOSED** — "an unknown membership must not become a fired notification" —
+  and the membership query only runs when a group-addressed row is actually present.
+- **MEASURED BOTH WAYS: 3 failed / 2 passed pre-fix, 5 passed after.** All three failures carried the
+  bug's exact signature (one notification fired instead of zero). **And it explained why the 2 that
+  passed pre-fix are the point:** they are the "must STILL fire" directions, proving the fix did not
+  introduce the inverse defect.
+- Disclosed, not fixed: a group reminder now depends on a second query that fails closed, so a lookup
+  error silently skips it for that minute (the server push still delivers, so nothing is missed); and
+  `listMyReminders` fetches the coach's whole authored set over the wire before filtering — correct
+  but wasteful. It kept the filter in JS "where it is exactly testable" rather than pushing a
+  PostgREST `.or()` that would need membership ids up front on every call.
+
+### Verified baseline — 2026-08-29 21:41, MINE, on a confirmed-static tree
+`spawn_list`: all 11 runs terminal. Newest `src/` mtime 3 minutes old before any gate ran.
+Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **707** files (was 703; +7 new − 3 deleted = +4) |
+| `npm run test:run` | **167 files / 1448 tests**, exit 0 both runs — **NEW FLOOR** |
+| arithmetic | 165+1+1=167 files; 1438 + 5 (T-057) + 5 (T-060) = 1448. T-058 and T-059 added none. **Nothing deleted, skipped or weakened** — the only test file touched by the regroup kept all 4 of its tests. |
+| `npx playwright test --list` | **80 tests / 13 files**, exit 0 |
+| debris | e2e **13** specs, **zero** scratch, `test-results/` absent |
+| commit | **`cb1ca9e`** on `feat/ux-templates-picker`, pushed, 32 files. `master` untouched at `3bf1f7f`. Tree clean. |
+
+---
+
+# Batch 20 — dispatched 2026-08-29 21:44. Autonomous. Tree clean at `cb1ca9e`.
+
+### The rule that shapes this batch: NOBODY WRITES `src/`
+The Settings rebuild has never been photographed, and the store fix that stops a preference being
+destroyed has never been seen in the UI. A `src/` edit mid-shoot invalidates the build the camera
+depends on — the lesson from six previous batches. **So the screenshot round is the only writer of
+anything outside `plans/`, and the other two slots are read-only audits.**
+**The onboarding redesign therefore moves to batch 21**, on a settled tree. Not hesitation: it edits
+`src/pages/nutrition/**` and profile defaults, which would break the round.
+
+### Why both other slots are AUDITS, and why that is not procrastination
+Each one **unblocks a backlog item that cannot start without it**:
+- Nobody knows what this app's gestures actually do, so apple-design implementation would be guesswork.
+- The 92-border sweep is blocked because `TOKEN-POLARITY-AUDIT.md` has two proven defects, and
+  T-059 has just raised the real exposure to **222 `--fs-primary` references across 82 files**.
+
+### Ownership map — disjoint, verified against the clean tree
+- **T-061** → WRITES `visual-qa/**` and `reports/**` only. Read-only in `src/`. **HOLDS PLAYWRIGHT
+  AND THE BUILD — sole owner.**
+- **T-062** → WRITES ONLY `plans/MOTION-GESTURE-AUDIT.md`. Read-only everywhere else.
+- **T-063** → WRITES ONLY `plans/FS-PRIMARY-EXPOSURE.md`. Read-only everywhere else.
+- Neither T-062 nor T-063 may run a build, a server, Playwright, or any gate. That is what keeps
+  T-061's evidence trustworthy.
+
+## [T-061] Photograph the rebuilt Settings, and prove the store fix in the UI
+- status: dispatched (batch 20)
+- owner: fitness-qa
+- goal: the 5-group Settings screen has never been seen, and the fix that stops a setting being
+  destroyed has never been observed end-to-end in a browser.
+- done when: Settings captured at 390 AND 1280 in all four theme states, `מתקדם` both collapsed and
+  expanded; and the round-trip photographed — toggle high contrast in the workout overlay, leave the
+  workout, and show that Settings agrees instead of reading OFF
+- notes: the ONLY Playwright runner. **Build FIRST.** `fullPage: true` LIES here — 390×1500 /
+  1280×1500. Wipe localStorage AND IndexedDB per combo. Dark is the `html.dark` CLASS; HC is
+  `html.high-contrast` and STACKS on it. **Edit budget: the spec only. A previous round rewrote 939
+  lines when I expected a small patch.**
+
+## [T-062] apple-design audit — what do this app's gestures actually do?
+- status: dispatched (batch 20)
+- owner: fitness-design
+- goal: the fact base for motion work, per the skill Amit named. Priority order: `SlideToComplete`
+  (the app's one real gesture, on the hot path), then the bottom sheets, then type tracking.
+- done when: per surface with file:line — drag-to-dismiss present at all; tracking 1:1 and does it
+  respect the grab offset; release velocity handed to a spring or discarded; snap target chosen from a
+  PROJECTED point; rubber-banding; any gesture driven by a CSS transition or `@keyframes` (i.e.
+  non-interruptible); feedback on pointer-down or on click; haptics on the same frame as the visual
+- notes: NO code, NO browser, NO gates. `prefers-reduced-motion` IS already honoured at
+  `global.css:663` — do not report it as missing.
+
+## [T-062] Motion audit — ACCEPTED 2026-08-29 21:54. `plans/MOTION-GESTURE-AUDIT.md`, 567 lines
+- status: **done** — read-only confirmed, one file written. No code, no browser, no gate, no git.
+- **⚠️ IT CORRECTED THREE PREMISES I PUT IN ITS OWN BRIEF. All three were mine, not a predecessor's.**
+  1. **Drag-to-dismiss EXISTS and is GOOD.** I asked "is there drag-to-dismiss at all". `ModalOverlay.tsx:369`
+     already does 1:1 downward tracking, rubber-bands upward, projects momentum, and hands release
+     velocity to a `bounce: 0` spring — i.e. it already satisfies four of the ten principles.
+     **The real finding is that FIVE surfaces BYPASS it:** four hand-roll `dragElastic: 0.5` with
+     `dragConstraints` pinned at both ends, so **the sheet moves half as far as the finger**; and
+     `NumpadOverlay.tsx:598` — the weight/reps entry surface, on the hot path — **has no `drag` prop
+     at all.** So the house solution exists and the defect is non-adoption, which is a much cheaper fix
+     than building it.
+  2. **The display type scale is ALREADY properly graded** — −0.03em at 120px down to −0.016em at 24px.
+     My brief asserted a fixed `letter-spacing` "is wrong somewhere by definition"; for the display
+     scale that is false. **The actual defect is narrow and precise:** `.kinetic-number` pins `-0.01em`
+     at `components.css:1630`, so the **72px rest timer** (`InlineRestTimer.tsx:446`) and the **56px PR
+     number** (`WorkoutSummary.tsx:642`) inherit BODY tracking — while `.kinetic-number.large`, with the
+     correct value, sits **15 lines away** in the same file.
+  3. **`prefers-reduced-transparency` IS handled**, at `components.css:1496`, and it covers both real
+     classes. I wrote on this board that it "is not handled at all". **Wrong — correct the record.**
+- **The stale glass-selector finding is REAL but at a different address than I gave.** Not the OS
+  `prefers-contrast` query — it is `tokens.css:672-675`, inside the app's own high-contrast TOGGLE. It
+  de-translucates four selectors: three with zero call sites, and **`.glass-subtle` is never defined
+  anywhere in the codebase.** It misses both classes that actually ship.
+- **⚠️ THE WORST VIOLATION IS ONE I NEVER ASKED ABOUT.** `useSwipeNavigation.ts:61` is an **explicit
+  no-op move handler with a comment saying so**. The user drags 70px, **nothing moves**, and the app
+  decides on release. That is the most direct possible breach of "feedback must be continuous DURING
+  the gesture" — and it was found because the worker read past its brief.
+- **`SlideToComplete` — the app's one real gesture, on the hot path. PASSES pointer-down response,
+  grab offset and pointer capture. FAILS four principles:**
+  - **It never measures velocity.** `:314` is a pure POSITION gate, so **a fast flick released at 70%
+    is discarded identically to an abandoned crawl.** On the single most repeated action in the product.
+  - **Snap-back is a CSS `transition` string** (`:333`, applied at `:441`) — non-interruptible by
+    construction, exactly the tool the skill names as wrong for a gesture.
+  - **A re-grab mid-return JUMPS:** `startOffsetRef` is seeded from `offset` state that is already `0`,
+    so the thumb teleports to the finger — the "animate from the presentation value" rule, broken.
+- Concrete values delivered rather than vague instructions: projection constant **0.499** (d = 0.998),
+  tap-opened spring **`{bounce: 0, duration: 0.35}`**, and **`{bounce: 0.2, duration: 0.3}` reserved for
+  the gesture-completed snap-home only** — bounce earned by momentum, never spent on a tap.
+- Fix list ordered cheapest-first, which is what makes it dispatchable: two number-tracking values and a
+  one-character constant are near-free; the velocity + projection work on `SlideToComplete` is the P0;
+  migrating `NumpadOverlay` to the existing `Sheet` is a contained third.
+
+
+## [T-063] The real exposure of the dual-use token
+- status: dispatched (batch 20)
+- owner: fitness-qa
+- goal: supersede `TOKEN-POLARITY-AUDIT.md`, which has two PROVEN defects and must not be trusted.
+  T-059 measured 222 `var(--fs-primary)` references across 82 files — an order of magnitude more than
+  the three lines the finding list named.
+- done when: every reference classified by ROLE (fill / border / ink / other) with file:line, measured
+  in ALL FOUR theme states, and grouped into batches that can each be one file-exclusive task
+- notes: read-only, no gates. **Re-measure; do not copy the old document's numbers.** Four sibling
+  tokens are fixed ON PURPOSE and are do-not-touch. `--color-border-strong` is DISQUALIFIED as a
+  replacement — it composites to 2.33:1 over dark.
+
+## [T-063] Token exposure — ACCEPTED 2026-08-29 22:00. `plans/FS-PRIMARY-EXPOSURE.md`, 388 lines
+- status: **done** — read-only confirmed, one file written. No browser, no build, no gate, no git.
+  **This SUPERSEDES `plans/TOKEN-POLARITY-AUDIT.md`.** Nothing was inherited from that document.
+- **VERDICT: FAIL. `--fs-primary` fails a floor in THREE of the four theme states, at 118 sites
+  across 63 files.** Fills and borders against their surroundings: **1.05:1 dark · 1.06:1 dark+HC ·
+  1.39:1 light+HC.**
+- **⚠️ THE INSIGHT THAT EXPLAINS WHY THIS SURVIVED FIFTEEN BATCHES OF CONTRAST WORK: it is not a TEXT
+  problem.** Every label sitting ON an `--fs-primary` fill passes 4.5:1 in all four states
+  (7.16–17.37:1). **So every text-focused audit reported it clean.** The defect is the fill's own edge
+  against the surface behind it — a boundary nobody was measuring.
+- **AND IT EXPLAINS WHY THE PIXEL ROUND MISSED IT TOO: none of the four `tokens-*.json` files samples
+  `--fs-primary` at all.** That is a direct, checkable reason the sampled evidence could not have
+  caught this, and it is the kind of thing a worker usually leaves implicit.
+- **Inventory reconciled rather than estimated: 223 references across 83 files** — minus 9 token
+  definitions/aliases, 1 comment in `components.css` and 2 comments in a test file = **211 live paint
+  sites in 81 files.** (Earlier count was 222/82; this one is itemised.)
+- **⚠️ ONE ARITHMETIC GAP I NOTICED AND IT DID NOT: the class counts sum to 209, not 211.**
+  118 BROKEN + 78 DEGRADED + 13 SAFE = 209. Two live sites are unaccounted for. Not a blocker — the
+  document is the authority on the grouping — but **whoever runs the first batch should reconcile
+  those two before claiming the sweep is complete.**
+- **It re-measured the disqualified token on its OWN numbers rather than citing mine:**
+  `--color-border-strong` = **2.10 / 2.30 / 2.35:1** over `#000` / `#111` / `#262626`. So the
+  disqualification stands independently — and on the actual page it is *worse* than the 2.33 figure
+  this board has been carrying.
+- **Method verified against FOUR figures this repo already publishes** before any comparison
+  (`--fs-primary` L=0.019460 vs 0.019452; `#0a0a0a` L=0.0030353 vs 0.003035 exactly; 15.12:1 on white;
+  11.83:1 on the light track), plus the four sampled JSONs confirming its cascade resolution.
+- **THREE GROUPING FINDINGS THAT A FLAT SWEEP WOULD HAVE DESTROYED — this is why the task was worth
+  running:**
+  1. **`WorkoutCalendar.tsx` holds BOTH verdicts.** 4 SAFE sites (near-black ink on the bright
+     signal/accent fills — correct in all four states) and 6 BROKEN (month chevrons vanish at 1.05:1 in
+     dark). **A blanket find-and-replace on that file breaks working code.**
+  2. **The worst USER impact is not the biggest file.** `WorkoutSkeletons.tsx` has 15 references and
+     all 15 are merely DEGRADED. The real damage is **the set-logging screen (its batch 2, 31 sites)**,
+     where a user mid-workout loses every input outline and every numpad key edge. That is the hot path,
+     and `PRODUCT.md`'s first rule is that nothing may slow set entry.
+  3. **Enabled/disabled and selected/unselected are indistinguishable in dark at ~20 sites**
+     (`#0a0a0a` vs `#262626` = 1.31:1) — coach selection rows, nutrition CTAs, the onboarding step dot.
+     So this is not only "hard to see", it is **state that cannot be read.**
+- **It honoured every constraint I set:** `--fs-primary` never moves; the fix is two NEW semantic pairs
+  — `--fs-edge` (dark `rgba(255,255,255,0.42)` → 3.89–4.10:1, i.e. the app's existing dark border idiom
+  raised until it clears the floor, with `#318d78` = accent × 0.64 offered as the alternative) and
+  `--fs-panel` for deliberate dark chrome. **Light stays byte-identical under both.**
+- **9 batches with exclusive file ownership**, which is what makes this dispatchable at all.
+- **Its own disclosure, and it is the right one to make:** it read the actual surface at ~40 of the 211
+  sites and assigned the rest **by class**, from the declaration plus the sibling `background` in the
+  same style object. The class table fixes the ratios exactly, **but a misread surface would move a
+  site between class rows.** Six sites are flagged in the document as needing one human look.
+  → So each batch worker must confirm the surface for its own files before editing, not trust the class
+  assignment blind. I will put that in every dispatch.
+
+## [T-061] Settings screenshots — ⏱ TIMED OUT at 30 min. **EVIDENCE LANDED; verdict owed.**
+- status: **partially accepted — 41 PNGs + measurements recovered from disk, the written report is owed**
+- **Its last write was 22:08:36 and it died at ~22:15 running its own spec.** So, exactly like batch 18,
+  it died at the END, not during capture. **Recovered from the tree rather than re-run.**
+- **WHAT LANDED, verified by me:** `visual-qa/` went 492 → **533 PNGs**, of which **41 are `s20-*`**, plus
+  `s20-measure.json`. New spec `e2e/settings-s20.spec.ts` — **`--list` now reports 88 tests in 14 files,
+  exit 0**, so it parses and the suite is intact.
+- **✅ THE ROUND TRIP IS PHOTOGRAPHED, AND IT IS THE WHOLE POINT OF THE ROUND.** Nine shots in sequence:
+  `01-workout-hc-off` → `02-overlay-advanced-before` → `03-overlay-hc-on` → `04-workout-hc-on` →
+  `05-after-leaving-workout` → **`06-settings-hc-on`** → `06b-hc-row` (cropped) →
+  **`07-settings-dark-hc-still-on`** → `07b-hc-row`.
+  **Shot 06 proves Settings now AGREES after leaving the workout, and 07 proves the preference SURVIVES
+  a dark-mode toggle** — the exact two steps that used to destroy it. The batch-19 store fix is now
+  observed end-to-end in a browser, not just unit-tested.
+- Also landed: **8 full Settings captures** (all four theme states × 390 and 1280) and **24 text-crop
+  shots** (`advanced-trigger`, `group-heading`, `legal-label` × 4 states × 2 widths) for per-element
+  contrast.
+- **MISSING:** `reports/visual-qa-s20.md`, and the `מתקדם` **EXPANDED** captures — the crops are of the
+  trigger, not of an opened section. Both carried forward.
+- debris it left, **swept by me**: `test-results/` and `playwright-report/` both existed and are gone.
+
+### ⚠️ TWO SCREENSHOT ROUNDS IN A ROW DIED THE SAME DEATH. I AM CHANGING THE SHAPE, NOT RETRYING IT.
+Batch 18 and batch 20 both hit the 30-minute wall, and in both cases **the capture work had already
+succeeded — what got cut off was the write-up.** That is my own "failed twice, change approach" trigger,
+so here is the diagnosis and a new rule rather than a third identical dispatch:
+**ROOT CAUSE:** one worker cannot do all of — build, drive a multi-step flow across 4 theme states × 2
+widths, take 40+ captures, AND write an analytical report — inside 30 minutes on this host. The report is
+always last, so the report is always what dies.
+**NEW STANDING RULE — CAPTURE AND VERDICT ARE ALWAYS TWO WORKERS.**
+The capture worker photographs and dumps raw measurements to JSON, and is explicitly told **not** to
+analyse. A second, **browser-free** worker reads the PNGs + JSON and writes the verdict. That second
+shape has now succeeded twice on the first attempt (T-059, T-063) because it has no build, no server and
+no browser to spend its budget on.
+
+### Verified baseline — 2026-08-29 22:17, MINE, on a confirmed-static tree
+All 14 runs terminal. Newest `src/` mtime 21:37 — i.e. **batch 20 changed zero `src/` files**, exactly as
+designed. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **707** files (unchanged — no `src/` edits this batch) |
+| `npm run test:run` | **167 files / 1448 tests**, exit 0 both runs — floor held exactly |
+| `npx playwright test --list` | **88 tests / 14 files**, exit 0 (was 80/13; +8 from `settings-s20.spec.ts`) |
+| debris | e2e **14** specs, zero scratch, `test-results/` + `playwright-report/` swept |
+
+---
+
+# Batch 21 — dispatched 2026-08-29 22:18. Autonomous. First `src/` work since the audits.
+
+### ⚠️ MY OWN GREP CORRECTED THE ONBOARDING PROPOSAL BEFORE I DISPATCHED IT
+`plans/ONBOARDING-PROPOSAL.md` says `activityLevel` has **FOUR** fabrication sites. I grepped
+`DEFAULT_PROFILE|activityLevel` myself and it is **more than four**:
+- `src/appOnboarding.ts:81` **and `:121`** — two calls; the proposal named one
+- **`src/AppRouter.tsx:233`** — a third call site the proposal never mentions
+- `src/pages/nutrition/components/GoalsEditor.tsx:136` — `?? 'פעיל מתון'`
+- `src/pages/settings/types.ts:70` — `DEFAULT_PROFILE` hardcodes it (plus `gender: 'male'`)
+**AND THE ONE THAT MAKES "STORE NOTHING" A NO-OP IF MISSED: `src/utils/tdee.ts:68` is
+`ACTIVITY_MAP[activityLevel] ?? 1.55`.** The consumer already fabricates the 1.55 multiplier on its own,
+so deleting the stored field just moves the lie downstream instead of removing it. Same family-vs-symbol
+miss I have now made three times — the proposal counted the *writers* and never the *reader*.
+
+### Ownership map — disjoint, verified by grep against the clean tree
+- **T-064** → WRITES ONLY `reports/visual-qa-s20.md`. Read-only everywhere. **No browser, no build.**
+- **T-065** → `src/components/workout/components/SlideToComplete.tsx` (+ its test),
+  `src/styles/components.css`, `src/hooks/useSwipeNavigation.ts`.
+- **T-066** → `src/pages/onboarding/**`, `src/appOnboarding.ts`, `src/AppRouter.tsx`,
+  `src/pages/settings/types.ts`, `src/pages/settings/hooks/useSettingsState.ts`,
+  `src/pages/settings/sections/ProfileSection.tsx`, `src/pages/nutrition/components/GoalsEditor.tsx`,
+  `src/utils/tdee.ts`, `src/services/settingsService.ts` + tests.
+- **`src/styles/components.css` is T-065's exclusively** — a global file, and the rule is one-at-a-time.
+  T-066 is forbidden from it.
+- **NO PLAYWRIGHT, NO BUILD.** The s20 captures are already on disk; the two `src/` workers must not
+  invalidate a build, and the expanded-`מתקדם` re-shoot goes in the NEXT batch on a settled tree.
+
+## [T-064] The s20 verdict — the write-up two rounds have now failed to produce
+- status: dispatched (batch 21)
+- owner: fitness-qa
+- goal: read the 41 `s20-*` PNGs + `s20-measure.json` already on disk and write the verdict, with no
+  browser at all — that constraint is the fix for the failure mode, not a limitation.
+- done when: `reports/visual-qa-s20.md` states whether the 5-group Settings screen holds in all four
+  theme states, whether the round-trip shots prove the preference survives, and every defect with its PNG
+- notes: shots `06` and `07` are the load-bearing ones. `_summary.json` is STALE — do not cite it.
+
+## [T-065] The app's one real gesture, and two tracking values
+- status: dispatched (batch 21)
+- owner: fitness-design
+- goal: `plans/MOTION-GESTURE-AUDIT.md`'s P0 plus its two near-free wins.
+- done when: verify green; test:run >= 1448 plus a test proving a flick completes; release velocity fed
+  to a spring; snap-back interruptible; a re-grab mid-return does not jump
+- notes: cheapest-first ORDER — the two `.kinetic-number` tracking values, then the swipe no-op, then the
+  velocity work. Projection constant **0.499** (d = 0.998); snap-home spring
+  **`{bounce: 0.2, duration: 0.3}`** ONLY for a gesture-completed snap, `{bounce: 0, duration: 0.35}` for
+  a tap. **A CSS `transition` on a gesture is the defect** — do not keep it.
+
+## [T-066] Onboarding, per the approved proposal
+- status: dispatched (batch 21)
+- owner: fitness-dev
+- goal: cut the 11 fields that have no reader anywhere, and stop the app recording an activity level the
+  user never gave.
+- done when: verify green; test:run >= 1448 minus only tests whose subject was deleted, named one by one;
+  every fabrication site listed above closed, `tdee.ts` included
+- notes: ORDERED, partial-in-order acceptable. **Do NOT add a question, do NOT reorder the first screen
+  into something the owner has not seen, and do NOT migrate data already on users' devices.** If honest
+  handling of an unknown activity level would change what the nutrition screen DISPLAYS, stop and report
+  — that is a different surface.
+
+---
+
+
+
+
+---
+
+
+
 ---
 
 
