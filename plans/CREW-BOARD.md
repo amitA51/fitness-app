@@ -2550,6 +2550,219 @@ sufficient — a worker cannot know which claims are stale without re-reading ev
 report files, mark each CLOSED / STILL-OPEN / WRONG against the current tree. That is cheaper than every
 future worker re-deriving it, and it is exactly the kind of work that gets skipped until it costs a round.
 
+## [T-077] The hand-rolled copies — ACCEPTED 2026-08-30 00:37. **BOTH REPLACED, THE THIRD ADJUDICATED.**
+- 2 modified + 1 new test, exactly its ownership. Method verified against **THIRTEEN** published ratios.
+- **⚠️ IT FOUND THE FILE ITSELF AND SAID SO.** My brief said "the privacy card's switch" with no path.
+  It located it from the `נתונים ופרטיות` group at `Settings.tsx:271` → `LegalLinksSection.tsx`, and
+  wrote "not from your path" rather than letting me think I had given it.
+- **Defect 1 — `ThemeSection` tile → shared `IconBox`.** `--fs-primary` no longer paints here at all;
+  the glyph, the only element carrying information, improves in **all four** states (→ 18.88:1 both HC).
+  **⚠️ AND IT DISCLOSED THAT TWO FILL NUMBERS GO DOWN** — light 15.12 → 1.28, light+HC 1.39 → 1.11 —
+  because the tile stops being a navy block and becomes the same quiet chip as its three siblings.
+  **It justified that against the audit's OWN baseline:** `visual-qa-14bd.md:332` names 1.11:1 as the
+  neighbouring `IconBox` figure and an 18.88:1 white glyph as what the shared component would produce,
+  and both are exactly what it measured. So this is the prescribed outcome, not a side effect.
+- **Defect 2 — the privacy switch → shared `SettingsToggle`.** The two knobs that meant OPPOSITE things
+  while sitting **1.16:1** apart are now **16.19:1** apart. Target **52×30 → 52×44**, and it pinned
+  `border-width: 0` + `padding: 0` so **painted equals boxed** — closing the "boxes 44, paints 42" trap
+  in the assertion itself.
+- **THE TEST PINS THE SHARED COMPONENT'S SIGNATURE, NOT ITS COLOURS** — 44×44 box, 52×32 track,
+  per-state knob tokens, and the track fill **imported from the shared module's own export**. **So a
+  re-hand-rolled copy fails even if someone copies the corrected colours.** That is the right shape of
+  test for this defect class, and nobody asked for it.
+- **⚠️ ONE NUMBER REGRESSES AND IT REFUSED TO HIDE OR FORK IT:** the light ON knob drops 8.90 → 2.11.
+  **But that is a property of `SettingsToggle` ITSELF, shared by all six switches on the screen** — it
+  is the 2.11:1 already on this board awaiting Amit's eye, now confirmed as the shared component's own
+  gap rather than a call-site defect. It did not fork or edit the shared component. Correct.
+- **⚠️ DEFECT 3 ADJUDICATED AND REFUSED, WITH A REAL CONCEPTUAL DISTINCTION.**
+  `WorkoutPrefsSection.tsx:65` is verbatim `active ? { background: --fs-primary, color: --fs-accent }`
+  — **the exact MIRROR of `IconBox.tsx:20`**, confirming T-072's re-grade and not the original audit.
+  It **is** a real defect (fill 15.12 / 1.05 / 1.39 / 1.06, same signature as the old tile). **But it is
+  NOT a copy of a shared primitive:** `IconBox` is a 32px decorative tile, this is a labelled pressable
+  rest-time chip with `aria-pressed` and its own 44px target. **"Forking `IconBox` to express it is
+  precisely what the constraint forbids."** The fix is a role token in `src/styles/**`, which T-076
+  held. It stopped. Lane discipline AND the right call.
+- **It caught its own new assertion failing mid-way and diagnosed why:** jsdom silently drops
+  `border: 'none'`, so it asserts zero border *width* instead. The mid-run 1488+1 also **proves the
+  arithmetic** — the single failure was its own test, not a regression.
+- **⚠️ A FOURTH COPY, in its own directory, correctly left:** `ProfileEditSection.tsx:424-440`
+  (`פרופיל ציבורי`) is the same bespoke 52×30 switch with **identical F1 and F2 defects.**
+- Its 4 measurement artifacts live under `visual-qa/`, which is gitignored — I confirmed at
+  `.gitignore:64`. No debris entered git.
+
+### Verified baseline — 2026-08-30 00:37, MINE, on a confirmed-static tree
+All 29 runs terminal. Newest `src/` mtime 4 minutes old before any gate ran. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **710** files (709 + 1 new test file) |
+| `npm run test:run` | **171 files / 1489 tests**, exit 0 both runs — **NEW FLOOR** |
+| arithmetic | 170+1=171 files; 1484 + 5 (T-077) = 1489. T-076 and T-078 added none. **Nothing deleted, skipped or weakened.** |
+| `npx playwright test --list` | **92 tests / 14 files**, exit 0 |
+| debris | e2e **14** specs, zero scratch, `test-results/` + `playwright-report/` absent |
+| commit | **`9579b6f`** on `feat/ux-templates-picker`, pushed, 8 files, +424/−55. `master` untouched at `3bf1f7f`. Tree clean. |
+
+---
+
+# Batch 26 — THE CAPTURE ROUND. Dispatched 2026-08-30 00:40. Tree clean at `9579b6f`.
+
+### Deferred twice on purpose; now genuinely due, and the tree is finally settled
+Batches 24 and 25 changed sheet widths, token values and two component identities. Photographing before
+those landed would have photographed a tree about to change — the mistake batches 10-12 avoided.
+**Nothing writes `src/` this batch.** That is what keeps the capture worker's build trustworthy, and it
+is the accumulated lesson of six previous rounds.
+
+### Ownership map — disjoint, one browser
+- **T-079** → WRITES `visual-qa/**` + `e2e/settings-s20.spec.ts` only. Read-only in `src/`.
+  **HOLDS PLAYWRIGHT AND THE BUILD — sole owner. CAPTURE ONLY, NO ANALYSIS, NO REPORT.**
+- **T-080** → WRITES ONLY `plans/DOC-FRESHNESS.md`. Read-only. No browser, no build, no gates.
+- **T-081** → WRITES ONLY `plans/SHARED-PRIMITIVE-COPIES.md`. Read-only. No browser, no build, no gates.
+
+## [T-079] The capture round, with the element-screenshot path MANDATED
+- status: dispatched (batch 26)
+- owner: fitness-qa
+- goal: photograph everything four rounds have failed to reach, on a settled tree.
+- done when: raw PNGs + ONE measurement JSON covering — Settings in **dark, dark+HC and at 1280**; the
+  five migrated bottom sheets; the `max-w-lg` desktop delta; the newly-shared `IconBox` chip and the
+  privacy switch in **both** states
+- notes: **MANDATED `locator('#main-content').screenshot()`. SCROLL-AND-STITCH IS FORBIDDEN** — offering
+  both methods is what killed round four. Build FIRST. Wipe localStorage AND IndexedDB per combo. Dark
+  is the `html.dark` CLASS; HC is `html.high-contrast` and STACKS. Label every crop from its verified
+  text content. **Edit budget: the spec only. Do NOT write a report.**
+
+## [T-080] Our own docs are lying to our own workers
+- status: dispatched (batch 26)
+- owner: fitness-qa
+- goal: three workers in two batches cited a claim that later work had already closed. A worker cannot
+  know which claims are stale without re-reading everything, so read it once and write it down.
+- done when: every claim in the three proven offenders marked CLOSED / STILL-OPEN / WRONG against the
+  current tree, with the file:line that settles it
+- notes: read-only, ONE new plan file, no gates. Scoped to `plans/MOTION-GESTURE-AUDIT.md`,
+  `plans/FS-PRIMARY-EXPOSURE.md` and `reports/04-A11Y-RTL-HEBREW.md` — the three that caused real
+  damage. **Do not edit the audits themselves**; the index is the deliverable.
+
+## [T-081] Find every remaining hand-rolled copy
+- status: dispatched (batch 26)
+- owner: fitness-design
+- goal: FOUR copies of a shared primitive have now been found one at a time, and **in every single case
+  the shared component was correct and the copy was not.** Stop finding them by accident.
+- done when: every component in `src/` that re-implements a shared primitive is listed with file:line,
+  the primitive it duplicates, and what the copy gets WRONG that the shared one gets right
+- notes: read-only, ONE new plan file, no gates. Known instance to start from and NOT re-derive:
+  `ProfileEditSection.tsx:424-440`. **A component that is merely SIMILAR is not a copy** — T-077 proved
+  that distinction matters by correctly refusing `WorkoutPrefsSection`, which shares a token pairing
+  with `IconBox` but is a different control. Say which are copies and which are not.
+
+## [T-080] Doc freshness — ACCEPTED 2026-08-30 00:58. `plans/DOC-FRESHNESS.md`, 421 lines
+- status: **done** — read-only confirmed, one file written, the three audits themselves untouched as
+  instructed. No build, no gate, no browser, no git.
+- **SCORE: 34 CLOSED · 19 STILL-OPEN · 15 WRONG · 34 MOVED groups · 13 honestly UNVERIFIABLE.**
+- **⚠️⚠️ ITS HEADLINE: "the motion audit's fix list is the most dangerous page in the repo."** It says
+  *"Nothing below has been applied"* — **SEVEN of its ELEVEN items have been.** Beyond the
+  `SlideToComplete` velocity I already knew about: **all four bypass sheets AND `NumpadOverlay` are on
+  the canonical path, `projectMomentum` is `0.998`, and the exercise swipe — the document's own
+  "biggest single violation", a whole section built on a no-op handler — now tracks the finger with
+  velocity, projection and an earned-bounce settle.** So a worker reading that page would redo seven
+  landed fixes.
+- **⚠️ THE FINDING WORTH ACTING ON: THE TABS RTL DEFECT IS HALF-FIXED, WHICH IS WORSE THAN EITHER
+  EXTREME.** The shared `SegmentedControl` got exactly the RTL arrow-key helper report 04 asked for, at
+  `:72`. **`Progress.tsx:222` and `Nutrition.tsx:200` did NOT.** So anyone told "the tabs bug is
+  closed" leaves **two main tablists still inverted in Hebrew.** This matches T-067's batch-22 flag
+  exactly — the shared one was fixed, the two call sites were not. **Live defect, cheap, next batch.**
+- **⚠️ MY DRIFT FIGURE WAS WRONG AND IT CORRECTED IT.** I told it `tokens.css` had drifted ~15 lines.
+  It is **+24 in the `:root` block and +40 to +84 further down, and NOT UNIFORM** — `--fs-heading`
+  moved `:110` → `:134`, the HC glass block `:672` → `:756`. **A constant offset will not fix it.**
+- **IT PROTECTED MY OWN RULING FROM A FUTURE WORKER.** It recorded that `--fs-panel`'s HC value
+  deliberately deviates from the audit's own proposal (`#1c363b`, not `--fs-surface-2`) for the exact
+  regression reason, and wrote **"do not 'correct' it back."** That is the kind of note that stops a
+  later batch undoing a decision it cannot see the reasoning for.
+- **⚠️ `reports/04`'s heading-hierarchy finding CANNOT BE ACTED ON AT ALL.** It cites `RoleStep.tsx`
+  and `CompleteStep.tsx` — **we deleted both** — and the three surviving onboarding steps contain **no
+  `<h1>` or `<h2>` element whatsoever.** Three of its citation blocks now point at unrelated code.
+  **It traced the real surviving RTL defect to `global.css:486` and `:511`** (`inset: 9px auto 9px 0`).
+- **⚠️ ONE MORE NUMBER TO RECONCILE BEFORE THE SWEEP'S BATCH 2: it counts 253/257/84, not T-072's
+  247/251/85.** So even the freshly re-derived inventory has moved — partly because batch 25 converted
+  8 sites. Whoever runs Batch 2 re-derives, again.
+
+## [T-081] Shared-primitive copies — ACCEPTED 2026-08-30 00:58. **17 SITES. AND IT FOUND A SECOND
+## INVERTED SWITCH I DID NOT KNOW EXISTED.**
+- status: **done** — read-only confirmed, one file written (`plans/SHARED-PRIMITIVE-COPIES.md`, 318
+  lines). No build, no gate, no browser, no git. Every ratio computed from the token hex values, and it
+  cross-checked its method against two figures `SettingsToggle`'s own comments already assert.
+- **TWO sites where a USER SEES A WRONG STATE, both switches:**
+  1. The known `ProfileEditSection.tsx:423-455` — confirmed: ON knob and the canonical OFF knob are
+     **1.16:1** apart, 30px height is **14px under** the floor, no track border (1.25:1 in dark).
+  2. **⚠️ NEW, AND IT IS AN RTL DEFECT NOBODY HAD FOUND: `SettingsPrimitives.tsx:107-133`.** Its knob
+     is positioned with **physical `left: 2` and animated with physical `x`**, so under `dir="rtl"` it
+     **rests on the wrong side and travels the OPPOSITE DIRECTION from every other switch in the app.**
+     Its OFF knob is also **1.25:1** in dark (hardcoded to one colour in both states) and its track
+     outline is **1.05:1** — the whole OFF control is a featureless blob. **Two switches in one app
+     moving opposite ways for the same state change.**
+- **⚠️⚠️ THE ROOT CAUSE OF THE OTHER 15 IS ONE LINE, AND THAT IS THE VALUE OF THE SWEEP.**
+  `SettingsRow` keeps **its own copy of `IconBox`'s tile without the `borderRadius: 12`** — so **five
+  sections forked the ENTIRE ROW just to get a rounded tile.** Fix the shared row and five forks
+  collapse. Fifteen scattered defects become one change plus five swaps.
+- **⚠️⚠️ AND IT SURFACED WHAT MAY BE A REGRESSION BATCH 25 JUST INTRODUCED — I MUST VERIFY THIS
+  MYSELF BEFORE ANYTHING ELSE.** `SettingsRow` wraps its `icon` prop in its own square tile
+  **unconditionally**. T-077 changed `ThemeSection` to pass an `IconBox` into that prop. If the audit is
+  right, a 12px-rounded tile now sits inside a same-size 0px-corner tile and **the square corners show
+  behind the rounded one at all four corners, on all four rows** — on the exact screen I signed off an
+  hour ago. **T-077's own contrast numbers would still be correct; the defect is geometry, which is why
+  a contrast pass could not see it.** First item next batch: read both files and confirm or clear it.
+- **IT REFUSED TWO CANDIDATES AND ONE WHOLE FAMILY, all correctly:**
+  - `WorkoutPrefsSection`'s rest-time chip — the precedent, re-confirmed.
+  - **`SettingsPrimitives`' `TabBar`** — "a horizontally scrolling 5-item tab strip is not the 2-up
+    `SegmentedControl`; they do not even share styling." So its real defects — **no `role="tablist"`,
+    no `aria-selected`, and a ≈38px target, the ONLY unreachable-target finding in the sweep** — get
+    fixed IN PLACE, not by importing.
+  - **The ~30 hand-rolled 44×44 icon buttons: there is NO shared icon-button primitive to copy.**
+    `Button.tsx` has no icon-only mode. So they are not copies, and building the primitive is a
+    separate proposal. That is the honest answer, not the convenient one.
+- Also found: **`ProfileAvatar.tsx` is DEAD** (zero importers) and re-implements `getInitials` inline ·
+  both avatar fallbacks are `aria-hidden`, so a user with no photo gives a screen reader **nothing** ·
+  the two circular avatars are copies **of each other with no owner**, so that one is an extraction, not
+  an import.
+- **⚠️ A REAL ARCHITECTURAL DECISION IT FLAGGED RATHER THAN TOOK:** `SettingsCard` is marked
+  `@deprecated` in favour of `<Card variant="glass" asymmetric>` — **yet it is still the correct target
+  for four of the copy fixes.** "Either un-deprecate it or migrate all settings sections — but not both
+  piecemeal."
+  **MY RULING: UN-DEPRECATE `SettingsCard`.** Reasons: it is the house idiom every settings section
+  already uses; it holds the 4px accent rail that settings cards carry, so migrating to raw `Card`
+  means re-adding that rail at every call site — i.e. duplicating exactly what the wrapper exists to
+  hold; and a deprecation marker nobody is acting on is itself the stale claim this batch was about.
+  **The marker is what is wrong, not the component.**
+
+### ⚠️ I VERIFIED THE DOUBLE-NESTED TILE MYSELF. REAL DEFECT — BUT **NOT** A BATCH-25 REGRESSION.
+I read `src/components/ui/SettingsRow.tsx` and `src/pages/settings/sections/ThemeSection.tsx` in full
+rather than take the audit's word, because it pointed at a screen I signed off an hour ago.
+- **The mechanism is confirmed.** `SettingsRow.tsx:15-21` wraps the `icon` prop in its own
+  `w-8 h-8` box with `background: var(--fs-surface-2)`, `color: var(--fs-heading)` and **no
+  `borderRadius`**. `IconBox.tsx:24-28` is `w-8 h-8` with the **same background, the same foreground,
+  and `borderRadius: 12`**. So an `IconBox` passed into that prop sits inside an identically-sized,
+  identically-coloured square.
+- **⚠️ THE SYMPTOM IS MORE PRECISE THAN THE AUDIT STATED, AND A FIXER NEEDS THE CORRECTION.** The audit
+  says the outer square's corners "show behind" the rounded tile, which implies a two-tone artifact.
+  **Both boxes paint `--fs-surface-2`, so there is no colour artifact at all** — the union of the two
+  shapes is simply the SQUARE. The real symptom is that **`IconBox`'s 12px rounding is entirely
+  defeated on every row that goes through `SettingsRow`.** Anyone hunting for a colour seam will find
+  nothing and may close this as unreproducible.
+- **✅ T-077 IS CLEARED, and this is why reading the file mattered.** Three of `ThemeSection`'s four
+  rows — `הפחתת אנימציות`, `טקסט גדול`, `ניגודיות גבוהה` — were **already** passing `IconBox` into
+  `SettingsRow`'s `icon` prop before batch 25 touched anything. T-077 changed only the first row, and
+  it changed it **into** that pattern, i.e. it made row 1 consistent with the three below it. **The
+  double-nesting predates batch 25; T-077 took it from 3 of 4 rows to 4 of 4.**
+- **And T-077's contrast numbers remain exactly correct.** Both boxes paint the same fill and the same
+  ink, so the fill and glyph ratios it reported are unaffected. The defect is purely geometric — which
+  is precisely why a contrast pass could not see it, and why the sweep was worth running.
+- **So this is T-081's Batch 3, not a hotfix.** Fixing `SettingsRow` to render `IconBox` closes it on
+  all four rows AND removes the reason five other sections forked the whole row.
+
+
+
+
+
+
+
 
 
 ## [T-077] The hand-rolled copies of shared components

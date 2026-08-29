@@ -1483,3 +1483,609 @@ test.describe('s23 capture', () => {
     await flushS23();
   });
 });
+
+
+// ===========================================================================
+// s26 — CAPTURE-ONLY PASS. Three priority groups, no analysis in this file.
+//
+//   1. /settings in all four theme states at 390 AND 1280 (dark, dark+HC and
+//      every state at 1280 had never been photographed).
+//   2. Two just-changed controls, cropped, in all four theme states:
+//      (a) the `מצב כהה` row's 32px IconBox chip;
+//      (b) the `מעקב אנליטיקה ויציבות` switch in BOTH aria-checked states.
+//   3. Five bottom sheets at 390 AND 1280 in light and dark. ModalOverlay's
+//      bottomSheet content is `w-full max-w-lg` (512px) — the dialog rect is
+//      recorded so the width change at 1280 is evidenced numerically.
+//
+// Frames are ONE `locator.screenshot()` call each — no scroll-and-stitch.
+// Every crop is named from text/aria read out of the live DOM, and the raw
+// pixel samples are stored as arrays. Nothing is aggregated into a single
+// 'foreground' or 'inkOnFill' field: that has previously invented and
+// concealed defects.
+// ===========================================================================
+
+const S26: Record<string, unknown>[] = [];
+
+type S26Sample = { hex: string; rgb: Rgb; count: number; share: number };
+
+/** Raw pixel census of a PNG buffer. No bg/fg pick, no contrast maths. */
+async function s26Samples(
+  buf: Buffer
+): Promise<{ pngWidth: number; pngHeight: number; pixelSamples: S26Sample[]; distinctColors: number }> {
+  const sharpMod = (await import('sharp')).default;
+  const { data, info } = await sharpMod(buf).raw().toBuffer({ resolveWithObject: true });
+  const ch = info.channels;
+  const total = info.width * info.height;
+  const counts = new Map<string, number>();
+  for (let i = 0; i + ch - 1 < data.length; i += ch) {
+    const key = `${data[i]},${data[i + 1]},${data[i + 2]}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const pixelSamples: S26Sample[] = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 14)
+    .map(([key, n]) => {
+      const [r, g, b] = key.split(',').map(Number);
+      const rgb: Rgb = [r ?? 0, g ?? 0, b ?? 0];
+      return { hex: toHex(rgb), rgb, count: n, share: Math.round((n / total) * 100000) / 100000 };
+    });
+  return { pngWidth: info.width, pngHeight: info.height, pixelSamples, distinctColors: counts.size };
+}
+
+async function flushS26(): Promise<void> {
+  const fs = await import('node:fs');
+  fs.mkdirSync(OUT, { recursive: true });
+  fs.writeFileSync(
+    `${OUT}/s26-measure.json`,
+    JSON.stringify(
+      {
+        meta: {
+          spec: 'e2e/settings-s20.spec.ts (s26 capture pass)',
+          capturedAt: new Date().toISOString(),
+          bundle: 'npm run build ran immediately before this pass; served by npm run preview',
+          scrollContainer: '#main-content',
+          captureMethod:
+            'ONE locator.screenshot() per frame. mainClientHeight/mainScrollHeight/pngHeight are all recorded so the reader can see for themselves whether a frame covered the whole scrollport.',
+          themeStates:
+            'html.dark = dark. html.high-contrast STACKS on dark (both classes = dark+HC). Applied through the product appSettings record, then re-read off <html>.',
+          isolation:
+            'localStorage + sessionStorage cleared and every IndexedDB database deleted before each combo, so a persisted in-progress workout cannot hijack a frame.',
+          colorSampling:
+            'pixelSamples is the RAW pixel census of each PNG: top 14 colours by count, with count and share. Deliberately NOT reduced to a foreground/background pair and NO contrast ratio is computed here.',
+          labelling:
+            'every crop records verifiedText / verifiedAriaLabel / verifiedAriaChecked read out of the live DOM at capture time; the filename is derived from those.',
+          note: 'raw measurements only — no analysis, no verdicts, no recommendations',
+        },
+        records: S26,
+      },
+      null,
+      2
+    ),
+    'utf8'
+  );
+}
+
+/** Raw geometry + raw resolved colour strings for one element. */
+async function s26Facts(page: Page, selector: string): Promise<Record<string, unknown> | null> {
+  return page.evaluate((sel) => {
+    const el = document.querySelector(sel) as HTMLElement | null;
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    const cs = getComputedStyle(el) as unknown as Record<string, string>;
+    const props = [
+      'color',
+      'backgroundColor',
+      'backgroundImage',
+      'borderTopColor',
+      'borderBottomColor',
+      'borderInlineStartColor',
+      'borderInlineEndColor',
+      'outlineColor',
+      'boxShadow',
+      'fill',
+      'stroke',
+      'opacity',
+      'borderRadius',
+      'width',
+      'height',
+      'minHeight',
+      'fontSize',
+      'fontWeight',
+      'direction',
+    ];
+    const computed: Record<string, string> = {};
+    for (const p of props) computed[p] = cs[p] ?? null;
+    const svg = el.querySelector('svg');
+    const svgCs = svg ? (getComputedStyle(svg) as unknown as Record<string, string>) : null;
+    const knob = el.querySelector('span, div');
+    const knobCs = knob ? (getComputedStyle(knob) as unknown as Record<string, string>) : null;
+    return {
+      selector: sel,
+      rect: {
+        x: r.x,
+        y: r.y,
+        width: r.width,
+        height: r.height,
+        top: r.top,
+        right: r.right,
+        bottom: r.bottom,
+        left: r.left,
+      },
+      computed,
+      svgComputed: svgCs
+        ? {
+            color: svgCs.color,
+            stroke: svgCs.stroke,
+            fill: svgCs.fill,
+            width: svgCs.width,
+            height: svgCs.height,
+            strokeWidth: svgCs.strokeWidth,
+          }
+        : null,
+      firstChildComputed: knobCs
+        ? {
+            tag: (knob as HTMLElement).tagName,
+            backgroundColor: knobCs.backgroundColor,
+            color: knobCs.color,
+            width: knobCs.width,
+            height: knobCs.height,
+            borderRadius: knobCs.borderRadius,
+            transform: knobCs.transform,
+            boxShadow: knobCs.boxShadow,
+          }
+        : null,
+      verifiedText: (el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 160),
+      verifiedAriaLabel: el.getAttribute('aria-label'),
+      verifiedAriaChecked: el.getAttribute('aria-checked'),
+      className: typeof el.className === 'string' ? el.className : null,
+    };
+  }, selector);
+}
+
+/** Scrollport geometry, so the reader can judge frame completeness themselves. */
+async function s26Main(page: Page) {
+  return page.evaluate(() => {
+    const el = document.querySelector('#main-content') as HTMLElement | null;
+    if (!el) return null;
+    const cs = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    return {
+      clientHeight: el.clientHeight,
+      scrollHeight: el.scrollHeight,
+      scrollTop: el.scrollTop,
+      overflowY: cs.overflowY,
+      rect: { x: r.x, y: r.y, width: r.width, height: r.height },
+    };
+  });
+}
+
+/** ONE element screenshot. Never scroll-and-stitch. */
+async function s26Shoot(
+  page: Page,
+  locator: Locator,
+  name: string,
+  meta: Record<string, unknown>
+): Promise<boolean> {
+  const el = locator.first();
+  if (!(await el.count())) {
+    S26.push({ png: null, name, ...meta, error: 'locator matched nothing' });
+    return false;
+  }
+  await el.scrollIntoViewIfNeeded().catch(() => {});
+  let buf: Buffer;
+  try {
+    buf = await el.screenshot({ path: `${OUT}/${name}.png`, timeout: 25_000 });
+  } catch (e) {
+    S26.push({ png: null, name, ...meta, error: `screenshot failed: ${String(e).slice(0, 200)}` });
+    return false;
+  }
+  S26.push({ png: `${name}.png`, name, ...meta, ...(await s26Samples(buf)) });
+  return true;
+}
+
+/** A brand-new browser context per combo — the ONLY reliable isolation here.
+ *
+ *  The in-page wipe used by earlier rounds (`indexedDB.deleteDatabase` inside
+ *  page.evaluate) hangs forever from the second call onwards: the registered
+ *  PWA service worker keeps a connection open, so neither `onsuccess` nor
+ *  `onblocked` settles and the single evaluate eats the whole test timeout.
+ *  A fresh context starts with empty localStorage AND empty IndexedDB by
+ *  construction, and `serviceWorkers: 'block'` keeps the SW from re-opening
+ *  either — so a persisted in-progress workout cannot hijack a frame.
+ *
+ *  The theme state is written by an init script BEFORE the app boots, so no
+ *  reload is needed and the very first paint is already in the right state. */
+async function s26Open(
+  browser: import('@playwright/test').Browser,
+  vp: { width: number; height: number },
+  combo: { id: string; dark: boolean; hc: boolean },
+  path: string
+) {
+  const context = await browser.newContext({
+    viewport: { width: vp.width, height: vp.height },
+    baseURL: 'http://localhost:4173',
+    locale: 'he-IL',
+    timezoneId: 'Asia/Jerusalem',
+    serviceWorkers: 'block',
+  });
+  await context.addInitScript(
+    ({ dark, hc }) => {
+      localStorage.setItem('skip_auth', 'true');
+      localStorage.setItem('onboarding_completed', 'true');
+      localStorage.setItem(
+        'user_profile',
+        JSON.stringify({
+          name: 'דנה',
+          age: 30,
+          height: 170,
+          weight: 68,
+          gender: 'female',
+          weightGoal: 'עלייה במסה',
+          activityLevel: 'פעיל מתון',
+        })
+      );
+      localStorage.setItem(
+        'appSettings',
+        JSON.stringify({ darkMode: dark, workoutSettings: { highContrast: hc } })
+      );
+    },
+    { dark: combo.dark, hc: combo.hc }
+  );
+  const page = await context.newPage();
+  await page.goto(path, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(2200);
+  for (const label of ['דילוג', 'רק הכרחי', 'אישור הכל']) {
+    const btn = page.getByRole('button', { name: label }).first();
+    if (await btn.isVisible().catch(() => false)) {
+      await btn.click({ force: true, timeout: 3000 }).catch(() => {});
+      await page.waitForTimeout(300);
+    }
+  }
+  await page.waitForTimeout(600);
+  return { context, page };
+}
+
+/** Open every `מתקדם` expander so nothing stays hidden behind one. */
+async function s26ExpandAdvanced(page: Page): Promise<number> {
+  const triggers = page.getByRole('button', { name: /מתקדם/ });
+  const n = await triggers.count().catch(() => 0);
+  for (let i = 0; i < n; i++) {
+    await triggers
+      .nth(i)
+      .click({ force: true, timeout: 3000 })
+      .catch(() => {});
+    await page.waitForTimeout(220);
+  }
+  await page.waitForTimeout(400);
+  return n;
+}
+
+/** Tag the `מצב כהה` row and its 32px IconBox chip, verifying the row text. */
+async function s26TagDarkChip(page: Page) {
+  return page.evaluate(() => {
+    for (const n of Array.from(document.querySelectorAll('[data-s26]')))
+      n.removeAttribute('data-s26');
+    const sw = document.querySelector('[role="switch"][aria-label="מצב כהה"]');
+    if (!sw) return { ok: false, reason: 'no מצב כהה switch', rowText: null, chipClass: null };
+    let node = sw.parentElement as HTMLElement | null;
+    for (let i = 0; i < 10 && node; i++) {
+      const chip = node.querySelector('div.w-8.h-8') as HTMLElement | null;
+      if (chip) {
+        chip.setAttribute('data-s26', 'dark-chip');
+        node.setAttribute('data-s26', 'dark-row');
+        return {
+          ok: true,
+          reason: null,
+          rowText: (node.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 120),
+          chipClass: chip.className,
+        };
+      }
+      node = node.parentElement;
+    }
+    return { ok: false, reason: 'no 32px IconBox above the switch', rowText: null, chipClass: null };
+  });
+}
+
+// ── GROUP 1: the /settings screen, four theme states x 390 and 1280 ────────
+
+for (const vp of VIEWPORTS) {
+  test(`s26 g1 — settings screen, 4 theme states @ ${vp.tag}`, async ({ browser }) => {
+    test.setTimeout(240_000);
+
+    for (const combo of COMBOS) {
+      const { context, page } = await s26Open(browser, vp, combo, '/settings');
+      try {
+        const fp = await themeFingerprint(page);
+        const main = await s26Main(page);
+        const base = {
+          group: 'g1-settings-screen',
+          combo: combo.id,
+          viewport: vp.tag,
+          width: vp.width,
+        };
+
+        await s26Shoot(page, page.locator('#main-content'), `s26-settings-${combo.id}-${vp.tag}`, {
+          ...base,
+          state: 'advanced-collapsed',
+          htmlClass: fp.htmlClass,
+          tokens: fp.tokens,
+          htmlState: await htmlState(page),
+          mainContent: main,
+        });
+
+        const expanders = await s26ExpandAdvanced(page);
+        await s26Shoot(
+          page,
+          page.locator('#main-content'),
+          `s26-settings-expanded-${combo.id}-${vp.tag}`,
+          {
+            ...base,
+            state: 'advanced-expanded',
+            advancedTriggersClicked: expanders,
+            htmlClass: (await themeFingerprint(page)).htmlClass,
+            mainContent: await s26Main(page),
+          }
+        );
+      } finally {
+        await context.close();
+        await flushS26();
+      }
+    }
+  });
+}
+
+// ── GROUP 2: the two just-changed controls, cropped, all four states ───────
+
+for (const vp of VIEWPORTS) {
+  test(`s26 g2 — dark-mode icon chip + analytics switch @ ${vp.tag}`, async ({ browser }) => {
+    test.setTimeout(300_000);
+
+    for (const combo of COMBOS) {
+      const { context, page } = await s26Open(browser, vp, combo, '/settings');
+      try {
+        await s26ExpandAdvanced(page);
+      const fp = await themeFingerprint(page);
+      const base = {
+        group: 'g2-controls',
+        combo: combo.id,
+        viewport: vp.tag,
+        width: vp.width,
+        htmlClass: fp.htmlClass,
+        tokens: fp.tokens,
+      };
+
+      // (a) the `מצב כהה` row's 32px IconBox chip — component just changed.
+      const tag = await s26TagDarkChip(page);
+      S26.push({ kind: 'tag-dark-chip', ...base, ...tag });
+      if (tag.ok) {
+        await s26Shoot(
+          page,
+          page.locator('[data-s26="dark-chip"]'),
+          `s26-chip-darkmode-${combo.id}-${vp.tag}`,
+          {
+            ...base,
+            control: 'IconBox chip on the מצב כהה row',
+            verifiedRowText: tag.rowText,
+            chipClass: tag.chipClass,
+            facts: await s26Facts(page, '[data-s26="dark-chip"]'),
+          }
+        );
+        await s26Shoot(
+          page,
+          page.locator('[data-s26="dark-row"]'),
+          `s26-row-darkmode-${combo.id}-${vp.tag}`,
+          {
+            ...base,
+            control: 'whole מצב כהה row (chip in context)',
+            verifiedRowText: tag.rowText,
+            facts: await s26Facts(page, '[data-s26="dark-row"]'),
+          }
+        );
+      }
+
+      // (b) the analytics switch — new component, knob colours inverted.
+      //     Photograph BOTH aria-checked states, named from the read value.
+      const sel = '[role="switch"][aria-label="מעקב אנליטיקה ויציבות"]';
+      const sw = page.locator(sel);
+      if (await sw.count()) {
+        for (const pass of ['as-found', 'after-toggle'] as const) {
+          if (pass === 'after-toggle') {
+            await sw.first().scrollIntoViewIfNeeded().catch(() => {});
+            await sw
+              .first()
+              .click({ force: true, timeout: 5000 })
+              .catch(() => {});
+            await page.waitForTimeout(700);
+          }
+          const checked = await sw.first().getAttribute('aria-checked').catch(() => null);
+          const stateTag = checked === 'true' ? 'on' : checked === 'false' ? 'off' : 'unknown';
+          await s26Shoot(page, sw, `s26-switch-analytics-${stateTag}-${combo.id}-${vp.tag}`, {
+            ...base,
+            control: 'מעקב אנליטיקה ויציבות switch',
+            pass,
+            verifiedAriaChecked: checked,
+            stateTag,
+            facts: await s26Facts(page, sel),
+          });
+        }
+      } else {
+        S26.push({ kind: 'missing', ...base, control: 'analytics switch', error: 'not in DOM' });
+      }
+      } finally {
+        await context.close();
+        await flushS26();
+      }
+    }
+  });
+}
+
+// ── GROUP 3: five bottom sheets, 390 and 1280, light and dark ─────────────
+//
+// At 1280 the bottomSheet content is `w-full max-w-lg` (512px) and centred
+// where it used to be full-bleed; the dialog rect makes that measurable.
+
+/** Drive a fresh guest into a live workout. Returns the flow actually taken. */
+async function s26EnterWorkout(page: Page): Promise<{ reached: boolean; flow: string[] }> {
+  const flow: string[] = [];
+  const overflow = page.getByRole('button', { name: 'עוד פעולות' });
+  const tryClick = async (loc: Locator, tag: string, waitMs = 2500) => {
+    if (await loc.first().isVisible().catch(() => false)) {
+      await loc
+        .first()
+        .click({ force: true, timeout: 5000 })
+        .catch(() => {});
+      await page.waitForTimeout(waitMs);
+      flow.push(tag);
+    }
+  };
+  await page.goto('/workout');
+  await page.waitForTimeout(2500);
+  for (let i = 0; i < 3; i++) {
+    if (await overflow.first().isVisible().catch(() => false)) break;
+    await tryClick(page.getByRole('button', { name: /התחילו בלי תבנית/ }), 'no-template', 2200);
+    await tryClick(
+      page.getByRole('button', { name: /התחל את האימון|התחל אימון|התחילו אימון/ }),
+      'start',
+      3000
+    );
+    if (await overflow.first().isVisible().catch(() => false)) break;
+    const rows = page.locator('[role="listitem"]');
+    if ((await rows.count()) > 1) {
+      for (const idx of [0, 1]) await tryClick(rows.nth(idx), `pick:row${idx}`, 500);
+    }
+    await tryClick(
+      page.getByRole('button', { name: /הוסיפו לאימון|התחל עם|התחל \(/ }),
+      'confirm',
+      2800
+    );
+    await tryClick(page.getByText('כללי', { exact: true }), 'goal');
+    await tryClick(page.getByRole('button', { name: /דלגו? על חימום/ }), 'skip-warmup', 3000);
+  }
+  const reached = await overflow
+    .first()
+    .isVisible()
+    .catch(() => false);
+  flow.push(`url=${new URL(page.url()).pathname}`);
+  return { reached, flow };
+}
+
+for (const vp of VIEWPORTS) {
+  test(`s26 g3 — five bottom sheets, light + dark @ ${vp.tag}`, async ({ browser }) => {
+    test.setTimeout(600_000);
+
+    for (const combo of COMBOS.filter((c) => !c.hc)) {
+      const { context, page } = await s26Open(browser, vp, combo, '/');
+      try {
+      const entry = await s26EnterWorkout(page);
+      const fp = await themeFingerprint(page);
+      const base = {
+        group: 'g3-bottom-sheets',
+        combo: combo.id,
+        viewport: vp.tag,
+        width: vp.width,
+        htmlClass: fp.htmlClass,
+        tokens: fp.tokens,
+      };
+      S26.push({ kind: 'workout-entry', ...base, ...entry });
+      await flushS26();
+      if (!entry.reached) continue;
+
+      await s26Shoot(page, page.locator('#main-content'), `s26-workout-live-${combo.id}-${vp.tag}`, {
+        ...base,
+        surface: 'live workout, before any sheet',
+        mainContent: await s26Main(page),
+      });
+
+      // Trigger table. `menu` triggers go through the overflow menu first.
+      const SHEETS: {
+        slug: string;
+        via: 'direct' | 'menu';
+        trigger: RegExp | string;
+        expect: string;
+      }[] = [
+        { slug: 'numpad', via: 'direct', trigger: /הקש לעריכה/, expect: 'מקלדת מספרים' },
+        { slug: 'reorder', via: 'direct', trigger: 'רשימת תרגילים', expect: 'סדר תרגילים' },
+        { slug: 'tools', via: 'direct', trigger: 'כלים נוספים לתרגיל', expect: 'כלים' },
+        { slug: 'add-exercise', via: 'direct', trigger: 'הוסף תרגיל', expect: '' },
+        { slug: 'workout-settings', via: 'menu', trigger: 'הגדרות', expect: '' },
+        { slug: 'tutorial', via: 'menu', trigger: 'מדריך', expect: '' },
+      ];
+
+      for (const s of SHEETS) {
+        // Make sure no sheet is already up.
+        await page.keyboard.press('Escape').catch(() => {});
+        await page.waitForTimeout(600);
+
+        let clicked = false;
+        if (s.via === 'menu') {
+          const of = page.getByRole('button', { name: 'עוד פעולות' }).first();
+          if (await of.isVisible().catch(() => false)) {
+            await of.click({ force: true }).catch(() => {});
+            await page.waitForTimeout(700);
+            const item = page.getByRole('menuitem', { name: s.trigger as string }).first();
+            if (await item.isVisible().catch(() => false)) {
+              await item.click({ force: true }).catch(() => {});
+              clicked = true;
+            }
+          }
+        } else {
+          const t = page.getByRole('button', { name: s.trigger }).first();
+          if (await t.isVisible().catch(() => false)) {
+            await t.click({ force: true }).catch(() => {});
+            clicked = true;
+          }
+        }
+        await page.waitForTimeout(1500);
+
+        const dialog = page.locator('[role="dialog"]');
+        const count = await dialog.count().catch(() => 0);
+        if (!clicked || count === 0) {
+          S26.push({
+            kind: 'sheet-miss',
+            ...base,
+            sheet: s.slug,
+            clicked,
+            dialogCount: count,
+            error: clicked ? 'no [role="dialog"] appeared' : 'trigger not visible',
+          });
+          continue;
+        }
+
+        // Label from what the DOM actually says, not from what we hoped for.
+        const verified = await page.evaluate(() => {
+          const d = document.querySelector('[role="dialog"]') as HTMLElement | null;
+          if (!d) return null;
+          const labelledBy = d.getAttribute('aria-labelledby');
+          const titleEl = labelledBy ? document.getElementById(labelledBy) : null;
+          return {
+            ariaLabel: d.getAttribute('aria-label'),
+            ariaLabelledByText: titleEl ? (titleEl.textContent ?? '').trim() : null,
+            headingText: (d.querySelector('h1,h2,h3') as HTMLElement | null)?.textContent?.trim() ?? null,
+            firstText: (d.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 120),
+          };
+        });
+        const name = `s26-sheet-${s.slug}-${combo.id}-${vp.tag}`;
+        await s26Shoot(page, dialog, name, {
+          ...base,
+          sheet: s.slug,
+          expectedLabel: s.expect || null,
+          verified,
+          labelMatchesExpectation: s.expect
+            ? verified?.ariaLabel === s.expect || verified?.ariaLabelledByText === s.expect
+            : null,
+          facts: await s26Facts(page, '[role="dialog"]'),
+          windowInnerWidth: await page.evaluate(() => window.innerWidth),
+        });
+        await flushS26();
+      }
+      } finally {
+        await context.close();
+        await flushS26();
+      }
+    }
+  });
+}
+
+test.afterAll(async () => {
+  await flushS26();
+});
