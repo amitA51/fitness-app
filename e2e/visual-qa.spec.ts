@@ -4,7 +4,7 @@
  * (light) and Obsidian (dark) so an agent can review coherence/contrast.
  * Output: ./visual-qa/*.png   Run: npx playwright test e2e/visual-qa.spec.ts --project="Mobile Chrome (Pixel 5)"
  */
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 async function setTheme(page: import('@playwright/test').Page, theme: 'light' | 'dark') {
   await page.evaluate((t) => {
@@ -75,7 +75,11 @@ test('capture main surfaces light + dark', async ({ page }) => {
   // 3) Walk the main routes directly; screenshot whatever renders.
   const routes: Array<[string, string]> = [
     ['/', '03-dashboard'],
-    ['/nutrition', '04-nutrition'],
+    /* /nutrition is gated (NUTRITION_TRAINEE_UI_ENABLED=false + NutritionGuard):
+       for a non-admin it REDIRECTS home, so this entry used to file a dashboard
+       screenshot under the name "04-nutrition" — evidence that lies. Kept, but
+       renamed to what it actually photographs: the redirect target. */
+    ['/nutrition', '04-nutrition-gate-redirect'],
     ['/progress', '05-progress'],
     ['/program', '06-program'],
     ['/templates', '07-templates'],
@@ -282,17 +286,13 @@ test('capture reachable overlays light + dark', async ({ page }) => {
     await page.waitForTimeout(400);
   }
 
-  // Nutrition goals editor (ערוך יעדים).
-  await page.goto('/nutrition');
-  await page.waitForTimeout(1800);
-  const editGoals = page.getByRole('button', { name: /ערוך יעדים/ }).first();
-  if (await editGoals.isVisible().catch(() => false)) {
-    await editGoals.click({ force: true }).catch(() => {});
-    await page.waitForTimeout(900);
-    await both(page, '31-goals-editor');
-    await page.keyboard.press('Escape').catch(() => {});
-    await page.waitForTimeout(400);
-  }
+  /* REMOVED: the nutrition goals editor (ערוך יעדים).
+     It lived behind /nutrition, which NUTRITION_TRAINEE_UI_ENABLED=false now
+     redirects home for every non-admin. The block still "passed": it navigated,
+     found no button, and filed the dashboard as 31-goals-editor. There is no
+     guest-reachable replacement for this overlay — capturing it needs an
+     app_admins session, which this suite has no way to mint — so it is deleted
+     rather than pointed at a lookalike. See reports/visual-qa-14bd.md. */
 
   // Settings — scroll to the backup/restore (export) section.
   await page.goto('/settings');
@@ -662,4 +662,930 @@ test('capture program warmup — skip-warmup-set button', async ({ page }) => {
   // The first SET of a program exercise is a warmup ⇒ the per-set
   // "דלג על סט החימום" affordance is shown (feature 1, already implemented).
   await both(page, '48-program-warmup-skip');
+});
+
+// ============================================================================
+// 14bd — HIGH-CONTRAST MATRIX + NEVER-PHOTOGRAPHED SURFACES
+// ============================================================================
+// Added for the visual-QA pass on 14b3dbd. Everything below MEASURES rendered
+// pixels rather than trusting the token arithmetic in tokens.css:
+//
+//   • the fill of a surface is the MODAL pixel colour of its element screenshot
+//   • its ink is the pixel colour, occupying >=0.8% of that element, with the
+//     greatest WCAG contrast against the fill (antialiasing fringe is below the
+//     floor and cannot win)
+//   • every ratio printed is computed from those two sampled colours
+//
+// Theme state is applied through the REAL product path — the `appSettings`
+// record SettingsContext owns (darkMode + workoutSettings.highContrast) — read,
+// mutated and written back so the stored shape is preserved, then reloaded so
+// the provider itself paints <html>. The classes are asserted afterwards, so a
+// combo that silently failed to apply fails the capture instead of filing a
+// mislabelled PNG.
+//
+// Viewports are 390x1500 / 1280x1500 because `fullPage: true` captures only the
+// first viewport in this app (the scrolling box is an inner MAIN, not the
+// document).
+// ============================================================================
+
+type Rgb = [number, number, number];
+
+interface Reading {
+  surface: string;
+  combo: string;
+  viewport: string;
+  png: string;
+  fill: string;
+  ink: string;
+  inkOnFill: number;
+  extra: Record<string, number>;
+  note?: string;
+}
+
+const READINGS: Reading[] = [];
+const MISSES: string[] = [];
+
+const COMBOS = [
+  { id: 'light', dark: false, hc: false },
+  { id: 'light-hc', dark: false, hc: true },
+  { id: 'dark', dark: true, hc: false },
+  { id: 'dark-hc', dark: true, hc: true },
+] as const;
+
+const VIEWPORTS = [
+  { tag: '390', width: 390, height: 1500 },
+  { tag: '1280', width: 1280, height: 1500 },
+] as const;
+
+function channelLum(c: number): number {
+  const s = c / 255;
+  return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+}
+
+function luminance([r, g, b]: Rgb): number {
+  return 0.2126 * channelLum(r) + 0.7152 * channelLum(g) + 0.0722 * channelLum(b);
+}
+
+/** WCAG 2.x contrast ratio, rounded to 2dp. */
+function contrast(a: Rgb, b: Rgb): number {
+  const la = luminance(a);
+  const lb = luminance(b);
+  const hi = Math.max(la, lb);
+  const lo = Math.min(la, lb);
+  return Math.round(((hi + 0.05) / (lo + 0.05)) * 100) / 100;
+}
+
+function toHex([r, g, b]: Rgb): string {
+  return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/**
+ * Modal fill + the extreme significant colours, sampled from real pixels.
+ *
+ * `ink` is the significant colour with the greatest contrast against the fill.
+ * `inkShare` is published alongside it because on a wide element with small
+ * text the glyph core is a genuinely tiny fraction of the pixels — a low share
+ * means "this is a thin figure", not "this measurement is wrong", and a share
+ * at the floor means the ink may be an antialiasing fringe rather than the
+ * declared colour. Nothing downstream has to guess.
+ */
+async function palette(buf: Buffer): Promise<{
+  fill: Rgb;
+  fillShare: number;
+  ink: Rgb;
+  inkOnFill: number;
+  inkShare: number;
+  darkest: Rgb;
+  lightest: Rgb;
+}> {
+  const sharpMod = (await import('sharp')).default;
+  const { data, info } = await sharpMod(buf).raw().toBuffer({ resolveWithObject: true });
+  const ch = info.channels;
+  const total = info.width * info.height;
+  const counts = new Map<string, number>();
+  for (let i = 0; i + ch - 1 < data.length; i += ch) {
+    const key = `${data[i]},${data[i + 1]},${data[i + 2]}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const parse = (k: string): Rgb => {
+    const [r, g, b] = k.split(',').map(Number);
+    return [r ?? 0, g ?? 0, b ?? 0];
+  };
+  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  const fill = parse(sorted[0]?.[0] ?? '0,0,0');
+  const fillShare = Math.round(((sorted[0]?.[1] ?? 0) / total) * 1000) / 1000;
+  const SIGNIFICANT = 0.005;
+  let ink = fill;
+  let best = 1;
+  let inkShare = fillShare;
+  let darkest = fill;
+  let lightest = fill;
+  for (const [key, n] of sorted) {
+    if (n / total < SIGNIFICANT) continue;
+    const c = parse(key);
+    const r = contrast(c, fill);
+    if (r > best) {
+      best = r;
+      ink = c;
+      inkShare = Math.round((n / total) * 1000) / 1000;
+    }
+    if (luminance(c) < luminance(darkest)) darkest = c;
+    if (luminance(c) > luminance(lightest)) lightest = c;
+  }
+  return { fill, fillShare, ink, inkOnFill: best, inkShare, darkest, lightest };
+}
+
+/** Apply a theme combo the way the product does, then prove it landed. */
+async function applyCombo(
+  page: import('@playwright/test').Page,
+  combo: { id: string; dark: boolean; hc: boolean }
+): Promise<void> {
+  await page.evaluate(
+    ({ dark, hc }) => {
+      let stored: Record<string, unknown> = {};
+      try {
+        stored = JSON.parse(localStorage.getItem('appSettings') ?? '{}');
+      } catch {
+        stored = {};
+      }
+      const workout = (stored.workoutSettings ?? {}) as Record<string, unknown>;
+      localStorage.setItem(
+        'appSettings',
+        JSON.stringify({ ...stored, darkMode: dark, workoutSettings: { ...workout, highContrast: hc } })
+      );
+    },
+    { dark: combo.dark, hc: combo.hc }
+  );
+  await page.reload();
+  await page.waitForTimeout(1400);
+  const applied = await page.evaluate(() => ({
+    dark: document.documentElement.classList.contains('dark'),
+    hc: document.documentElement.classList.contains('high-contrast'),
+  }));
+  expect(applied, `combo ${combo.id} must actually be on <html>`).toEqual({
+    dark: combo.dark,
+    hc: combo.hc,
+  });
+}
+
+/** Resolved token values — exact, and a cross-check on the sampled pixels. */
+async function tokenSnapshot(page: import('@playwright/test').Page): Promise<Record<string, string>> {
+  return page.evaluate(() => {
+    const cs = getComputedStyle(document.documentElement);
+    const names = [
+      '--fs-bg',
+      '--fs-surface',
+      '--fs-surface-2',
+      '--fs-ink',
+      '--fs-accent',
+      '--fs-plate',
+      '--nav-pill-bg',
+      '--nav-pill-text',
+      '--nav-bg',
+      '--btn-primary-bg',
+      '--btn-primary-text',
+      '--btn-primary-bg-hover',
+      '--color-surface-hover',
+      '--fs-link',
+      '--color-ink-on-accent',
+    ];
+    const out: Record<string, string> = {};
+    for (const n of names) out[n] = cs.getPropertyValue(n).trim();
+    return out;
+  });
+}
+
+async function shootEl(
+  page: import('@playwright/test').Page,
+  locator: import('@playwright/test').Locator,
+  surface: string,
+  combo: string,
+  viewport: string,
+  extra: Record<string, Rgb> = {}
+): Promise<Rgb | null> {
+  const el = locator.first();
+  if (!(await el.isVisible().catch(() => false))) {
+    MISSES.push(`${surface} @ ${combo}/${viewport}: element not visible`);
+    return null;
+  }
+  await el.scrollIntoViewIfNeeded().catch(() => {});
+  const png = `hc-${surface}-${combo}-${viewport}.png`;
+  const buf = await el.screenshot({ path: `visual-qa/${png}` });
+  const p = await palette(buf);
+  const ratios: Record<string, number> = {};
+  for (const [label, ref] of Object.entries(extra)) ratios[label] = contrast(p.fill, ref);
+  ratios.fillShare = p.fillShare;
+  ratios.inkShare = p.inkShare;
+  ratios.darkestOnFill = contrast(p.darkest, p.fill);
+  ratios.lightestOnFill = contrast(p.lightest, p.fill);
+  READINGS.push({
+    surface,
+    combo,
+    viewport,
+    png,
+    fill: toHex(p.fill),
+    ink: `${toHex(p.ink)} (dark ${toHex(p.darkest)} / light ${toHex(p.lightest)})`,
+    inkOnFill: p.inkOnFill,
+    extra: ratios,
+  });
+  return p.fill;
+}
+
+/** Modal colour of an arbitrary viewport band — used for "the surface behind X". */
+async function sampleBand(
+  page: import('@playwright/test').Page,
+  box: { x: number; y: number; width: number; height: number }
+): Promise<Rgb | null> {
+  const vp = page.viewportSize();
+  if (!vp) return null;
+  const clip = {
+    x: Math.max(0, Math.min(box.x, vp.width - 2)),
+    y: Math.max(0, Math.min(box.y, vp.height - 2)),
+    width: Math.max(2, Math.min(box.width, vp.width - box.x)),
+    height: Math.max(2, Math.min(box.height, vp.height - box.y)),
+  };
+  const buf = await page.screenshot({ clip });
+  return (await palette(buf)).fill;
+}
+
+async function flushReadings(tag: string): Promise<void> {
+  const fs = await import('node:fs');
+  fs.mkdirSync('visual-qa', { recursive: true });
+  fs.writeFileSync(
+    `visual-qa/measure-${tag}.json`,
+    JSON.stringify({ commit: '14b3dbd', tag, readings: READINGS, misses: MISSES }, null, 2),
+    'utf8'
+  );
+}
+
+/** Guest seed + a clean slate: no persisted workout can resume under a capture. */
+async function seedFixture(page: import('@playwright/test').Page): Promise<void> {
+  await page.goto('/');
+  await page.evaluate(async () => {
+    localStorage.clear();
+    // Every IndexedDB store, not just the app's own — an orphaned db from an
+    // earlier combo is exactly how a stale in-progress workout resurfaces.
+    const dbs = (await indexedDB.databases?.()) ?? [];
+    await Promise.all(
+      dbs.map(
+        (d) =>
+          new Promise<void>((resolve) => {
+            if (!d.name) return resolve();
+            const req = indexedDB.deleteDatabase(d.name);
+            req.onsuccess = () => resolve();
+            req.onerror = () => resolve();
+            req.onblocked = () => resolve();
+          })
+      )
+    );
+  });
+  await seedGuest(page);
+}
+
+/** Local (not UTC) date key — the week strip keys cells by local calendar day. */
+function localDay(offsetDays = 0): string {
+  const d = new Date();
+  d.setDate(d.getDate() - offsetDays);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+async function putRecords(
+  page: import('@playwright/test').Page,
+  store: string,
+  records: unknown[]
+): Promise<void> {
+  await page.evaluate(
+    ({ store, records }) =>
+      new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open('sparkos-fitness-db');
+        open.onsuccess = () => {
+          const db = open.result;
+          if (!db.objectStoreNames.contains(store)) {
+            db.close();
+            return reject(new Error(`missing store ${store}`));
+          }
+          const tx = db.transaction(store, 'readwrite');
+          const os = tx.objectStore(store);
+          for (const r of records) os.put(r);
+          tx.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+          tx.onerror = () => reject(tx.error);
+        };
+        open.onerror = () => reject(open.error);
+      }),
+    { store, records }
+  );
+}
+
+function completedSession(id: string, date: string) {
+  return {
+    id,
+    date,
+    startTime: `${date}T09:00:00.000Z`,
+    endTime: `${date}T10:00:00.000Z`,
+    status: 'completed',
+    duration: 3300,
+    totalVolume: 4200,
+    exercises: [
+      {
+        id: 'e1',
+        exerciseId: 'bench',
+        exerciseName: 'Bench Press',
+        targetMuscle: 'Chest',
+        notes: '',
+        restSeconds: 90,
+        isCompleted: true,
+        order: 0,
+        sets: [
+          { setNumber: 1, reps: 8, weight: 60, isCompleted: true },
+          { setNumber: 2, reps: 8, weight: 62.5, isCompleted: true },
+        ],
+      },
+      {
+        id: 'e2',
+        exerciseId: 'squat',
+        exerciseName: 'Squat',
+        targetMuscle: 'Legs',
+        notes: '',
+        restSeconds: 120,
+        isCompleted: true,
+        order: 1,
+        sets: [{ setNumber: 1, reps: 5, weight: 100, isCompleted: true }],
+      },
+    ],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// A) Home: week strip, bottom-nav selected pill, interactive-card hover
+// ---------------------------------------------------------------------------
+test('14bd — home, week strip, nav pill, card hover across the 4 theme states', async ({ page }) => {
+  test.setTimeout(900_000);
+  const errors: string[] = [];
+  page.on('console', (m) => {
+    if (m.type() === 'error') errors.push(m.text());
+  });
+
+  await seedFixture(page);
+  // A trained day so `.day-cell.done` exists to be photographed.
+  await putRecords(page, 'workout_sessions', [completedSession('qa-today', localDay(0))]);
+
+  for (const vp of VIEWPORTS) {
+    await page.setViewportSize({ width: vp.width, height: vp.height });
+    for (const combo of COMBOS) {
+      await page.goto('/');
+      await applyCombo(page, combo);
+      expect(new URL(page.url()).pathname, 'home capture must be on /').toBe('/');
+
+      const tokens = await tokenSnapshot(page);
+      const fs = await import('node:fs');
+      fs.mkdirSync('visual-qa', { recursive: true });
+      fs.writeFileSync(
+        `visual-qa/tokens-${combo.id}.json`,
+        JSON.stringify(tokens, null, 2),
+        'utf8'
+      );
+
+      // Create a planned REST day through the real affordance: tap an untrained
+      // cell. This is the state whose polarity was inverted in light+HC.
+      // Only when none exists yet — clicking once per combo would eat every
+      // empty cell in the row and leave nothing to sample as "empty".
+      if ((await page.locator('.day-cell.rest').count()) === 0) {
+        const untrained = page.locator('.day-cell:not(.done):not(.rest)');
+        if ((await untrained.count()) > 1) {
+          await untrained.first().click({ force: true }).catch(() => {});
+          await page.waitForTimeout(600);
+        }
+      }
+
+      await page.screenshot({ path: `visual-qa/hc-home-${combo.id}-${vp.tag}.png` });
+
+      // The card behind the strip: a band just under the grid, inside the card.
+      const grid = page.locator('.day-cell').first();
+      const gridBox = await grid.boundingBox();
+      let cardBg: Rgb | null = null;
+      if (gridBox) {
+        cardBg = await sampleBand(page, {
+          x: gridBox.x + 2,
+          y: gridBox.y + gridBox.height + 6,
+          width: Math.max(40, gridBox.width * 4),
+          height: 6,
+        });
+      }
+
+      const trained = await shootEl(page, page.locator('.day-cell.done'), 'daycell-done', combo.id, vp.tag, cardBg ? { vsCard: cardBg } : {});
+      const rest = await shootEl(page, page.locator('.day-cell.rest'), 'daycell-rest', combo.id, vp.tag, cardBg ? { vsCard: cardBg } : {});
+      const empty = await shootEl(page, page.locator('.day-cell:not(.done):not(.rest)'), 'daycell-empty', combo.id, vp.tag, cardBg ? { vsCard: cardBg } : {});
+
+      // The three-state polarity claim: trained brightest, rest middle, empty darkest.
+      if (trained && rest && empty) {
+        READINGS.push({
+          surface: 'weekstrip-polarity',
+          combo: combo.id,
+          viewport: vp.tag,
+          png: `hc-home-${combo.id}-${vp.tag}.png`,
+          fill: `${toHex(trained)}|${toHex(rest)}|${toHex(empty)}`,
+          ink: '-',
+          inkOnFill: 0,
+          extra: {
+            trainedVsRest: contrast(trained, rest),
+            restVsEmpty: contrast(rest, empty),
+            trainedVsEmpty: contrast(trained, empty),
+            lumTrained: Math.round(luminance(trained) * 10000) / 10000,
+            lumRest: Math.round(luminance(rest) * 10000) / 10000,
+            lumEmpty: Math.round(luminance(empty) * 10000) / 10000,
+          },
+          note: 'polarity is correct only when lumTrained > lumRest > lumEmpty',
+        });
+      }
+
+      // Bottom nav: the selected pill, and the bar it sits on.
+      const navInactive = page.locator('nav a:not([aria-current="page"])');
+      const barBg = await shootEl(page, navInactive, 'nav-inactive', combo.id, vp.tag);
+      // The inactive icon + label are thin glyphs: every one of their pixel
+      // colours sits below the 0.5% significance floor, so the pixel pass cannot
+      // see them and reports ink==fill. Settle those two with computed colours
+      // measured against the SAMPLED bar fill.
+      if (barBg && (await navInactive.first().isVisible().catch(() => false))) {
+        const inks = await navInactive.first().evaluate((el) => {
+          const seen = new Set<string>();
+          for (const node of [el, ...Array.from(el.querySelectorAll('*'))]) {
+            const c = getComputedStyle(node as Element).color;
+            if (c) seen.add(c);
+          }
+          return [...seen];
+        });
+        for (const [i, raw] of inks.slice(0, 3).entries()) {
+          const m = raw.match(/\d+(\.\d+)?/g) ?? [];
+          const rgb: Rgb = [Number(m[0] ?? 0), Number(m[1] ?? 0), Number(m[2] ?? 0)];
+          READINGS.push({
+            surface: `nav-inactive-computed-${i}`,
+            combo: combo.id,
+            viewport: vp.tag,
+            png: `hc-nav-inactive-${combo.id}-${vp.tag}.png`,
+            fill: toHex(barBg),
+            ink: toHex(rgb),
+            inkOnFill: contrast(rgb, barBg),
+            extra: {},
+            note: 'computed colour vs sampled bar fill (glyph too thin to sample)',
+          });
+        }
+      }
+      await shootEl(
+        page,
+        page.locator('[style*="nav-pill-bg"]'),
+        'nav-pill',
+        combo.id,
+        vp.tag,
+        barBg ? { vsBar: barBg } : {}
+      );
+      const nav = page.locator('nav').first();
+      const navBox = await nav.boundingBox();
+      if (navBox) {
+        await page.screenshot({
+          path: `visual-qa/hc-navbar-${combo.id}-${vp.tag}.png`,
+          clip: navBox,
+        });
+      }
+
+      // Interactive card hover — --color-surface-hover.
+      // `.card-interactive` is defined in components.css/global.css but applied
+      // by NO tsx in src/, so a selector-based capture would just report "not
+      // found" and prove nothing. Instead: hover the real interactive cards on
+      // home and diff the sampled fill. A zero delta is the finding.
+      const hoverTargets = page.locator(
+        'main a[class*="card"], main button[class*="card"], main a[class*="glass"], main button[class*="glass"]'
+      );
+      const hoverCount = await hoverTargets.count();
+      if (hoverCount > 0) {
+        const target = hoverTargets.first();
+        await target.scrollIntoViewIfNeeded().catch(() => {});
+        await page.waitForTimeout(200);
+        const beforeBuf = await target.screenshot();
+        const before = (await palette(beforeBuf)).fill;
+        await target.hover().catch(() => {});
+        await page.waitForTimeout(500);
+        const afterFill = await shootEl(page, target, 'card-hover', combo.id, vp.tag, {
+          vsResting: before,
+        });
+        const cls = (await target.getAttribute('class')) ?? '';
+        READINGS.push({
+          surface: 'card-hover-delta',
+          combo: combo.id,
+          viewport: vp.tag,
+          png: `hc-card-hover-${combo.id}-${vp.tag}.png`,
+          fill: `${toHex(before)}->${afterFill ? toHex(afterFill) : 'n/a'}`,
+          ink: '-',
+          inkOnFill: 0,
+          extra: { changed: afterFill && toHex(afterFill) !== toHex(before) ? 1 : 0 },
+          note: `hovered ${cls.slice(0, 90)}; card-interactive is applied by no tsx, so --color-surface-hover may have no consumer`,
+        });
+      } else {
+        const inventory = await page.evaluate(() => {
+          const out: string[] = [];
+          for (const el of Array.from(
+            document.querySelectorAll('main a, main button, main [role="button"], main [onclick]')
+          ).slice(0, 40)) {
+            const cls = (el.getAttribute('class') ?? '').slice(0, 70);
+            out.push(`${el.tagName.toLowerCase()}:${cls}`);
+          }
+          return out;
+        });
+        MISSES.push(
+          `card-hover @ ${combo.id}/${vp.tag}: no interactive card element on /; inventory=${JSON.stringify(inventory.slice(0, 14))}`
+        );
+      }
+    }
+  }
+
+  await flushReadings('home');
+  console.log(`HC_HOME_CONSOLE_ERRORS:${JSON.stringify(errors.slice(0, 25))}`);
+});
+
+// ---------------------------------------------------------------------------
+// B) Progress tab row, primary CTA (resting + pressed), Settings toggle
+// ---------------------------------------------------------------------------
+test('14bd — active tab, primary CTA resting/pressed, settings toggle ON/OFF', async ({ page }) => {
+  test.setTimeout(900_000);
+  const errors: string[] = [];
+  page.on('console', (m) => {
+    if (m.type() === 'error') errors.push(m.text());
+  });
+
+  await seedFixture(page);
+
+  for (const vp of VIEWPORTS) {
+    await page.setViewportSize({ width: vp.width, height: vp.height });
+    for (const combo of COMBOS) {
+      // --- Progress tab row ---
+      // NOT `.tab-row .tab.active`: that class pair is live only in the numpad
+      // overlay and the post-workout summary. The Progress tab bar is
+      // role="tab" buttons with `background:'none'` — selection is carried by
+      // ink colour + weight, so the figure that matters is label vs surface.
+      await page.goto('/progress');
+      await applyCombo(page, combo);
+      await page.waitForTimeout(600);
+      await page.screenshot({ path: `visual-qa/hc-progress-${combo.id}-${vp.tag}.png` });
+      const inactiveTab = await shootEl(
+        page,
+        page.locator('[role="tab"][aria-selected="false"]'),
+        'tab-inactive',
+        combo.id,
+        vp.tag
+      );
+      await shootEl(
+        page,
+        page.locator('[role="tab"][aria-selected="true"]'),
+        'tab-active',
+        combo.id,
+        vp.tag,
+        inactiveTab ? { vsTrack: inactiveTab } : {}
+      );
+
+      // --- Primary CTA (Button.tsx variant=primary — the ONLY consumer of
+      //     --btn-primary-bg-hover, which is the pressed-CTA token) ---
+      // `:not([disabled])` matters: the MyCoach connect CTA is disabled until a
+      // code is typed, and a disabled Button renders at opacity .4, so sampling
+      // it measures the disabled treatment (exempt from contrast minimums) and
+      // never changes on press. Type a code first, then require an enabled one.
+      let ctaRoute = '';
+      const cta = page.locator(
+        'button[class*="btn-primary-bg)"]:not([disabled]), a[class*="btn-primary-bg)"]:not([disabled])'
+      );
+      for (const route of ['/my-coach', '/settings', '/templates', '/community', '/progress', '/']) {
+        await page.goto(route);
+        await page.waitForTimeout(1600);
+        if (route === '/my-coach') {
+          const codeInput = page.locator('main input[type="text"], main input:not([type])').first();
+          if (await codeInput.isVisible().catch(() => false)) {
+            await codeInput.fill('QA14BD').catch(() => {});
+            await page.waitForTimeout(400);
+          }
+        }
+        if ((await cta.count()) > 0 && (await cta.first().isVisible().catch(() => false))) {
+          ctaRoute = route;
+          break;
+        }
+      }
+      if (ctaRoute) {
+        const pageBg = await sampleBand(page, { x: 4, y: 4, width: 40, height: 6 });
+        // Park the pointer off the control FIRST. Playwright's fill() leaves the
+        // mouse where it clicked and mouse.up() leaves it on the button, so
+        // without this the "resting" sample is really the :hover fill — which is
+        // exactly how a press that changes nothing can look like a pass.
+        await page.mouse.move(2, 2);
+        await page.waitForTimeout(350);
+        await shootEl(page, cta, 'cta-resting', combo.id, vp.tag, pageBg ? { vsPage: pageBg } : {});
+        const box = await cta.first().boundingBox();
+        if (box) {
+          // --btn-primary-bg-hover backs BOTH :hover and :active on this Button,
+          // so hover is sampled separately: it tells apart "the press does
+          // nothing" from "the press does nothing the hover had not already done".
+          await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+          await page.waitForTimeout(400);
+          await shootEl(page, cta, 'cta-hover', combo.id, vp.tag, pageBg ? { vsPage: pageBg } : {});
+          await page.mouse.down();
+          await page.waitForTimeout(400);
+          const pressed = await shootEl(page, cta, 'cta-pressed', combo.id, vp.tag, pageBg ? { vsPage: pageBg } : {});
+          await page.mouse.up();
+          await page.mouse.move(2, 2);
+          const rest = READINGS.find(
+            (r) => r.surface === 'cta-resting' && r.combo === combo.id && r.viewport === vp.tag
+          );
+          if (pressed && rest) {
+            READINGS.push({
+              surface: 'cta-press-delta',
+              combo: combo.id,
+              viewport: vp.tag,
+              png: `hc-cta-pressed-${combo.id}-${vp.tag}.png`,
+              fill: `${rest.fill}->${toHex(pressed)}`,
+              ink: '-',
+              inkOnFill: 0,
+              extra: { pressedVsResting: contrast(pressed, hexToRgb(rest.fill)) },
+              note: `route ${ctaRoute}; press must be perceptible (>=3:1 is the house floor cited in tokens.css)`,
+            });
+          }
+        }
+      } else {
+        MISSES.push(`cta @ ${combo.id}/${vp.tag}: no Button variant=primary found on any probed route`);
+      }
+
+      // --- Settings toggle, ON and OFF ---
+      await page.goto('/settings');
+      await page.waitForTimeout(1800);
+      await page.screenshot({ path: `visual-qa/hc-settings-${combo.id}-${vp.tag}.png` });
+      const switches = page.locator('button[role="switch"]');
+      const n = await switches.count();
+      let offIdx = -1;
+      let onIdx = -1;
+      for (let i = 0; i < n; i++) {
+        const checked = await switches.nth(i).getAttribute('aria-checked');
+        if (checked === 'false' && offIdx < 0) offIdx = i;
+        if (checked === 'true' && onIdx < 0) onIdx = i;
+      }
+      // Sample the 52x32 VISUAL track (the aria-hidden span), not the >=44px tap
+      // target: the tap target's modal pixel is the card behind it, which made
+      // ON and OFF measure identically. Inside the track span the fill IS the
+      // track and the highest-contrast significant colour IS the knob.
+      if (offIdx >= 0) {
+        await shootEl(
+          page,
+          switches.nth(offIdx).locator('span[aria-hidden="true"]'),
+          'toggle-off',
+          combo.id,
+          vp.tag
+        );
+      } else {
+        MISSES.push(`toggle-off @ ${combo.id}/${vp.tag}: no unchecked switch in Settings`);
+      }
+      if (onIdx < 0 && offIdx >= 0) {
+        // Turn one on so the ON state is photographable.
+        await switches.nth(offIdx).click({ force: true }).catch(() => {});
+        await page.waitForTimeout(600);
+        onIdx = offIdx;
+      }
+      if (onIdx >= 0) {
+        await shootEl(
+          page,
+          switches.nth(onIdx).locator('span[aria-hidden="true"]'),
+          'toggle-on',
+          combo.id,
+          vp.tag
+        );
+      } else {
+        MISSES.push(`toggle-on @ ${combo.id}/${vp.tag}: no checked switch in Settings`);
+      }
+    }
+  }
+
+  await flushReadings('controls');
+  console.log(`HC_CONTROLS_CONSOLE_ERRORS:${JSON.stringify(errors.slice(0, 25))}`);
+});
+
+function hexToRgb(hex: string): Rgb {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex.trim());
+  if (!m) return [0, 0, 0];
+  return [Number.parseInt(m[1] ?? '0', 16), Number.parseInt(m[2] ?? '0', 16), Number.parseInt(m[3] ?? '0', 16)];
+}
+
+// ---------------------------------------------------------------------------
+// C) ReadinessReadingCard — both states, and the קריאה חלקית badge
+// ---------------------------------------------------------------------------
+test('14bd — ReadinessReadingCard: with a reading and with none', async ({ page }) => {
+  test.setTimeout(900_000);
+  const errors: string[] = [];
+  page.on('console', (m) => {
+    if (m.type() === 'error') errors.push(m.text());
+  });
+  const httpFailures: string[] = [];
+  page.on('response', (r) => {
+    if (r.status() >= 400) {
+      const u = new URL(r.url());
+      httpFailures.push(`${r.status()} ${u.host}${u.pathname}`);
+    }
+  });
+  const log: string[] = [];
+
+  await seedFixture(page);
+
+  const openRecoveryTab = async (): Promise<void> => {
+    await page.goto('/progress');
+    await page.waitForTimeout(2000);
+    const tab = page
+      .getByRole('tab', { name: 'התאוששות' })
+      .or(page.getByRole('button', { name: 'התאוששות' }))
+      .first();
+    if (await tab.isVisible().catch(() => false)) {
+      await tab.click({ force: true }).catch(() => {});
+      await page.waitForTimeout(1600);
+    } else {
+      MISSES.push('recovery tab: no התאוששות tab found on /progress');
+    }
+  };
+
+  // ---- STATE 1: NO recovery log. The card must show no score and no "/ 100".
+  await putRecords(page, 'workout_sessions', [completedSession('qa-empty-1', localDay(1))]);
+  for (const vp of VIEWPORTS) {
+    await page.setViewportSize({ width: vp.width, height: vp.height });
+    for (const combo of COMBOS) {
+      await page.goto('/progress');
+      await applyCombo(page, combo);
+      await openRecoveryTab();
+      const card = page.locator('div').filter({ hasText: 'אין עדיין קריאת מוכנות' }).last();
+      if (await card.isVisible().catch(() => false)) {
+        await card.scrollIntoViewIfNeeded().catch(() => {});
+        await page.waitForTimeout(300);
+        await card.screenshot({ path: `visual-qa/hc-readiness-empty-${combo.id}-${vp.tag}.png` });
+        const text = (await card.textContent()) ?? '';
+        log.push(
+          `empty ${combo.id}/${vp.tag}: hasSlash100=${/\/\s*100/.test(text)} hasHedgeBadge=${text.includes('קריאה חלקית')}`
+        );
+        // The whole point of the card: no number is printed without a log.
+        expect(text, 'empty readiness state must not print /100').not.toMatch(/\/\s*100/);
+      } else {
+        MISSES.push(`readiness-empty @ ${combo.id}/${vp.tag}: empty-state card not found`);
+      }
+      await page.screenshot({ path: `visual-qa/hc-recoverytab-empty-${combo.id}-${vp.tag}.png` });
+    }
+  }
+
+  // ---- STATE 2: a recovery log exists -> score + recommendation + badge.
+  await page.setViewportSize({ width: 390, height: 1500 });
+  await page.goto('/progress');
+  await putRecords(page, 'recovery_logs', [
+    {
+      id: '5f1c1d64-4a5e-4f6a-9c1e-2b7d9a0e1f11',
+      date: localDay(0),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      sleepHours: 7.5,
+      sleepQuality: 4,
+      sorenessLevel: 4,
+      energyLevel: 4,
+      stressLevel: 3,
+      tightAreas: [],
+    },
+  ]);
+  await putRecords(page, 'workout_sessions', [
+    completedSession('qa-load-1', localDay(1)),
+    completedSession('qa-load-2', localDay(3)),
+  ]);
+
+  for (const vp of VIEWPORTS) {
+    await page.setViewportSize({ width: vp.width, height: vp.height });
+    for (const combo of COMBOS) {
+      await page.goto('/progress');
+      await applyCombo(page, combo);
+      await openRecoveryTab();
+      const card = page.locator('div').filter({ hasText: 'קריאת מוכנות' }).last();
+      if (await card.isVisible().catch(() => false)) {
+        await card.scrollIntoViewIfNeeded().catch(() => {});
+        await page.waitForTimeout(300);
+        await card.screenshot({ path: `visual-qa/hc-readiness-data-${combo.id}-${vp.tag}.png` });
+        const text = (await card.textContent()) ?? '';
+        log.push(`data ${combo.id}/${vp.tag}: hasSlash100=${/\/\s*100/.test(text)} partial=${text.includes('קריאה חלקית')}`);
+      } else {
+        MISSES.push(`readiness-data @ ${combo.id}/${vp.tag}: card not found`);
+      }
+      // The badge whose contrast has never been measured.
+      const badge = page.getByText('קריאה חלקית', { exact: true }).first();
+      if (await badge.isVisible().catch(() => false)) {
+        const bBox = await badge.boundingBox();
+        let behind: Rgb | null = null;
+        if (bBox) {
+          behind = await sampleBand(page, {
+            x: bBox.x,
+            y: bBox.y + bBox.height + 8,
+            width: Math.max(40, bBox.width),
+            height: 5,
+          });
+        }
+        await shootEl(page, badge, 'partial-badge', combo.id, vp.tag, behind ? { vsCard: behind } : {});
+
+        // The badge glyph is ~0.6% of the pill, so the DARKEST SAMPLED colour can
+        // be an antialiased mid-tone rather than the declared one. Settle it: take
+        // the computed text colour (exact) against the sampled pill fill (real
+        // pixels). This is the figure to quote for an 11px label.
+        const computed = await badge.evaluate((el) => {
+          const cs = getComputedStyle(el);
+          const parse = (v: string): [number, number, number] => {
+            const m = v.match(/\d+(\.\d+)?/g) ?? [];
+            return [Number(m[0] ?? 0), Number(m[1] ?? 0), Number(m[2] ?? 0)];
+          };
+          return { color: parse(cs.color), bg: parse(cs.backgroundColor), fontSize: cs.fontSize };
+        });
+        const badgeFill = READINGS.find(
+          (r) => r.surface === 'partial-badge' && r.combo === combo.id && r.viewport === vp.tag
+        );
+        if (badgeFill) {
+          READINGS.push({
+            surface: 'partial-badge-computed',
+            combo: combo.id,
+            viewport: vp.tag,
+            png: badgeFill.png,
+            fill: `${toHex(computed.bg)} (sampled ${badgeFill.fill})`,
+            ink: toHex(computed.color),
+            inkOnFill: contrast(computed.color, hexToRgb(badgeFill.fill)),
+            extra: { computedOnComputed: contrast(computed.color, computed.bg) },
+            note: `fontSize ${computed.fontSize}; AA for this size needs 4.5:1`,
+          });
+        }
+      } else {
+        MISSES.push(`partial-badge @ ${combo.id}/${vp.tag}: badge not rendered`);
+      }
+      await page.screenshot({ path: `visual-qa/hc-recoverytab-data-${combo.id}-${vp.tag}.png` });
+    }
+  }
+
+  await flushReadings('readiness');
+  console.log(`HC_READINESS_LOG:${JSON.stringify(log)}`);
+  console.log(`HC_READINESS_CONSOLE_ERRORS:${JSON.stringify(errors.slice(0, 25))}`);
+  console.log(`HC_HTTP_FAILURES:${JSON.stringify([...new Set(httpFailures)].slice(0, 20))}`);
+});
+
+// ---------------------------------------------------------------------------
+// D) The two gates: hidden nutrition, admin-only paywall
+// ---------------------------------------------------------------------------
+test('14bd — gates: no תזונה tab, /nutrition redirects, no פרימיום row, /paywall redirects', async ({
+  page,
+}) => {
+  test.setTimeout(600_000);
+  const findings: string[] = [];
+  await seedFixture(page);
+
+  for (const vp of VIEWPORTS) {
+    await page.setViewportSize({ width: vp.width, height: vp.height });
+    for (const combo of COMBOS) {
+      await page.goto('/');
+      await applyCombo(page, combo);
+
+      // 1) The trainee bottom nav must not carry a תזונה tab.
+      const navNutrition = page.locator('nav').getByText('תזונה', { exact: true });
+      const navCount = await navNutrition.count();
+      findings.push(`${combo.id}/${vp.tag} nav-nutrition-count=${navCount}`);
+      expect(navCount, 'bottom nav must have no תזונה tab for a non-admin').toBe(0);
+      const nav = page.locator('nav').first();
+      const navBox = await nav.boundingBox();
+      if (navBox) {
+        await page.screenshot({
+          path: `visual-qa/gate-nav-no-nutrition-${combo.id}-${vp.tag}.png`,
+          clip: navBox,
+        });
+      }
+
+      // 2) /nutrition must not open.
+      await page.goto('/nutrition');
+      await page.waitForTimeout(1800);
+      const nutritionPath = new URL(page.url()).pathname;
+      findings.push(`${combo.id}/${vp.tag} /nutrition -> ${nutritionPath}`);
+      await page.screenshot({
+        path: `visual-qa/gate-nutrition-redirect-${combo.id}-${vp.tag}.png`,
+      });
+      expect(nutritionPath, '/nutrition must redirect for a non-admin').not.toBe('/nutrition');
+
+      // 3) Settings must not show the פרימיום row.
+      await page.goto('/settings');
+      await page.waitForTimeout(2000);
+      const premium = page.getByText('פרימיום', { exact: false });
+      const premiumCount = await premium.count();
+      findings.push(`${combo.id}/${vp.tag} premium-row-count=${premiumCount}`);
+      await page.screenshot({ path: `visual-qa/gate-settings-no-premium-${combo.id}-${vp.tag}.png` });
+      expect(premiumCount, 'Settings must not show the פרימיום row for a non-admin').toBe(0);
+
+      // 4) /paywall must redirect.
+      await page.goto('/paywall');
+      await page.waitForTimeout(2000);
+      const paywallPath = new URL(page.url()).pathname;
+      findings.push(`${combo.id}/${vp.tag} /paywall -> ${paywallPath}`);
+      await page.screenshot({ path: `visual-qa/gate-paywall-redirect-${combo.id}-${vp.tag}.png` });
+      expect(paywallPath, '/paywall must redirect for a non-admin').not.toBe('/paywall');
+    }
+  }
+
+  const fs = await import('node:fs');
+  fs.mkdirSync('visual-qa', { recursive: true });
+  fs.writeFileSync('visual-qa/gates-14bd.json', JSON.stringify({ commit: '14b3dbd', findings }, null, 2), 'utf8');
+  console.log(`HC_GATES:${JSON.stringify(findings)}`);
 });

@@ -1099,7 +1099,279 @@ The trainee-facing surface is small, but nutrition has **three other consumers**
 - **No new admin toggle SCREEN.** That is a UI for a feature he may delete. If he later wants a
   runtime switch, the flag is the seam and it is a separate, small task.
 
-# Batch 17 — dispatched 2026-08-29 20:07. Amit: "תמשיך את המשימות ומה שצריך לעשות בלי לשכוח כלום ובלי פשרות"
+# Batch 18b — Amit's Settings ask, 2026-08-29 20:38. Audit dispatched immediately, redesign next batch.
+
+**His words:** Settings should hold only what is genuinely needed, arranged coherently — right now it
+is "קצת מבולגן". His own example: **date & time does not belong** — the app is Israel-only, so the
+timezone, the date and the format are always the same. He also said that anything whose control
+**exists somewhere else in the app** should not be duplicated here. And he explicitly offered the
+**`מתקדם`** escape hatch for settings most people should never see. *"זה חשוב."*
+
+### My reading of the one ambiguous sentence, stated so he can correct me
+"אם יש שם דברים שיש במקומות אחרים, אז זו בטוח שצריך את ההגדרות שלהם שם" — dictated, and it can be read
+both ways. **I am taking it as: a control that also exists elsewhere is a DUPLICATE, and the setting
+belongs where the feature lives, not in both places.** Told him so in plain terms rather than guessing
+silently. And his instinct points at a defect we already proved in batch 17: **the in-workout
+accessibility toggles persist to a DIFFERENT store than the Settings screen reads, so the two can
+genuinely disagree while a workout is mounted.**
+
+### Ground truth I established MYSELF before writing the brief
+`src/pages/Settings.tsx` is a thin orchestrator over **16 section components** under
+`src/pages/settings/sections/` plus 4 shared bits under `settings/components/`. It also renders a
+**`SettingsJumpNav`** — a jump menu is the screen admitting it is too long to scroll, which is
+corroboration of his complaint rather than a fix for it. `DateTimeSection.tsx` is real and is exactly
+the file he named.
+
+### Why an AUDIT first and not a redesign
+Same reason it worked on Home, Progress, billing, the theme axes and onboarding: **nobody knows which
+of these settings anything actually reads.** This app has repeatedly shipped controls that change
+nothing — a PR-alerts toggle wired to no consumer, a `defaultWorkoutGoal` that the goal dialog ignores,
+`--font-scale` written and read by zero stylesheets. Rearranging a screen whose switches may be inert
+is rearranging furniture in a room with no floor. **A setting that does nothing must be deleted, not
+demoted to `מתקדם`.**
+
+### Why it dispatches NOW despite batch 18 being live
+T-056 is read-only and writes ONE plan file, so it cannot disturb T-053's build or browser. **The
+redesign itself CANNOT run yet** — it writes `src/pages/settings/**`, and T-053 is at this moment
+photographing the Settings screen (the live `SettingsToggle`, the admin-gated paywall row). A `src/`
+edit mid-shoot destroys that evidence.
+
+## [T-056] Settings audit — ACCEPTED 2026-08-29 20:54. `plans/SETTINGS-AUDIT.md`, 678 lines
+- status: **done** — read-only confirmed, one file written. No build, no server, no git.
+- **Render order established** (17 rows incl. the admin paywall): Account → Paywall → Profile →
+  ProfileEdit → Theme → DateTime → Guidance → WorkoutPrefs → Coach → Notifications → Export →
+  CloudSync → Unsynced → DangerZone → Legal → Blocked → DataAbout.
+- **⚠️ AMIT WAS EXACTLY RIGHT, AND IT IS WORSE THAN HE THOUGHT: `DateTimeSection` IS 4-OF-4 DEAD.**
+  A repo-wide grep for `datePreferences|getDatePreferences|firstDayOfWeek` returns **three** files —
+  the service, the section, and one false match. **`onDatePreferencesChange` has ZERO subscribers**, and
+  `utils/datetime.ts` — which the service's own header claims it "pairs with" — **does not import it.**
+  Meanwhile **40 files hardcode `he-IL` / `Asia/Jerusalem`**, including `useCloudSync.ts`, which formats
+  a timestamp displayed **three sections below on the same screen**. So it is fiction twice over: a
+  13-entry timezone menu in an Israel-only app, where even the correct answer changes nothing.
+  **DELETE, not demote to `מתקדם`.**
+- **⚠️⚠️ THE TWO-STORE DEFECT IS WORSE THAN "THEY DISAGREE" — NEITHER WINS, AND A SETTING IS DESTROYED.**
+  Both writers persist to the **SAME `localStorage['appSettings']` key** (`SettingsContext.tsx:137` and
+  `WorkoutProvider.tsx:364`), each reads it **exactly once at mount**, and neither subscribes to the
+  other. **So each writes its whole stale snapshot over the top.** Concretely: toggle `ניגודיות גבוהה`
+  in the workout overlay → Settings shows OFF while the app renders high-contrast; then tap dark mode in
+  Settings and **the high-contrast preference is destroyed with no error.** Exactly three controls affected.
+  - **THE DIAGNOSTIC IS THE BEST PART: `darkMode` is the control group that proves it.**
+    `WorkoutSettingsOverlay.tsx:58` wires that ONE correctly and the three below it wrong, **in the same
+    file.** So the correct pattern already exists three lines above the broken one — and the
+    `WorkoutPrefs` context mirror is the house solution to precisely this bug. Discipline, not a rewrite.
+  - It re-confirmed `--font-scale` is written by one file and read by **zero** stylesheets.
+- **⚠️ TWO NAME FIELDS AND TWO WEIGHTS CAN SILENTLY DIVERGE.** `ProfileSection.tsx:47` (localStorage,
+  read by the dashboard greeting) vs `ProfileEditSection.tsx:329` (Supabase) — **adjacent, under the
+  same anchor, with different save gestures.** And `user_profile.weight` feeds the nutrition macro
+  target while `Progress.tsx:127` computes BMI from the body-weight **log** — so a month of weigh-ins
+  moves BMI and leaves the calorie target stale.
+- **IT CORRECTED MY BRIEF AGAIN:** I listed the PR-alerts toggle as dead. **It now has a consumer** at
+  `prService.ts:295`. Backlog corrected — that one is LIVE.
+- **What it named as genuinely well built**, for the keep/cut balance: `ProfileSection` (7/7 controls
+  with named readers), `NotificationsSection`, `UnsyncedChangesSection` (**invisible when idle — the
+  model `BlockedUsersSection` should follow**), and the `WorkoutPrefs` context mirror.
+- **Proposal: 5 top-level groups from 16 sections.** The jump nav should GO — its `מאמן` chip already
+  scrolls trainees to an **empty `<div>`**, and its chips compute to ~31px against the 44px floor.
+  `AdvancedSection` fits as-is; only caveat is that it lives under `pages/progress/`.
+- **Open risk it flagged as the most valuable next check:** if the cloud mirror re-hydrates
+  `appSettings` on a pull, there is a **THIRD writer** in the same conflict.
+
+
+- status: dispatched (batch 18b)
+- owner: fitness-qa
+- goal: the fact base for rebuilding the Settings screen — every control classified, every duplicate
+  named with BOTH locations, and every Israel-only fiction called out.
+- files: WRITES ONLY `plans/SETTINGS-AUDIT.md`. Read-only everywhere else. No gates, no browser.
+- done when: every control in all 16 sections listed with file:line and classified LIVE / DEAD /
+  DUPLICATED / FICTION; a keep / advanced / delete / relocate verdict each; and the two-store
+  accessibility conflict traced
+- notes: the redesign is the batch after, planned against facts. Reuse the EXISTING `AdvancedSection`
+  from `src/pages/progress/components/SectionCard.tsx` — it is already the house disclosure idiom.
+
+---
+
+
+
+### Why the third slot is what it is, and why nothing else could go in it
+He asked for two. I filled the third with a READ-ONLY audit rather than leaving it idle — but almost
+everything on the backlog was **disqualified by the photo round**, and that is the reasoning worth keeping:
+the toggle thumb, `SettingsPrimitives`' borders, `.day-cell.done.perfect-week`, the 5 spinners and the
+two-accessibility-stores bug **all write to `src/`**, and a `src/` edit mid-shoot invalidates the build
+the camera depends on. That is the accumulated evidence of six batches; I am not risking it for a
+one-line contrast fix. **So the third task writes only `plans/`.**
+Chosen: the COACH SIDE. It is the app's other half, it has **zero e2e coverage**, `GlowAreaChart`
+changed underneath it unseen in batch 12, and Amit's standing "delete what does not help" ruling has
+never once been applied to it. Same audit-before-deciding move that paid off on Home, Progress,
+billing, the theme axes and now onboarding.
+
+### Ownership map — disjoint, verified against a clean tree at `14b3dbd`
+- **T-053** → WRITES `visual-qa/**`, `reports/**`, and `e2e/visual-qa.spec.ts`. Read-only in `src/`.
+  **HOLDS PLAYWRIGHT AND THE BUILD — the only worker allowed to touch either.**
+- **T-054** → WRITES ONLY `plans/ONBOARDING-PROPOSAL.md`. Read-only everywhere else.
+- **T-055** → WRITES ONLY `plans/COACH-SIDE-AUDIT.md`. Read-only everywhere else.
+- Neither T-054 nor T-055 may run a build, a dev server, Playwright, or any gate. That is what keeps
+  T-053's evidence trustworthy.
+
+### Fact I corrected before dispatching
+I have been writing "`e2e/visual-qa.spec.ts:78,286` still navigate to `/nutrition`". It is **three**
+lines — **78, 285 and 286**. Checked myself rather than copying my own note forward.
+
+## [T-054] Onboarding proposal — ACCEPTED 2026-08-29 20:46. `plans/ONBOARDING-PROPOSAL.md`, 453 lines
+- status: **done** — one file, no code, read-only elsewhere. Awaiting Amit's product approval.
+- **THE SHAPE: 3 screens, 19 → 14 numbered actions** (10 taps + 4 typed; 13 without the guide sheet).
+  4 fields kept · 3 deferred to a NAMED home · **11 cut.** Gate reduced to the name alone.
+- **ITS SPOT-CHECK EARNED ITS KEEP — it corrected FOUR of the audit's figures, and two changed a
+  recommendation.** This is the third time running that a worker has caught a predecessor's number.
+  1. **`activityLevel` has FOUR fabrication sites, not one.** Beyond `appOnboarding.ts:81` there is
+     `GoalsEditor.tsx:131` (`?? 'פעיל מתון'`), and **`DEFAULT_PROFILE` hardcodes both
+     `activityLevel: 'פעיל מתון'` AND `gender: 'male'`.** So "store null" silently fails unless all
+     four move — Settings would still DISPLAY the fabricated value as the user's own choice.
+  2. **`completeness` has TWO consumers, not one** — the audit missed `coachBrief.ts:82`, where
+     `>= 0.5` gates `'high'` confidence. **It then proved this is NOT a blocker:** `coachBrief.ts:80`
+     returns `'low'` under three sessions, so completeness cannot affect a new user at all. That check
+     is why it could accept the 0.43 a trimmed flow produces instead of padding the numerator.
+  3. 9 fields are presented, not 8. 4. The Settings section is `פרטים אישיים`, not `פרופיל`.
+- **On the fabricated activity level it went FURTHER than my brief framed it, correctly:** deriving an
+  activity MULTIPLIER from a SKILL self-report is a category error even when the user answers. So the
+  recommendation is **store nothing and ask at the point of use**, following this app's own written BMI
+  precedent (hide the badge rather than compute from a default). Quantified: **306 kcal/day** on a
+  1749 BMR between 1.55 and 1.375.
+- **Two consequences it surfaced that a naive cut would have missed:** `equipment` must leave the
+  `completeness` DENOMINATOR or the ceiling drops to 6/7 for everyone permanently; and the
+  already-fabricated cohort has an exact signature — `activityLevel` set AND `experienceLevel === ''`
+  — which it **flagged rather than recommended**, because acting on it writes to stored user data.
+- The UNVERIFIED blur/disabled-gate item stays UNVERIFIED. Its flow removes `age`, the only gated typed
+  field, which sidesteps it today — **recorded as a side effect, not a fix**, since `weight` still
+  commits on blur. Exactly the honesty I asked for.
+
+## [T-055] Coach side mapped — ACCEPTED 2026-08-29 20:46. `plans/COACH-SIDE-AUDIT.md`, 858 lines
+- status: **done** — read-only confirmed, one file written.
+- **⚠️⚠️ IT CORRECTED A PREMISE IN MY OWN BRIEF THAT I HAVE BEEN REPEATING SINCE BATCH 13.**
+  **`.env`, `.env.local` and `.env.example` ALL EXIST**, and `.env.local` carries both
+  `VITE_SUPABASE_URL` and a real-JWT-shaped `VITE_SUPABASE_ANON_KEY`. Vite prefers `.env.local`, so
+  **Supabase reads as CONFIGURED in this tree and the coach path would issue real requests.** My
+  standing claim that "coach data reads short-circuit without credentials" is **WRONG** and every
+  earlier report that relied on it inherited the error. The coach side is still unreachable for a
+  worker — but for want of a coach SESSION, which is a different and fixable problem. It checked key
+  names and value lengths only and did not read a secret value.
+- **⚠️ THE COACH SCREENSHOTS WE ALREADY HAVE ARE A LIE.** `e2e/visual-qa.spec.ts:225` walks five
+  `/coach/*` routes and photographs them **with zero assertions, as a GUEST** — and a guest fails
+  `CoachGuard` and is redirected to `/`. **So the ten `visual-qa/2*-coach-*.png` files are almost
+  certainly the trainee Dashboard saved under coach filenames.** It also clicks a `מאמן` masthead
+  toggle that no longer exists anywhere in `src/components/` — that is `ViewModeBar`, which we deleted
+  in batch 1. Functional coach e2e coverage is **zero**, as suspected; what exists is worse than zero
+  because it produces confident-looking false evidence.
+- **THE PLACEHOLDER HUNT CAME UP MOSTLY EMPTY, AND THAT IS THE REAL FINDING.** Only four minor ones (a
+  hardcoded 40px calorie bar with no assigned target, a fabricated `T08:00:00` on ICS export, invite
+  copy promising 5 free seats against `DEFAULT_SEAT_LIMIT = 1`, `?? 0` macros reading as "logged
+  zero"). **Everything else traced to real or derived data.** Its words: this half of the app defends
+  against fake numbers *more* systematically than anything else audited here — `throwOnError: true` on
+  aggregates, `—` instead of `0` while loading, readers that throw so the error state fires instead of
+  a silent empty one. **The coach side is the best-built part of this codebase.**
+- **⚠️ ONE LIVE FUNCTIONAL BUG, found in passing:** `AppRouter.tsx:848` polls
+  `materializeDueReminders()` for **every** user, and the `reminders_all_own` RLS policy means **a
+  coach's own device fires their CLIENTS' reminders at themselves.**
+- **§4 SETTLES THE KEEP/CUT QUESTION: THE COACH SIDE CANNOT BE DELETED.** 15 trainee-side call sites
+  plus 8 shared imports. **The trainee's home `האימון של היום` card is 100% coach-authored
+  `workout_schedule` data.** Invite onboarding, assigned-program start, assigned nutrition targets,
+  check-ins, the unread badge, Web Push, both cloud-reflection hooks, both chat surfaces and the whole
+  `/my-coach` shell all live inside the coach directories.
+- Size: **55 product files, 13,922 lines, tests 19.6% of lines.** Five dead symbols, including three
+  fully-tested tombstone-correct delete writers with no UI at all.
+- **It named what it did NOT read** — 7 files, and flagged `TypingDots` as the one to check: if that
+  indicator is not driven by a real presence signal, it is the fabricated-liveness pattern.
+
+### Backlog additions from this batch
+- **Fix the lying coach screenshots** in `e2e/visual-qa.spec.ts:225` — either drive them with a real
+  coach session or delete the block. Ten PNGs currently misrepresent what they show. **NOT steered into
+  T-053 mid-run** (interrupting a live worker is how they die); it owns that file, so this is a
+  follow-up on a settled tree.
+- **The reminder cross-fire bug** — `AppRouter.tsx:848` + the `reminders_all_own` policy. Two-sided,
+  needs `fitness-data`.
+- `TypingDots` presence check · the 4 coach placeholders · the invite copy promising 5 seats against a
+  limit of 1.
+
+---
+
+
+## [T-053] Screenshot round — ⏱ TIMED OUT at 30 min, but the EVIDENCE LANDED. Verdict not written.
+- status: **partially accepted — evidence recovered from disk, the written report is still owed**
+- **The known host failure mode.** Its last tool call was *counting its own PNGs*, so it died while
+  summarising, not while capturing. **Per the batch-3 precedent I recovered the work from the tree
+  instead of re-running it** — a second 30-minute photo session to reproduce artefacts that already
+  exist is the waste, not the saving.
+- **WHAT IS ON DISK, verified by me:** `visual-qa/` went **292 → 492 PNGs** — **168 `hc-*`** (the four
+  theme states) plus **32 `gate-*`**. Newest write 21:02, one minute before the timeout. Also
+  `gates-14bd.json` and **`tokens-{light,dark,light-hc,dark-hc}.json` — sampled token values in all
+  four states**, which is exactly the pixel evidence the hand-derived HC fix was missing.
+- **✅ THE GATE FILE IS AN UNAMBIGUOUS PASS across 8 combos (4 theme states × 2 widths):**
+  `nav-nutrition-count=0` · `/nutrition -> /` · `premium-row-count=0` · `/paywall -> /` — **all eight,
+  no exceptions.** So the hidden-nutrition state and the admin-gated paywall are now **pixel-verified in
+  light, dark, light+HC and dark+HC**, not merely asserted in a unit test.
+- **⚠️ IT REWROTE THE SPEC FAR BEYOND ITS BRIEF: `e2e/visual-qa.spec.ts` is +939/−13.** I asked for
+  three `/nutrition` navigations to be fixed. It instead **converted them into gate ASSERTIONS** (3 → 17
+  mentions, i.e. 8 combos × 2 checks) and added two capture tests at `:1024` and `:1210` for the four
+  theme states. **I verified it loads rather than assuming:** `--list` reports **28 tests in that file**
+  and the whole suite **80 tests in 13 files, exit 0**. Nothing broken.
+- **WHAT IS MISSING AND WHY IT MATTERS:** no written verdict. The token JSONs hold the sampled numbers
+  but **nobody has compared them against T-051's 28 hand-derived figures.** That comparison IS the point
+  of the round, so the round is not finished until someone reads those files.
+- **`visual-qa/_summary.json` is STALE — do not cite it.** Its week-strip figures (rest-vs-empty 1.19
+  light / 1.04 dark) are the batch-9 values from before batch 11 fixed that pair to 3.05 / 3.02.
+- **Left untouched, correctly:** the lying coach capture block at `:229`. That defect surfaced from the
+  coach audit while this worker was mid-run, and interrupting a live worker is how they die.
+- debris: **zero** — e2e still 13 specs, no scratch files, `test-results/` and `playwright-report/`
+  absent, root clean. It cleaned up before dying.
+
+### Verified baseline — 2026-08-29 21:05, lead-measured on a settled tree
+`spawn_list`: all seven runs terminal. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **703** files |
+| `npm run test:run` | **1438 tests**, exit 0 both runs — floor held exactly |
+| `npx playwright test --list` | **80 tests / 13 files**, exit 0 — the rewritten spec parses |
+| tree | `e2e/visual-qa.spec.ts` + the board + 3 new plan docs. `visual-qa/` is gitignored, so the 200 new PNGs and the JSONs are **local-only evidence** |
+
+### My own error, recorded: I consumed a heading with a `strReplace` for the SECOND time
+The batch-15 T-046 heading went the same way. Both were repaired, but the pattern is mine: when I
+replace a task heading with a verdict block I must re-emit the heading. **Anchor future verdict edits on
+the `- status:` line, never on the `## [T-0xx]` heading.**
+
+- status: dispatched (batch 18)
+- owner: fitness-qa
+- goal: photograph what nobody has seen — and specifically the high-contrast fix, whose 14 CSS
+  declarations were derived **entirely by hand arithmetic with no pixel ever sampled.**
+- done when: `ReadinessReadingCard`, the hidden-nutrition state, the live `SettingsToggle`, the
+  admin-gated paywall, **light+HC and dark+HC** all captured at 390 AND 1280; the three `/nutrition`
+  navigations in the spec fixed; every defect reported with the PNG that shows it
+- notes: the ONLY Playwright runner. **Build FIRST.** `fullPage: true` LIES here — use 390×1500 /
+  1280×1500. Wipe localStorage AND IndexedDB per combo. Dark mode is the `html.dark` CLASS, not the OS
+  query — and high-contrast is `html.high-contrast`, which STACKS on it.
+
+## [T-054] Onboarding proposal — a plan, not an edit
+- status: dispatched (batch 18)
+- owner: fitness-design
+- goal: turn `plans/ONBOARDING-AUDIT.md`'s facts into a concrete proposal: what to ask, what to cut,
+  what to defer, and what the first 60 seconds should actually look like.
+- done when: a step-by-step proposed flow with a tap count vs today's 19; every one of the 18 fields
+  given a keep/cut/defer verdict; the invented `activityLevel` addressed; and the risks named
+- notes: **writes NO code.** Deleting questions from onboarding is a product decision and Amit gets to
+  approve the shape before anyone touches `src/`. The audit's own UNVERIFIED item (the blur/disabled
+  button trap) must be carried forward as unverified, not silently promoted to fact.
+
+## [T-055] The coach side — never mapped, never tested
+- status: dispatched (batch 18)
+- owner: fitness-qa
+- goal: the fact base for a keep/cut decision on the app's entire other half.
+- done when: every coach surface listed with file:line and classified REAL / DERIVED / PLACEHOLDER /
+  DEAD; what breaks without `.env`; what the trainee side depends on; and an honest size estimate
+- notes: read-only, no gates, no browser. Coach data reads short-circuit without credentials, so this
+  is a static read and it must say so.
+
+---
+
+
 
 **My call, taken under his standing autonomy:** finish T-048 rather than `git restore` it. The work is
 85% done and correct; throwing it away to redo the identical deletions tomorrow is the compromise, not
