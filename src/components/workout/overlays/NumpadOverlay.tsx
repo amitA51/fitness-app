@@ -578,7 +578,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
       <ModalOverlay
         isOpen={isOpen}
         onClose={onClose}
-        variant="none"
+        variant="bottomSheet"
         zLevel="ultra"
         backdropOpacity={50}
         blur="sm"
@@ -588,25 +588,35 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
         closeOnEscape
         ariaLabel={label}
       >
-        <m.div
-          initial={shouldReduceMotion ? { y: 0 } : { y: '100%' }}
-          animate={{ y: 0 }}
-          exit={shouldReduceMotion ? { y: 0 } : { y: '100%' }}
-          transition={
-            shouldReduceMotion ? { duration: 0 } : { type: 'spring', damping: 28, stiffness: 350 }
-          }
-          className="w-full max-w-md mx-auto overflow-hidden fixed bottom-0 left-0 right-0 glass-surface-dark"
+        {/* The sheet slide-in and the drag-to-dismiss both belong to
+            ModalOverlay's bottomSheet variant now (1:1 downward finger tracking,
+            rubber-band upward, momentum projection on release). This element used
+            to hand-roll the entry spring at damping 28 / stiffness 350 — an
+            unearned overshoot on a sheet opened by a tap — and carried no drag
+            prop at all, so the most-touched surface in the product could only be
+            dismissed by button, backdrop or Escape. */}
+        <div
+          className="w-full max-w-md mx-auto overflow-hidden glass-surface-dark"
           style={{
             backgroundColor: 'var(--fs-bg)',
             borderTop: '2px solid var(--fs-primary)',
             borderRadius: '24px 24px 0 0',
             boxShadow: '0 -12px 32px rgba(11,26,43,0.2)',
-            paddingBottom: 'env(safe-area-inset-bottom, 24px)',
           }}
-          onClick={(e) => e.stopPropagation()}
         >
-          {/* Navy Masthead — exercise + label */}
-          <div className="px-6 py-4" style={{ backgroundColor: 'var(--fs-primary)' }}>
+          {/* Navy Masthead — exercise + label. Doubles as the drag handle: it is
+              pure chrome (no controls), it spans the full sheet width, and it is
+              the one region a downward drag cannot be confused with a keypad
+              press. `touch-action: none` lets the drag win over scroll here. */}
+          <div
+            data-sheet-drag-handle
+            className="px-6 py-4"
+            style={{
+              backgroundColor: 'var(--fs-primary)',
+              touchAction: 'none',
+              cursor: 'grab',
+            }}
+          >
             {exerciseName && (
               <m.div
                 className="text-center mb-1"
@@ -818,7 +828,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
               )}
             </div>
           </div>
-        </m.div>
+        </div>
       </ModalOverlay>
     );
   }

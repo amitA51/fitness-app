@@ -1,16 +1,14 @@
-import {
-  AnimatePresence,
-  animate,
-  m,
-  useDragControls,
-  useMotionValue,
-  useReducedMotion,
-} from 'framer-motion';
+import { AnimatePresence, animate, m, useDragControls, useMotionValue } from 'framer-motion';
 import type React from 'react';
 import { useCallback, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Z_INDEX } from '../../constants/zIndex';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+// The app-wide signal, not Framer's: it ORs the OS `prefers-reduced-motion`
+// query with the in-app "הפחתת אנימציות" toggle (reflected as
+// <html class="reduce-motion">). Framer's own hook reads only the OS query, so
+// sheets kept sliding for users who had switched the in-app toggle on.
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { triggerHapticEffect } from '../../utils/haptics';
 
 type ZLevel = 'default' | 'high' | 'ultra' | 'extreme';
@@ -90,10 +88,22 @@ const blurPxMap: Record<BlurLevel, string | undefined> = {
 // Apple's exponential-decay momentum projection (Designing Fluid Interfaces):
 // where a flick would come to rest, so a throw dismisses even from a small drag.
 // Module-scope pure function — stable across renders, no hook dependency needed.
-const projectMomentum = (velocity: number): number => {
-  const decel = 0.995;
+//
+// `decel = 0.998` is Apple's shipped deceleration rate and resolves the formula
+// to EXACTLY `velocity_px_per_second * 0.499`:
+//   (v / 1000) * 0.998 / (1 - 0.998) = (v / 1000) * 499 = v * 0.499
+// It was 0.995 (a 0.199 factor), which under-credited every flick by 2.5x. Note
+// the shape of the formula: the `/ 1000` is cancelled by `d/(1-d)`, so a bare
+// `(v / 1000) * 0.499` would project a 2500 px/s flick to 1.2px — a no-op.
+export const projectMomentum = (velocity: number): number => {
+  const decel = 0.998;
   return ((velocity / 1000) * decel) / (1 - decel);
 };
+
+// Anything a pointer-down should be read as a TAP rather than the start of a
+// sheet drag. Used to protect controls that live inside handle chrome.
+const INTERACTIVE_SELECTOR =
+  'button, a[href], input, select, textarea, label, [role="button"], [role="switch"], [role="tab"], [contenteditable="true"]';
 
 /**
  * Reusable modal overlay component with consistent styling.
@@ -145,7 +155,7 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const prefersReduced = useReducedMotion() ?? false;
+  const prefersReduced = useReducedMotion();
 
   // Premium timing — respect prefers-reduced-motion (durations collapse to 0)
   const backdropDuration = prefersReduced ? 0 : 0.24;
@@ -180,9 +190,15 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
     return typeof window !== 'undefined' ? window.innerHeight * 0.85 : 600;
   }, []);
 
+  // A pointer-down on a CONTROL is a tap, never a grab — even when that control
+  // sits inside handle chrome (a header row marked as a handle still holds its
+  // close button). Starting a drag here hands the pointer to Framer, which then
+  // swallows the ensuing click: the button goes dead and the sheet reads as
+  // stuck open. Marking a whole header as draggable is only safe with this guard.
   const startSheetDrag = useCallback(
     (e: React.PointerEvent) => {
       const target = e.target as HTMLElement | null;
+      if (target?.closest(INTERACTIVE_SELECTOR)) return;
       if (target?.closest('[data-sheet-drag-handle]')) {
         dismissArmedRef.current = false;
         dragControls.start(e);
@@ -212,6 +228,14 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
         onClose();
         return;
       }
+      dismissArmedRef.current = false;
+      // Reduced motion keeps the GESTURE — direct manipulation tracks the finger
+      // and is not vestibular motion — but no spring may run: write the final
+      // value synchronously so the sheet is simply back home on the next frame.
+      if (prefersReduced) {
+        sheetY.set(0);
+        return;
+      }
       // Snap home carrying the release velocity (§5); a whisper of settle because
       // a flick preceded it (§4). Interrupted cleanly by the next grab.
       animate(sheetY, 0, {
@@ -220,9 +244,8 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
         duration: 0.4,
         velocity: info.velocity.y,
       });
-      dismissArmedRef.current = false;
     },
-    [onClose, sheetY, measureSheetHeight]
+    [onClose, sheetY, measureSheetHeight, prefersReduced]
   );
 
   // Use focus trap for accessibility - trap focus on the content, not the backdrop
@@ -359,10 +382,14 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
             aria-labelledby={ariaLabelledBy}
             aria-describedby={ariaDescribedBy}
           >
-            {isBottomSheet && !prefersReduced ? (
+            {isBottomSheet ? (
               // Inner drag layer — 1:1 downward, rubber-band up, velocity handoff on
               // release. Keeps `pan-y` so the sheet body still scrolls; only a
               // [data-sheet-drag-handle] pointer-down (handle/title) starts a drag.
+              // Rendered under reduced motion as well: dragging is direct
+              // manipulation, and removing it would take a dismissal route away
+              // from exactly the users least able to chase a small close button.
+              // The release path skips the spring instead (see handleSheetDragEnd).
               <m.div
                 className="w-full"
                 style={{ y: sheetY, touchAction: 'pan-y' }}

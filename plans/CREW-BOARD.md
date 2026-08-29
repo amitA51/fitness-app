@@ -2126,6 +2126,257 @@ that trigger's colour in all four theme states, so this round now has two jobs, 
   **`--fs-accent-text` now exists as a proven precedent for this exact shape** — a new semantic token,
   re-pointed per theme state, light byte-identical. Judge the audit's proposal against it.
 
+## [T-070] The corrected capture round — ⏱ TIMED OUT (the FOURTH), but the RIGHT HALF landed
+- status: **partially accepted — 20 PNGs + a 52KB measurement JSON recovered from disk; the verdict and
+  the dark/1280 half are owed**
+- **⚠️ THIS DEATH HAS A DIFFERENT CAUSE FROM THE PREVIOUS THREE, AND THAT MATTERS.** Rounds 1-3 died
+  while WRITING THE SUMMARY after capture succeeded. This one died **inside `npx playwright test`** —
+  the log shows it on test **[1/2]**, named `settings scroll-stitch, unseen groups, crops + expanded`.
+  So the split rule is not what failed; the capture itself was too big.
+- **ROOT CAUSE, and it is my brief's fault: I offered TWO paths and it took the expensive one.** I wrote
+  "scroll `#main-content` explicitly and stitch, **or** capture the scroll-container element". Stitching
+  means scroll → shoot → scroll → shoot for every combo; capturing the element is **ONE call** that
+  Playwright fills with the whole scrollable content. It stitched, got through light and light+HC at
+  390, and the wall arrived.
+  → **NEW RULE: MANDATE `locator('#main-content').screenshot()`. FORBID stitching.** An option list in a
+  brief is a decision I failed to make.
+- **✅ WHAT LANDED IS EXACTLY WHAT THREE ROUNDS FAILED TO GET.** `visual-qa/` 533 → **553 PNGs**, of
+  which **20 are `s23-*`**, plus `s23-measure.json` (**52KB** of raw readings) and `s23-run.log`:
+  - **Both never-seen groups, photographed at last** — `s23-group-imun-vehatraot-{light,light-hc}-390`
+    and `s23-group-netunim-ufratiut-{light,light-hc}-390`. Those two appeared in **no frame** of any
+    previous round.
+  - **Both real `מתקדם` triggers, COLLAPSED AND EXPANDED** — `s23-label-metkadem-i1/i2`, each with a
+    `-row` crop and an `-open-` variant. **And they are labelled from verified text content**, which
+    fixes the last round's 24 crops that were all silently `פרופיל ציבורי`.
+  - Full-page Settings, plain and expanded, light + light+HC at 390 (321KB / 397KB — i.e. genuinely
+    tall captures, so the `#main-content` fix worked).
+- **MISSING and carried forward:** dark, dark+HC, the 1280 round trip, and the written verdict.
+- **Spec grew +815 lines** — inside its declared file, so not a scope breach, but far past what I meant
+  by "the spec only". `--list` confirms it parses: **92 tests / 14 files**, exit 0 (was 88).
+- debris it left, **swept by me**: `test-results/` existed and is gone.
+
+## [T-072] Token sweep de-risked — ACCEPTED 2026-08-29 23:38. **12 sites would have been DAMAGED.**
+- status: **done** — read-only confirmed, one existing doc updated, no build/gate/browser/git.
+- **⚠️ MY "OFF BY TWO" WAS WRONG IN A MORE USEFUL WAY: it was FIVE unclassified sites, and the
+  aggregate merely happened to be off by two.** `BottomNav.tsx:252`, `EmptyState.tsx:37`,
+  `AnimatedProgressRing.tsx:92`, `Dashboard.tsx:294` and `PageThemeContext.tsx:64` carried **no class
+  row at all.** It could not pin the gap to lines because the doc published only aggregates — so it
+  rebuilt the per-site ledger from scratch.
+- **RE-DERIVED: 247 lines / 251 occurrences / 85 files, not 223/83** → **208 live paint sites.**
+  New counts **108 BROKEN / 79 DEGRADED / 21 SAFE = 208 ✓.**
+- **⚠️ THE OLD 211 WAS RIGHT BY ACCIDENT.** It undercounted raw references by **24** *and* non-paint
+  lines by **26**, and the two errors nearly cancelled. Two named faults: `--color-on-mustard` was
+  **double-counted** (in both the SAFE list and the 9 token definitions), and a **9-line comment block
+  in `components.css` was counted as 1.**
+- **⚠️⚠️ THE OBSERVATION THAT COLLAPSED THE RISK INSTEAD OF GRINDING THROUGH IT:** `--fs-primary` is
+  **darker than EVERY non-accent surface** in all three failing states (dark 1.05–1.31 across
+  bg/surface/plate/surface-2). **So a misread surround changes the exact ratio but never the verdict** —
+  the only surround that makes the token correct is one bright in all four states (`--fs-accent` or
+  `--fs-signal`). That turned **168 unopened sites** from "which of four surfaces?" into **one binary
+  answerable with certainty from each style object.** This is why the task finished at all.
+- **⚠️ 12 SITES MOVED TO SAFE — twelve sites a mechanical sweep would have BROKEN.** Worst:
+  `GoalsStep.tsx` — the selected card fills with `var(--fs-accent)` (`:80`), so all three of its sites
+  sit on mint and were filed BROKEN. **Two moved OUT of SAFE:** `WorkoutPrefsSection.tsx:65` had its
+  fill and ink **read backwards** and had been conflated with `IconBox.tsx:20`, its mirror.
+- **4 moved DEGRADED → BROKEN**, including `global.css:594`: it was headed for `--fs-panel`, but
+  `.text-gradient` is **text** — sending it there paints surface-2 on surface-2, in a place where dark
+  is already unreadable.
+- **All 7 flagged sites resolved, none needs a human.** `PageThemeContext.tsx:64` is **dead plumbing** —
+  it writes `--accent-current` / `--dynamic-accent-start`, which **nothing in `src/` reads.**
+- **It judged the proposal against the `--fs-accent-text` precedent and passed it** — and noted their
+  `:root`-alias inversion is an **improvement**, making "light stays byte-identical" true by
+  construction rather than by measurement.
+- **⚠️ TWO THINGS IT SAYS MUST BE SETTLED FIRST.** (1) **`--fs-panel` makes BOTH high-contrast states
+  WORSE — 1.39:1 → 1.11:1.** It called that a design decision and refused to take it alone.
+  (2) `.data-strip` must not become precedent: it already ships the disqualified
+  `--color-border-strong` at 2.10–2.35:1 and is only tolerable because no floor applies there.
+- **MY RULING on `--fs-panel` in high contrast: it may NOT regress.** The bands are decorative and
+  carry no text, so 1.11:1 is not a WCAG failure — but a user who switches ON high contrast has asked
+  for MORE separation, and shipping less on the one axis they opted into is the wrong direction. Both HC
+  blocks must re-point `--fs-panel` to hold or beat the current 1.39. That is cheap and it is exactly
+  the shape `--fs-accent-text` already uses.
+- Also found: **`SettingsPrimitives.tsx:162`** carries a second, independent defect — `--fs-heading` on
+  an `--fs-accent` fill, **1.50:1 dark and 1.25:1 in both HC** — and **Batch 3 will walk straight past
+  it.** Same hazard §2 flagged and could not clear.
+- It hit the **grep-tool truncation** (5 of 14 matches on `tokens.css`), noticed, and switched to
+  `Select-String` with non-ASCII stripped. Also warns of a **~15-line drift** between the doc's cited
+  `tokens.css` line numbers and the current file.
+- **Confirmations it recorded as results, not padding:** the class table, the `--color-border-strong`
+  disqualification, the six `components.css` paint lines, `WorkoutSummary.tsx:1019`'s split branch, the
+  `TemplateCard.tsx:229` identical-branch bug, the four `WorkoutCalendar` SAFE sites, and batches 2-8's
+  file lists were all correct. Method verified against three published ratios **plus** the proposal's
+  own unchecked `--fs-edge` figures (4.099 / 3.882 / 3.942 vs 4.10 / 3.89 / 3.95).
+
+### Verified baseline — 2026-08-29 23:39, MINE, on a confirmed-static tree
+Newest `src/` mtime 22:59 — **batch 23 changed zero `src/` files**, exactly as designed.
+Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **707** files (unchanged — no `src/` edits) |
+| `npm run test:run` | **168 files / 1468 tests**, exit 0 both runs — floor held exactly |
+| `npx playwright test --list` | **92 tests / 14 files**, exit 0 (was 88; +4 from the s23 spec) |
+| debris | e2e **14** specs, zero scratch, `test-results/` + `playwright-report/` swept |
+| commit | **`81082ef`** on `feat/ux-templates-picker`, pushed, 4 files. `master` untouched at `3bf1f7f`. Tree clean. |
+
+---
+
+# Batch 24 — dispatched 2026-08-29 23:41. Autonomous. Tree clean at `81082ef`.
+
+### Sequencing, decided rather than defaulted
+The token sweep is now de-risked and its Batch 1 introduces the two NEW tokens every later batch
+depends on, so it goes first. It writes `tokens.css`, which invalidates any build — **so the owed
+dark/1280 capture cannot run this batch, and that is fine: T-074 changes token values, so capturing
+before it lands would photograph values about to change.** Capture goes to batch 25, with the
+element-screenshot path MANDATED.
+
+### Ownership map — disjoint, with an explicit stop-and-report guard where I cannot pre-verify
+- **T-073** → WRITES ONLY `reports/visual-qa-s23.md`. Read-only. No browser, no build, no gates.
+- **T-074** → `src/styles/tokens.css` + exactly the files named in `FS-PRIMARY-EXPOSURE.md` §6 Batch 1.
+- **T-075** → the bottom-sheet surfaces named in `MOTION-GESTURE-AUDIT.md`. **FORBIDDEN: all of
+  `src/styles/**`.**
+- **Guard, because I cannot pre-verify §6 Batch 1's file list myself:** both `src/` workers are told
+  that if a file they need is also owned by the other's declared area, they STOP and report instead of
+  editing it.
+
+## [T-073] The s23 verdict — settle the trigger fix in the theme that was failing
+- status: dispatched (batch 24)
+- owner: fitness-qa
+- goal: 20 PNGs and a 52KB measurement JSON are on disk covering the two Settings groups nobody has
+  ever seen and both `מתקדם` triggers collapsed AND expanded. Nobody has read them.
+- done when: `reports/visual-qa-s23.md` states whether the expander trigger now clears 4.5:1 in default
+  light (it measured **1.75:1** before the fix and the token change predicts **5.11:1**), whether the
+  two never-seen groups hold up, and every defect with its PNG
+- notes: NO browser — that constraint is what makes this finish. The evidence covers **light and
+  light+HC at 390 only**; dark, dark+HC and 1280 are owed and must be listed as unverified, not
+  assumed. `_summary.json` is STALE. `inkOnFill` in the measure JSON has a 0.5%-share floor that BOTH
+  invents and conceals defects — do not cite it as a text verdict.
+
+## [T-073] The s23 verdict — ACCEPTED 2026-08-30 00:09. `reports/visual-qa-s23.md`, 406 lines
+- status: **done** — one file written, no browser, no build, no gate, no git. Its pixel scripts and
+  intermediate crops are deleted from scratch; nothing under `src/`, `supabase/` or config touched.
+- **✅ VERDICT: THE TRIGGER FIX HOLDS IN THE THEME THAT WAS FAILING.** Default light measures
+  **5.09–5.49:1** against the **real composited** background, floor 4.5 — worst case 5.09 clears by
+  13%. **T-067's predicted 5.11 lands inside that band.** High contrast 15.01–16.22:1. And it proved
+  the token is genuinely painted, not merely declared: **17–19 pixels at exactly `#256d5b` per crop.**
+  So the 1.75:1 defect that shipped a banned token is closed and measured, not assumed.
+- **METHOD CALIBRATED AGAINST SEVENTEEN PUBLISHED FIGURES** (report 04's table plus the
+  `tokens.css:36-39` comment), worst delta **0.005**. I asked for three.
+- **⚠️ THE TRAP I WARNED ABOUT DID FIRE — UNDER A DIFFERENT FIELD NAME, AND IT GENERALISED CORRECTLY.**
+  I named `inkOnFill`. The dataset's `sampledForeground` did the same damage: it reports a **divider
+  tint** for both row crops, which would have read **1.06:1 and 1.14:1 for labels that really measure
+  5.00 and 5.48.** **RULE CORRECTED: the hazard is the CLASS — any pre-aggregated colour field in a
+  measure JSON — not that one field name.** Sample the glyph pixels, always.
+- **ALL THREE FINDINGS ARE IN THE TWO GROUPS NOBODY HAD EVER SEEN**, which is the whole justification
+  for the four rounds it took to capture them:
+  - **⚠️ F1 MEDIUM — ON ONE SCREEN, A DARK KNOB MEANS ON IN ONE CARD AND OFF IN ANOTHER.** The privacy
+    card's switch is a **hand-rolled copy of `SettingsToggle`**: its ON knob is near-black, while the
+    canonical component's ON knob is WHITE and its OFF knob is near-black — **1.16:1 apart.** Light-only;
+    in HC they coincide. That is state a user cannot read.
+  - **F2 MEDIUM — the same copy is 52×30**, where the shared component wraps an identical 52×32 track in
+    an explicit **44×44** target. The copy lost the touch floor too.
+  - **F3 LOW-MEDIUM — the disabled `סנכרון מלא` label peaks at 1.78:1** (3.13 in HC). It
+    **source-confirmed the disabled state**, so WCAG-exempt, and filed it as a product legibility issue
+    rather than an a11y failure. Correct distinction, made explicitly.
+- **⚠️⚠️ SYSTEMIC, AND THIS IS THE THIRD INSTANCE: HAND-ROLLED COPIES OF SHARED COMPONENTS ARE THIS
+  APP'S RECURRING DEFECT SHAPE.** (1) `ThemeSection.tsx:53-59` copies `IconBox` and paints 1.06:1 in
+  dark+HC — the shared one is HC-safe. (2) `WorkoutPrefsSection.tsx:65` is `IconBox`'s mirror and was
+  conflated with it by an audit. (3) this switch. **In every case the shared component was correct and
+  the copy was not.** Worth a dedicated sweep: find every component that duplicates a shared primitive.
+- **The expanded state is clean, and it checked OWNERSHIP structurally rather than visually:** chevrons
+  flip, +643px inserted, no overlap, contrast unchanged when open — **and the revealed `הדרכה` block
+  really is INSIDE the display group (`Settings.tsx:248-250`)**, not a sibling that merely looks nested.
+  Pixels cannot answer that; it went to the DOM.
+- It settled the Hebrew-plus-number ordering in the rest-time chips **by counting enclosed counters in
+  the glyph clusters**, not by eyeballing. Correct RTL order confirmed.
+- **It nearly filed a bogus finding and caught itself:** a 42px chip target — but the CSS is
+  `minHeight: 44px` with a 1px border, so the *paint* is 42 and the *box* is 44. Recorded as a method
+  note so the next reader does not re-raise it.
+- **Coverage stated up front and not smoothed over:** **light and light+HC at 390 ONLY.** Dark, dark+HC
+  and 1280 are uncaptured and every mention of them is labelled UNVERIFIED, with 10 items in an explicit
+  could-not-determine list. That is what makes the PASS trustworthy.
+
+
+
+## [T-074] Token sweep, Batch 1 — introduce the two new pairs
+- status: dispatched (batch 24)
+- owner: fitness-design
+- goal: `--fs-primary` fails a floor in 3 of 4 theme states at 108 sites. Batch 1 declares the two new
+  semantic pairs and converts its own 12 sites.
+- done when: verify green; test:run >= 1468; every changed site stated as a number in all FOUR theme
+  states before and after; light proven byte-identical; **both HC states proven not to regress**
+- notes: **`--fs-primary` must NOT move** (dual-use: a dark-panel fill AND the ink on `--fs-signal`).
+  **`--color-border-strong` is DISQUALIFIED** (2.10–2.35:1). **MY RULING: `--fs-panel` may not regress
+  HC** — the doc's own figures take it 1.39 → 1.11 and both HC blocks must re-point it instead.
+  **Do NOT touch the 12 sites §4a moved to SAFE.** Follow `--fs-accent-text` as the precedent.
+
+## [T-074] Token sweep Batch 1 — ACCEPTED on evidence 2026-08-29 23:54. **MY GATES OWED** (2 workers live)
+- 1 file, exactly its ownership: `src/styles/tokens.css` only. **Zero sites converted — see MY ERROR below.**
+- **METHOD VERIFIED AGAINST TWELVE PUBLISHED FIGURES, not the three I asked for** — including the
+  `--color-border-strong` disqualification range (its 2.0994 / 2.3010 / 2.3490 vs this board's
+  published 2.10 / 2.30 / 2.35) and the proposal's own unchecked `--fs-edge` numbers. Every one matches.
+- **BOTH TOKENS DECLARED IN ALL THREE BLOCKS** — `:root`, `html.dark`, `html.high-contrast` — and it
+  wrote down WHY the third is not optional: equal specificity with no combined selector, **so a token
+  missing from the HC block would silently hand light+HC the LIGHT value on a black page.** That is the
+  exact trap `--fs-accent-text` caught last batch, and it applied the lesson rather than rediscovering it.
+- **`--fs-edge` dark = `rgba(255,255,255,0.42)`** — argued as *the app's existing dark border idiom
+  (`--color-border` .10, `--color-border-strong` .26) raised to the first alpha that clears 3:1*, not a
+  new colour concept. **3.95 / 4.10 / 3.89:1** across bg / surface / surface-2, where `--fs-primary` gave
+  1.06 / 1.05 / 1.31. **It rejected a brand-coloured edge** (`#318d78`, which also clears at 3.75–5.21)
+  because it would put an accent rail on every card — **`DESIGN.md` bans exactly that.**
+- **⚠️ IT REJECTED THE DOC'S OWN HC PROPOSAL, AND THEN REJECTED THE NEAR-MISS TOO.** `var(--fs-surface-2)`
+  is the 1.11:1 regression I ruled against. And `#262626` measures **1.3877 vs `#16292d`'s 1.3892** — so
+  it **fails "hold or beat" on the fourth digit** and it did not use it. That is the precision the ruling
+  asked for, applied literally.
+- **⚠️⚠️ AND IT CAUGHT WHY THE HC VALUE MUST BE A LITERAL, WHICH IS A REAL CASCADE TRAP.** Writing
+  `var(--navy-light)` there resolves to **`#222222` in dark+HC** — because the HC block does not declare
+  that token, so `html.dark`'s value survives — giving **1.32:1**. **The two HC states would disagree and
+  dark+HC would miss the floor.** So `--fs-panel` is `#1c363b`, the palette's own next navy step, kept as
+  a literal on purpose.
+- **MY RULING IS SATISFIED AND BEATEN:** light+HC **1.39 → 1.64**, dark+HC **1.06 → 1.64**. Both improve,
+  and it did so without the doc's 1px-outline workaround, so no band gained an outline.
+- **⚠️ ONE CELL GETS WORSE AND IT TURNED THAT INTO A DOCUMENTED CONSUMPTION RULE.** `--fs-panel` over a
+  `--fs-surface-2` backdrop in dark goes **1.31 → 1.00**, because in dark the token IS `--fs-surface-2`.
+  Rather than hide it, it wrote the rule into the `:root` comment so batches 2, 3 and 7 read it before
+  using the token, **and named the first two sites that must be checked** —
+  `SlideToComplete.tsx:491` and `WorkoutHeader.tsx:261`.
+- Light is byte-identical **by construction**: both tokens alias `var(--fs-primary)` in `:root`, so light
+  resolves to the same computed value rather than to a matching literal that could drift.
+- **⚠️ MY BRIEFING ERROR, and it cost this batch its second half.** I forbade `global.css` and
+  `components.css` to keep clear of the sheets worker — **but ALL 12 of Batch 1's paint sites live in
+  exactly those two files.** So Batch 1 delivered the token declarations and converted nothing. Not a
+  worker failure: it obeyed the constraint and listed all 12 with CURRENT line numbers (the doc's drift).
+  The declarations were the load-bearing half — eight later batches consume them — but **the 12 sites now
+  need their own task owning those two files exclusively.**
+- It confirmed the doc's count exactly: **6 paint lines in `global.css` + 6 in `components.css` = 12**,
+  with `global.css:410` a comment and 9 comment lines in `components.css`. `tokens.css` adds 0 sites.
+- Its own numbers are **NOT authoritative** — it reports 169 files / 1469 tests while two other workers
+  are live. **My own run is owed.** ⚠️ And it flagged 3 biome warnings in
+  `src/components/ui/__spike.test.tsx` over two `console.log` calls — **a filename that smells like
+  worker debris, so I must check whether that file is pre-existing or is the +1 test file.**
+- Also named, untouched: `global.css:594` `.text-gradient` must NOT go to `--fs-panel` (it is text —
+  matches T-072's finding) · `--color-primary` and `--navy` still alias `--fs-primary` with **zero
+  consumers**, i.e. dead aliases · `SettingsPrimitives.tsx:162` remains the defect Batch 3 walks past.
+
+
+
+## [T-075] Five sheets bypass the good drag-to-dismiss
+- status: dispatched (batch 24)
+- owner: fitness-design
+- goal: `ModalOverlay.tsx:369` already does 1:1 tracking, rubber-banding, momentum projection and a
+  velocity-fed spring — and **five surfaces bypass it.** Four hand-roll `dragElastic: 0.5`, so **the
+  sheet moves half as far as the finger**, and `NumpadOverlay.tsx:598` — the weight/reps entry surface,
+  on the hot path — **has no `drag` prop at all.**
+- done when: verify green; test:run >= 1468 plus a test that fails before the fix; every migrated
+  surface named; 1:1 tracking proven, not asserted
+- notes: the house solution EXISTS — this is non-adoption, not missing infrastructure, which is why it
+  is cheap. `prefers-reduced-motion` IS honoured at `global.css:663` and must stay honoured.
+  **FORBIDDEN: all of `src/styles/**`** — T-074 owns the tokens this batch.
+
+---
+
+
+
 ---
 
 

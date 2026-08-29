@@ -5,12 +5,10 @@
 // the anchor. The anchor is always selected and cannot be deselected. Confirm
 // dispatches a single CREATE_SUPERSET (2 = superset, 3+ = giant set).
 //
-// Uses the ModalOverlay variant="none" + m.div initial/animate-y pattern (the
-// same one ExerciseSelector uses). It deliberately does NOT bind an external
-// useMotionValue to style.y — that was the bug that left earlier sheets parked
-// off-screen at translateY(100%).
+// Built on <ModalOverlay variant="bottomSheet">, so the slide-in, the scrim and
+// the drag-to-dismiss (1:1 downward tracking, rubber-band up, momentum
+// projection on release) are all the house implementation.
 
-import { type PanInfo, m } from 'framer-motion';
 import { Check, X as CloseIcon, Link2 } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useMemo, useState } from 'react';
@@ -80,10 +78,6 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
     onConfirm(orderedIds);
   }, [exercises, selected, onConfirm]);
 
-  const handleDragEnd = (_: unknown, info: PanInfo) => {
-    if (info.offset.y > 150) onClose();
-  };
-
   const selectedCount = selected.size;
   const canConfirm = selectedCount >= 2;
 
@@ -91,7 +85,7 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
     <ModalOverlay
       isOpen={isOpen}
       onClose={onClose}
-      variant="none"
+      variant="bottomSheet"
       zLevel="extreme"
       backdropOpacity={60}
       blur="none"
@@ -101,22 +95,18 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
       closeOnEscape
       ariaLabel="בחירת תרגילים לסופרסט"
     >
-      <m.div
-        className="fixed bottom-0 left-0 right-0 flex flex-col"
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        style={{ maxHeight: '85dvh' }}
-        drag="y"
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0, bottom: 0.5 }}
-        onDragEnd={handleDragEnd}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Masthead */}
-        <div style={{ background: 'var(--fs-primary)' }}>
-          <div className="flex justify-center pt-3 pb-2">
+      {/* Entry spring and drag-to-dismiss belong to ModalOverlay's bottomSheet
+          variant. The hand-rolled version here had both drag constraints pinned
+          at 0 with dragElastic 0.5, so the sheet moved half as far as the finger,
+          and its dismiss test was a bare `offset.y > 150` with no velocity. */}
+      <div className="w-full flex flex-col" style={{ maxHeight: '85dvh' }}>
+        {/* Masthead — doubles as the drag handle (chrome; its close button is
+            excluded from the grab by ModalOverlay's interactive-element guard) */}
+        <div
+          data-sheet-drag-handle
+          style={{ background: 'var(--fs-primary)', touchAction: 'none' }}
+        >
+          <div className="flex justify-center pt-3 pb-2" style={{ cursor: 'grab' }}>
             <div className="w-10 h-1" style={{ background: 'var(--fs-surface)', opacity: 0.3 }} />
           </div>
           <div className="px-5 pb-4 flex items-center justify-between">
@@ -305,7 +295,7 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
         <div
           style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--fs-surface)' }}
         />
-      </m.div>
+      </div>
     </ModalOverlay>
   );
 };

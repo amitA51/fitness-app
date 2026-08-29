@@ -2,13 +2,12 @@
 // Sharp corners · dark masthead header · surface body
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
-import { AnimatePresence, type PanInfo, Reorder, m } from 'framer-motion';
+import { Reorder } from 'framer-motion';
 import { Link2 } from 'lucide-react';
 import { X as CloseIcon } from 'lucide-react';
-import React, { useState, useCallback, memo, useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { useFocusTrap } from '../../hooks/useFocusTrap';
+import React, { useState, useCallback, memo, useMemo } from 'react';
 import type { Exercise } from '../../types';
+import { ModalOverlay } from '../ui/ModalOverlay';
 import type { SupersetGroup } from './core/workoutTypes';
 import { ExerciseReorderItem } from './reorder/ExerciseReorderItem';
 
@@ -41,20 +40,13 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
   onCreateSupersetGroup,
   onClose,
 }) => {
-  const sheetRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState(exercises);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [expandedExercise, setExpandedExercise] = useState<number | null>(null);
 
-  // Make this raw createPortal sheet behave like the canonical ModalOverlay:
-  // trap Tab focus inside it, lock body scroll, and close on Escape. The
-  // component is only mounted while the drawer is open, so isOpen is always true.
-  useFocusTrap(sheetRef, {
-    isOpen: true,
-    onClose,
-    closeOnEscape: true,
-    restoreFocus: true,
-  });
+  // Focus trap, scroll lock, Escape-to-close, the scrim and the portal all come
+  // from ModalOverlay now — this component used to hand-roll every one of them.
+  // It is only mounted while the drawer is open, so isOpen is always true.
 
   // Superset multi-select mode
   const [supersetMode, setSupersetMode] = useState(false);
@@ -190,13 +182,6 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
     return m;
   }, [exercises]);
 
-  const handleDragEnd = useCallback(
-    (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-      if (info.velocity.y > 500 || info.offset.y > 200) onClose();
-    },
-    [onClose]
-  );
-
   const handleItemSelect = useCallback(
     (index: number, id: string) => {
       if (supersetMode) {
@@ -224,46 +209,29 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
   );
 
   const sheetContent = (
-    <AnimatePresence>
-      {/* Backdrop */}
-      <m.div
-        key="reorder-backdrop"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        onClick={handleClose}
+    <ModalOverlay
+      isOpen
+      onClose={onClose}
+      variant="bottomSheet"
+      zLevel="extreme"
+      backdropOpacity={60}
+      blur="sm"
+      trapFocus
+      lockScroll
+      closeOnBackdropClick
+      closeOnEscape
+      ariaLabel={supersetMode ? 'בחר תרגילים לסופרסט' : 'סדר תרגילים'}
+    >
+      {/* This sheet used to be a raw createPortal with its own backdrop, its own
+          focus trap and z-index 9999. All of that is ModalOverlay's job — and so
+          is the gesture, which here was `drag="y"` with both constraints pinned
+          at 0, dragElastic 0.5 and no dragListener guard: a half-speed drag that
+          ALSO competed with the Reorder.Group inside for every vertical pointer.
+          The house layer only starts a drag from [data-sheet-drag-handle], so
+          reordering an item and dismissing the sheet can no longer collide. */}
+      <div
+        className="w-full flex flex-col"
         style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(11,26,43,0.6)',
-          backdropFilter: 'blur(8px)',
-          zIndex: 9998,
-        }}
-      />
-
-      {/* Bottom Sheet */}
-      <m.div
-        ref={sheetRef}
-        key="reorder-sheet"
-        role="dialog"
-        aria-modal="true"
-        aria-label={supersetMode ? 'בחר תרגילים לסופרסט' : 'סדר תרגילים'}
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        drag="y"
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0, bottom: 0.5 }}
-        onDragEnd={handleDragEnd}
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 9999,
           background: 'var(--fs-surface)',
           maxHeight: '85vh',
           overflow: 'hidden',
@@ -273,13 +241,16 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
       >
         {/* Drag Handle */}
         <div
+          data-sheet-drag-handle
           style={{
             display: 'flex',
             justifyContent: 'center',
             paddingTop: 12,
             paddingBottom: 8,
             cursor: 'grab',
+            touchAction: 'none',
           }}
+          aria-hidden="true"
         >
           <div
             style={{
@@ -291,8 +262,10 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
           />
         </div>
 
-        {/* Navy Header */}
+        {/* Navy Header — also a drag handle. Its buttons stay tappable: a
+            pointer-down on a control never starts a sheet drag. */}
         <div
+          data-sheet-drag-handle
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -300,6 +273,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
             padding: '12px 20px',
             background: 'var(--fs-primary)',
             borderBottom: '1px solid rgba(var(--text-on-navy-rgb),0.1)',
+            touchAction: 'none',
           }}
         >
           <div>
@@ -512,11 +486,12 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
         </div>
 
         <div style={{ height: 'env(safe-area-inset-bottom, 16px)' }} />
-      </m.div>
-    </AnimatePresence>
+      </div>
+    </ModalOverlay>
   );
 
-  return createPortal(sheetContent, document.body);
+  // ModalOverlay already portals to document.body.
+  return sheetContent;
 };
 
 export default memo(ExerciseReorder);

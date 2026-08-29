@@ -11,7 +11,7 @@
 // PR celebrations, supersets toggle, CSV export toggle, body-weight prompts…)
 // has been removed because it was either UI-only or duplicated by global Settings.
 
-import { AnimatePresence, type PanInfo, m } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { X as CloseIcon } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { useSettings } from '../../../contexts/SettingsContext';
@@ -57,10 +57,6 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
     // global settings store rather than through onUpdateSetting.
     const { settings: appSettings, updateSettings, updateWorkoutSettings } = useSettings();
 
-    const handleDragEnd = (_: unknown, info: PanInfo) => {
-      if (info.offset.y > 100) onClose();
-    };
-
     const handleClose = useCallback(() => {
       triggerHaptic();
       onClose();
@@ -98,8 +94,8 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
     return (
       <ModalOverlay
         isOpen={isOpen}
-        onClose={onClose}
-        variant="none"
+        onClose={handleClose}
+        variant="bottomSheet"
         zLevel="ultra"
         backdropOpacity={50}
         blur="sm"
@@ -109,22 +105,15 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
         closeOnEscape
         ariaLabel="הגדרות אימון"
       >
-        {/* Custom backdrop with motion-value for drag interaction */}
-        <m.div
-          className="absolute inset-0"
-          style={{ background: 'rgba(0,0,0,0.5)' }}
-          onClick={handleClose}
-        />
-
-        <m.div
-          initial={{ y: '100%' }}
-          animate={{ y: 0 }}
-          exit={{ y: '100%' }}
-          transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-          drag="y"
-          dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={{ top: 0, bottom: 0.4 }}
-          onDragEnd={handleDragEnd}
+        {/* Entry spring and drag-to-dismiss both come from ModalOverlay's
+            bottomSheet variant. This sheet used to hand-roll them: a
+            damping-28/stiffness-350 open (an unearned overshoot on a tap) and a
+            drag with both constraints pinned at 0 plus dragElastic 0.4, which
+            moved the sheet well under half as far as the finger. The custom
+            full-bleed backdrop that used to sit here is gone too — ModalOverlay
+            already renders the scrim and routes its click to onClose, which is
+            `handleClose` so a backdrop dismiss still buzzes. */}
+        <div
           style={{
             background: 'var(--fs-bg)',
             borderTop: '2px solid var(--fs-primary)',
@@ -132,11 +121,15 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
             boxShadow: '0 -12px 32px rgba(11,26,43,0.2)',
             maxHeight: '88vh',
           }}
-          className="fixed bottom-0 left-0 right-0 flex flex-col overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
+          className="w-full flex flex-col overflow-hidden"
         >
-          {/* Drag handle */}
-          <div className="flex justify-center pt-3 pb-2">
+          {/* Drag handle — grab here to pull the sheet down and dismiss it. */}
+          <div
+            data-sheet-drag-handle
+            className="flex justify-center pt-3 pb-2 shrink-0"
+            style={{ touchAction: 'none', cursor: 'grab' }}
+            aria-hidden="true"
+          >
             <div
               style={{
                 width: 40,
@@ -147,11 +140,16 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
             />
           </div>
 
-          {/* Navy masthead — title + close button */}
+          {/* Navy masthead — title + close button. Also a drag handle: it is
+              chrome, and the only control inside it is the close button, which
+              ModalOverlay's handle check deliberately does not treat as a grab
+              (a pointer-down on a button is a tap). */}
           <div
-            className="flex items-center justify-between px-5 py-3"
+            data-sheet-drag-handle
+            className="flex items-center justify-between px-5 py-3 shrink-0"
             style={{
               background: 'var(--fs-primary)',
+              touchAction: 'none',
             }}
           >
             <div className="text-start">
@@ -470,7 +468,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
             </AnimatePresence>
             <div style={{ height: 32 }} />
           </div>
-        </m.div>
+        </div>
 
         <style>{`
                 .hide-scrollbar::-webkit-scrollbar { display: none; }

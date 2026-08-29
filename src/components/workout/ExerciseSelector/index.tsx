@@ -1,7 +1,7 @@
 // ExerciseSelector - Fresh Steel / Obsidian
 // Dark masthead · surface body · sharp corners · oversized display numerals.
 
-import { AnimatePresence, type PanInfo, m, useDragControls } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import {
   ClipboardList as ClipboardIcon,
   X as CloseIcon,
@@ -92,7 +92,6 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   const [selectedExercises, setSelectedExercises] = useState<Set<string>>(new Set());
   const [pendingExercises, setPendingExercises] = useState<PersonalExercise[]>([]);
   const shouldReduceMotion = useReducedMotion();
-  const dragControls = useDragControls();
 
   const handleSelect = useCallback((personalExercise: PersonalExercise) => {
     if (!personalExercise.name?.trim()) return;
@@ -183,16 +182,11 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     [onSelect, onSelectMany, onClose]
   );
 
-  const handleDragEnd = (_: unknown, info: PanInfo) => {
-    const projectedOffset = info.offset.y + info.velocity.y * 0.18;
-    if (projectedOffset > 120) onClose();
-  };
-
   return (
     <ModalOverlay
       isOpen={isOpen}
       onClose={onClose}
-      variant="none"
+      variant="bottomSheet"
       zLevel="extreme"
       backdropOpacity={60}
       blur="none"
@@ -202,16 +196,12 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       closeOnEscape
       ariaLabel="בחירת תרגילים"
     >
-      <m.div
-        className="fixed bottom-0 left-0 right-0 flex flex-col"
-        initial={shouldReduceMotion ? { opacity: 0 } : { y: '100%' }}
-        animate={shouldReduceMotion ? { opacity: 1 } : { y: 0 }}
-        exit={shouldReduceMotion ? { opacity: 0 } : { y: '100%' }}
-        transition={
-          shouldReduceMotion
-            ? { duration: 0.15, ease: 'easeOut' }
-            : { type: 'spring', bounce: 0, duration: 0.38 }
-        }
+      {/* Slide-in and drag-to-dismiss are ModalOverlay's now. The hand-rolled
+          drag here pinned both constraints at 0 with dragElastic 0.5, so the
+          sheet tracked at half finger speed, and projected momentum linearly at
+          `velocity * 0.18` instead of the house exponential-decay projection. */}
+      <div
+        className="w-full flex flex-col"
         style={{
           // 96dvh, not 92: the 67px of app chrome that used to peek above the
           // sheet was the first of six bars stacked over the exercise list. A
@@ -222,13 +212,6 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
           borderRadius: '28px 28px 0 0',
           boxShadow: 'var(--elevation-3)',
         }}
-        drag="y"
-        dragControls={dragControls}
-        dragListener={false}
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0, bottom: 0.5 }}
-        onDragEnd={handleDragEnd}
-        onClick={(e) => e.stopPropagation()}
       >
         {/* ── NAVY MASTHEAD ── */}
         <div
@@ -242,17 +225,14 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               "בחרו תרגילים" directly above tabs reading תרגילים / תבניות — the
               tabs already say where the user is, so the title was a whole bar
               spent on a repeat. The sheet keeps its accessible name from
-              ModalOverlay's ariaLabel. */}
+              ModalOverlay's ariaLabel.
+              This row is the drag handle: ModalOverlay reads the marker to start
+              the drag, and its interactive-element guard keeps a pointer-down on
+              a control a tap (starting a drag there made Framer swallow the
+              click, so tapping the X did nothing and the sheet read as stuck). */}
           <div
+            data-sheet-drag-handle
             className="flex items-center justify-center pt-2 pb-0.5"
-            onPointerDown={(event) => {
-              // A pointer-down on a control inside this row is a TAP, not a grab.
-              // Starting the drag here hands the pointer to Framer, which then
-              // swallows the ensuing click — so tapping the X did nothing at all
-              // and the sheet read as stuck open ("back doesn't go back").
-              if ((event.target as HTMLElement).closest('button')) return;
-              dragControls.start(event);
-            }}
             style={{ touchAction: 'none', cursor: 'grab' }}
           >
             <div
@@ -494,7 +474,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         <div
           style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--fs-surface)' }}
         />
-      </m.div>
+      </div>
     </ModalOverlay>
   );
 };

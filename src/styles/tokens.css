@@ -41,6 +41,30 @@
      (reports/04-A11Y-RTL-HEBREW.md:21). Dark and both high-contrast states
      re-point this token at --fs-accent below, where the mint already clears AA. */
   --fs-accent-text: #256d5b;
+  /* ── The two tokens that let --fs-primary stay exactly where it is ──
+     --fs-primary is dual-use: a dark-PANEL fill AND the ink on --fs-signal
+     (--color-on-mustard). Brighten it and the lime loses its ink; black it out and
+     the light active border goes to 1.00:1. So it cannot move — but every BORDER
+     and every deliberate dark BAND that merely aliased it paints near-black on
+     near-black once the surfaces flip: 1.05:1 in dark, 1.06:1 in dark+HC, 1.39:1
+     in light+HC, at 108 sites (plans/FS-PRIMARY-EXPOSURE.md).
+     Fix is the one --fs-accent-text above and --btn-primary-bg / --nav-pill-bg
+     already use on this exact defect: leave --fs-primary alone, give the two ROLES
+     their own tokens, re-point those per state. Both are declared in :root,
+     html.dark AND html.high-contrast, so all four states are pinned. That third
+     declaration is not optional: html.dark and html.high-contrast have equal
+     specificity and no combined selector, so a token missing from the HC block
+     would silently hand light+HC the LIGHT value on a black page — one failure
+     traded for another. Light aliases --fs-primary in both, so this state is
+     byte-identical BY CONSTRUCTION, not by two hex strings happening to match. */
+  /* Borders, outlines, dividers and any control edge that must be findable.
+     Floor 3:1 (WCAG 1.4.11, non-text contrast). */
+  --fs-edge: var(--fs-primary);
+  /* Deliberate dark chrome only: mastheads, chapter breaks, hero bands, full-bleed
+     dark panels. Ink on it stays --color-ink-on-dark, which already flips.
+     NOT for a band that sits on a --fs-surface-2 backdrop — in dark this token IS
+     --fs-surface-2 and would land at 1.00:1. Page or card backdrops only. */
+  --fs-panel: var(--fs-primary);
   /* Accent as raw RGB channels — enables rgba(var(--fs-accent-rgb), <alpha>) */
   --fs-accent-rgb: 67, 199, 165;
   --fs-signal: #e2fb70;
@@ -423,6 +447,22 @@ html.dark {
      the accent itself here. Keeps this state byte-identical to before the token
      existed (12.27:1 on --fs-bg #000, 11.03:1 on --fs-surface #111). */
   --fs-accent-text: var(--fs-accent);
+  /* Borders: the existing dark border idiom (--color-border .10,
+     --color-border-strong .26) raised to the first alpha that clears 3:1 on the
+     ELEVATED surface, not a new colour concept. 3.95:1 on --fs-bg #000, 4.10:1 on
+     --fs-surface #111, 3.89:1 on --fs-surface-2 #262626 — all clear 1.4.11, where
+     --fs-primary #0a0a0a gave 1.06 / 1.05 / 1.31. --color-border-strong could not
+     be reused: at .26 it measures 2.10-2.35:1 over these same three surfaces,
+     under the floor. A brand edge (#318d78 = --fs-accent x 0.64, the factor
+     already used on the dark ON track) also clears at 3.75-5.21:1, but it would
+     put an accent rail on every card, which DESIGN.md bans — the edge stays
+     neutral and the mint stays the action colour. */
+  --fs-edge: rgba(255, 255, 255, 0.42);
+  /* Panels: the app's own elevation step (bg -> surface -> surface-2), so a dark
+     band reads as the elevated surface instead of a hole. 1.39:1 vs the page (was
+     1.06:1) and 1.25:1 vs a card (was 1.05:1); --color-ink-on-dark #f0f0f0 on it
+     is 13.28:1. A band on a --fs-surface-2 backdrop is 1.00:1 here — see :root. */
+  --fs-panel: var(--fs-surface-2);
   --fs-accent-rgb: 77, 220, 187;
   --fs-signal: #e2fb70;
   --fs-warn: #ff8a65;
@@ -681,6 +721,25 @@ html.high-contrast {
      choice here, so accent text is the accent itself: 16.82:1 on #000. Applies to
      light+HC and dark+HC alike (this block wins over html.dark by source order). */
   --fs-accent-text: var(--fs-accent);
+  /* A border is structure here, not a hint — same premise as --color-border above,
+     so --fs-edge follows it, exactly like --fs-steel below. 21:1 on the black page
+     and card, 18.88:1 on --fs-surface-2, where --fs-primary gave 1.39 / 1.39 /
+     1.25 in light+HC and 1.06 / 1.06 / 1.05 in dark+HC. */
+  --fs-edge: var(--color-border);
+  /* --fs-panel is the one token in this pair that must NOT simply follow the
+     elevation ladder. Pointing it at --fs-surface-2 (#111111) would take a band
+     from 1.39:1 to 1.11:1 against the black page: no WCAG floor applies to a
+     decorative band, but a user who switches high contrast ON asked for MORE
+     separation, and shipping less on the one axis they opted into is the wrong
+     direction. #1c363b is the palette's own next step up the navy ladder (:root
+     --navy-light), so the band still reads as brand navy rather than a mid grey:
+     1.64:1 vs the page and card, 1.47:1 vs --fs-surface-2, --color-ink-on-dark
+     #ffffff on it 12.80:1. Both HC states improve — light+HC 1.39 -> 1.64,
+     dark+HC 1.06 -> 1.64.
+     It is a LITERAL on purpose: var(--navy-light) resolves to #222222 in dark+HC
+     (this block does not declare it, so html.dark's value survives), which is
+     1.32:1 — the two HC states would disagree and dark+HC would miss the floor. */
+  --fs-panel: #1c363b;
   --color-surface-hover: var(--fs-surface-2);
   --fs-plate: var(--fs-surface-2);
   --fs-steel: var(--color-border);
