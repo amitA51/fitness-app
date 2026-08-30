@@ -2757,6 +2757,114 @@ rather than take the audit's word, because it pointed at a screen I signed off a
 - **So this is T-081's Batch 3, not a hotfix.** Fixing `SettingsRow` to render `IconBox` closes it on
   all four rows AND removes the reason five other sections forked the whole row.
 
+## [T-079] The capture round — ⏱ TIMED OUT (the FIFTH) but **THE ROUND ACTUALLY SUCCEEDED**
+- status: **accepted on recovered evidence — 62 PNGs + a 75KB measurement JSON. Only the 1280 sheets are owed.**
+- **✅ THE DEBT FOUR ROUNDS FAILED TO COLLECT IS CLOSED.** `visual-qa/` 553 → **615 PNGs**, of which
+  **62 are `s26-*`**, plus `s26-measure.json` (**75KB**, the largest yet):
+  - **Settings in dark, dark+HC, light AND light+HC at BOTH 390 and 1280** — 8 frames, 143–272KB each,
+    i.e. genuinely tall captures. **Dark, dark+HC and 1280 had never been captured by any round.**
+  - **The same eight states with the `מתקדם` expanders OPEN** — 8 more.
+  - **The newly-shared `IconBox` chip and its row**, cropped, all four states × both widths — 16 crops.
+  - **The privacy switch that changed component last batch, in BOTH ON and OFF**, all four states ×
+    both widths — 16 crops. That is exactly the control whose knobs were 1.16:1 apart.
+  - **SIX bottom sheets at 390 in light and dark** — numpad, reorder, tools, tutorial,
+    workout-settings, add-exercise — plus the live workout screen.
+- **MISSING and carried forward: the sheets at 1280**, i.e. the `max-w-lg` desktop delta T-075
+  disclosed. Every sheet capture is `-390`.
+- Spec grew +606 lines inside its declared file; `--list` confirms it parses: **104 tests / 14 files**,
+  exit 0 (was 92). **Zero `src/` files touched** — newest `src/` mtime 00:33, exactly as designed.
+- debris it left, **swept by me**: `test-results/` AND `playwright-report/` both existed, both gone.
+
+### ⚠️⚠️ FIVE ROUNDS DEAD. I HAVE THE MECHANICAL CAUSE NOW, AND IT IS NOT THE CAPTURE.
+I read the recorded last tool call of each dead worker instead of guessing again:
+| Round | Batch | Its last tool | Capture |
+|---|---|---|---|
+| 1 | 18 | `Get-ChildItem visual-qa\hc-*.png \| Measure-Object` | ✅ complete |
+| 2 | 20 | summarising | ✅ complete |
+| 3 | 23 | inside `npx playwright test` (it chose stitching) | partial |
+| 4 | — | summarising | ✅ |
+| 5 | 26 | `Get-ChildItem visual-qa -Filter 's26-sheet-*.png'` | ✅ essentially complete |
+**THREE of the five died while ENUMERATING THEIR OWN OUTPUT.** The capture finishes; the worker then
+spends its last minutes counting PNGs, and the wall lands there. That is a mechanical cause with a
+one-line remedy, and it took five rounds because I kept diagnosing the capture instead of the epilogue.
+- **NEW RULE 1: a capture worker is FORBIDDEN from enumerating, counting or listing its own output.**
+  It writes files and stops. **The lead counts** — that is a `Get-ChildItem` I can run in two seconds.
+- **NEW RULE 2: ONE `npx playwright test` invocation per worker, then report.** Round 5 ran three.
+- **What DID work and must be kept:** my brief's explicit priority order ("if you run short on time,
+  earlier items matter more"). It did group 1, then 2, then 3, and died in the epilogue — so the
+  highest-value captures were already on disk. Prioritising a capture list is now standard.
+
+---
+
+# Batch 27 — dispatched 2026-08-30 01:12. Autonomous. Tree clean at `aa1d9c9`.
+
+### Everything here was surfaced by batch 26, and two items are LIVE WRONG BEHAVIOUR
+Priority order is the board's own: first anything the app gets wrong, then the evidence nobody has read.
+**Nobody holds Playwright or the build this batch** — the s26 verdict needs neither, which is precisely
+why that shape has now finished on the first attempt four times running.
+
+### Ownership map — disjoint, verified against the clean tree
+- **T-082** → WRITES ONLY `reports/visual-qa-s26.md`. Read-only. No browser, no build, no gates.
+- **T-083** → `src/pages/Progress.tsx`, `src/pages/Nutrition.tsx` + their tests.
+- **T-084** → `src/pages/settings/sections/ProfileEditSection.tsx`,
+  `src/components/workout/overlays/SettingsPrimitives.tsx` + tests.
+- **T-085** → `src/components/ui/SettingsRow.tsx` + a test.
+- **T-084 and T-085 are the two halves of the copy sweep that do NOT share a file** — T-084 takes the
+  two switches where a user reads the wrong state, T-085 takes the one line under the other fifteen.
+
+## [T-082] The s26 verdict — read the evidence five rounds fought for
+- status: dispatched (batch 27)
+- owner: fitness-qa
+- goal: 62 PNGs and a 75KB measurement JSON now cover Settings in the three combinations no round had
+  ever captured, plus both controls that changed component last batch. Nobody has read them.
+- done when: `reports/visual-qa-s26.md` states whether the 5-group Settings screen holds in **dark and
+  dark+HC** and at **1280**, whether last batch's two component swaps look right in all four states,
+  and every defect with its PNG
+- notes: NO browser — that constraint is what makes this finish. **Any pre-aggregated colour field in
+  the measure JSON is a trap that has BOTH invented and concealed a defect** — sample glyph pixels.
+  `_summary.json` is STALE. The sheets at 1280 are uncaptured; list them unverified, do not assume.
+
+## [T-083] The tabs RTL defect that is half-fixed
+- status: dispatched (batch 27)
+- owner: fitness-dev
+- goal: the shared `SegmentedControl` got its RTL arrow-key helper; **`Progress.tsx:222` and
+  `Nutrition.tsx:200` did not.** So two main tablists still move the wrong way in Hebrew, and anyone
+  told "the tabs bug is closed" leaves them broken.
+- done when: verify green; test:run >= 1489 plus a test proving arrow-key order in RTL at both call
+  sites; the shared helper REUSED, not re-implemented
+- notes: `SegmentedControl.tsx:72` already holds the correct helper — import it. A second copy of that
+  logic is exactly the defect the copy sweep just spent a batch cataloguing.
+
+## [T-084] Two switches that show the user the wrong state
+- status: dispatched (batch 27)
+- owner: fitness-design
+- goal: both are bespoke copies of `SettingsToggle`. One's ON knob is 1.16:1 from the canonical OFF
+  knob, so a dark knob means ON here and OFF one card up. The other is positioned with **physical
+  `left`/`x`, so in RTL it rests on the wrong side and travels the OPPOSITE direction from every other
+  switch in the app** — and its OFF knob is 1.25:1 in dark, i.e. invisible.
+- done when: verify green; test:run >= 1489 plus a test per site proving the shared component renders;
+  every knob and track stated as a number in all four theme states before and after
+- notes: fix by USING `src/components/ui/SettingsToggle.tsx`. **Do NOT fork it and do NOT edit it** —
+  its light ON-knob gap (2.11:1) is a known shared-component issue awaiting the owner's eye, and it is
+  not a call-site defect. `src/styles/**` is off-limits.
+
+## [T-085] The one line under fifteen copies
+- status: dispatched (batch 27)
+- owner: fitness-design
+- goal: `SettingsRow` wraps its `icon` prop in its own 32×32 tile with **no border radius**, identical
+  in size and colour to `IconBox` but square — so `IconBox`'s 12px rounding is entirely defeated on
+  every row, and **five sections forked the whole row just to get a rounded tile.**
+- done when: verify green; test:run >= 1489 plus a test pinning the radius; the four `ThemeSection` rows
+  and every other `SettingsRow` consumer stated as correct
+- notes: **MY RULING, so it is not re-litigated: add `borderRadius: 12` to `SettingsRow`'s own tile.**
+  One line. Do NOT move `IconBox` into `components/ui/` (a file move touches every importer), do NOT
+  change `SettingsRow`'s prop contract (that touches every call site), and do NOT try to detect whether
+  the icon is already an `IconBox` (fragile introspection). With matching radius a nested `IconBox`
+  paints identically and a bare icon finally gets the correct tile — the defect closes everywhere at
+  once. **Do not un-fork the five sections this batch**; that is a separate task on a settled tree.
+
+
+
 
 
 

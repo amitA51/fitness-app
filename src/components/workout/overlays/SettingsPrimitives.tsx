@@ -2,8 +2,8 @@
 // All visuals use var(--fs-*) tokens (no `bg-white/10` etc.) so the overlay
 // matches the rest of the active workout shell, NumpadOverlay, ConfirmExit etc.
 
-import { m } from 'framer-motion';
 import { memo } from 'react';
+import { SettingsToggle } from '../../ui/SettingsToggle';
 
 // ============================================================
 // HAPTIC
@@ -55,32 +55,51 @@ const labelStyle: React.CSSProperties = {
 // PRIMITIVES
 // ============================================================
 
-/** Toggle row — Fresh Steel surfaces, no opacity-based whites */
+/** Toggle row — Fresh Steel surfaces, no opacity-based whites.
+ *
+ * The switch VISUAL is the shared `SettingsToggle`, not a copy of it. The copy
+ * that stood here had two defects the shared component does not have:
+ *
+ *   1. RTL — its knob was placed with a physical `left: 2` and animated with a
+ *      physical `x` transform. Under `<html dir="rtl">` neither flips, so this
+ *      switch rested on the wrong side and travelled the OPPOSITE way from every
+ *      other switch in the app for the same state change. The shared component
+ *      uses `insetInlineStart`, which the writing mode flips for free.
+ *   2. Its knob was hardcoded to --fs-surface in BOTH states, so OFF it was
+ *      1.25:1 on its own --fs-surface-2 track in dark, inside a --fs-steel
+ *      outline that was 1.05:1 on that same track: a featureless blob. The
+ *      shared knob follows the fill it sits on (--fs-ink OFF, --fs-surface ON)
+ *      behind a 2px --fs-ink edge.
+ *
+ * The ROW is still the tap target. A <label> forwards its own activation to the
+ * labeled control — the switch button — so the full-width row keeps working
+ * without a second click handler, which would toggle twice and cancel itself.
+ * Children are spans (phrasing content) because a <label> may not hold divs.
+ */
 export const Toggle = memo<{
   label: string;
   description?: string;
   value: boolean;
   onChange: (v: boolean) => void;
 }>(({ label, description, value, onChange }) => (
-  <button
-    type="button"
-    role="switch"
-    aria-checked={value}
-    onClick={() => {
-      triggerSettingsHaptic();
-      onChange(!value);
-    }}
+  // The labeled control IS inside — SettingsToggle's <button role="switch">.
+  // `button` is a labelable element per HTML, but this rule only looks for
+  // input/select/textarea and cannot see through a component boundary. Dropping
+  // the <label> would cost the full-row tap target, and a click handler on a
+  // <div> instead would fire twice when the switch itself is tapped.
+  // biome-ignore lint/a11y/noLabelWithoutControl: labeled control is the switch button inside
+  <label
     className="w-full flex items-center justify-between text-start"
     style={{
       padding: '14px 4px',
       background: 'transparent',
-      border: 'none',
       cursor: 'pointer',
     }}
   >
-    <div className="flex-1 pe-4">
-      <div
+    <span className="flex-1 pe-4" style={{ minWidth: 0 }}>
+      <span
         style={{
+          display: 'block',
           fontFamily: 'var(--font-body)',
           fontSize: 15,
           fontWeight: 600,
@@ -89,10 +108,11 @@ export const Toggle = memo<{
         }}
       >
         {label}
-      </div>
+      </span>
       {description && (
-        <div
+        <span
           style={{
+            display: 'block',
             fontFamily: 'var(--font-body)',
             fontSize: 12,
             color: 'var(--fs-muted)',
@@ -101,37 +121,14 @@ export const Toggle = memo<{
           }}
         >
           {description}
-        </div>
+        </span>
       )}
-    </div>
-    <div
-      style={{
-        position: 'relative',
-        width: 50,
-        height: 30,
-        borderRadius: 999,
-        backgroundColor: value ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
-        border: '1px solid var(--fs-steel)',
-        flexShrink: 0,
-        transition: 'background-color 200ms ease',
-      }}
-    >
-      <m.div
-        style={{
-          position: 'absolute',
-          top: 2,
-          left: 2,
-          width: 24,
-          height: 24,
-          borderRadius: 999,
-          backgroundColor: 'var(--fs-surface)',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-        }}
-        animate={{ x: value ? 21 : 0 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-      />
-    </div>
-  </button>
+    </span>
+    {/* Haptics come from the shared component (triggerHaptic('light'), which the
+        Settings haptics switch gates) — calling triggerSettingsHaptic here too
+        would double-buzz one tap. */}
+    <SettingsToggle checked={value} onChange={() => onChange(!value)} label={label} />
+  </label>
 ));
 Toggle.displayName = 'Toggle';
 

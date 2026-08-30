@@ -15,7 +15,11 @@ export function SettingsRow({ icon, label, children, divider = true }: SettingsR
         {icon && (
           <div
             className="w-8 h-8 flex items-center justify-center shrink-0"
-            style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-heading)' }}
+            style={{
+              background: 'var(--fs-surface-2)',
+              color: 'var(--fs-heading)',
+              borderRadius: 12,
+            }}
           >
             {icon}
           </div>

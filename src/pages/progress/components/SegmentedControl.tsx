@@ -42,6 +42,30 @@ interface SegmentedControlProps<T extends string> {
 /** iOS-like settle: fast to arrive, no visible overshoot on a small control. */
 const INDICATOR_SPRING = { type: 'spring', stiffness: 400, damping: 30, mass: 1 } as const;
 
+/**
+ * Where a horizontal arrow key should move a roving-tabindex tablist, resolved by
+ * VISUAL direction: in RTL, ArrowLeft advances and ArrowRight goes back. Wraps at
+ * both ends.
+ *
+ * Returns `null` when the key is not a horizontal arrow (or the list is empty) —
+ * the caller must then leave the event alone rather than preventDefault it.
+ *
+ * Exported because the page-level tablists (Progress.tsx, Nutrition.tsx) draw a
+ * different control but have to step identically. A second copy of this rule is
+ * exactly how those two pages shipped LTR-inverted arrow keys.
+ */
+export function arrowKeyTargetIndex(
+  key: string,
+  isRTL: boolean,
+  currentIndex: number,
+  count: number
+): number | null {
+  if (key !== 'ArrowRight' && key !== 'ArrowLeft') return null;
+  if (count <= 0) return null;
+  const forward = isRTL ? key === 'ArrowLeft' : key === 'ArrowRight';
+  return (currentIndex + (forward ? 1 : -1) + count) % count;
+}
+
 export const SegmentedControl = memo(function SegmentedControl<T extends string>({
   options,
   value,
@@ -66,12 +90,11 @@ export const SegmentedControl = memo(function SegmentedControl<T extends string>
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent, idx: number) => {
-      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-      e.preventDefault();
       // Visual direction, not index direction: in RTL, ArrowRight goes back.
-      const forward = isRTL ? e.key === 'ArrowLeft' : e.key === 'ArrowRight';
-      const delta = forward ? 1 : -1;
-      const next = options[(idx + delta + options.length) % options.length];
+      const targetIdx = arrowKeyTargetIndex(e.key, isRTL, idx, options.length);
+      if (targetIdx === null) return;
+      e.preventDefault();
+      const next = options[targetIdx];
       if (!next) return;
       select(next.key);
       document.getElementById(`${idPrefix}-tab-${next.key}`)?.focus();

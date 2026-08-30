@@ -9,6 +9,7 @@ import { WaterTracker } from '../components/nutrition/WaterTracker';
 import { Card } from '../components/ui/Card';
 import PageHeader from '../components/ui/PageHeader';
 import { SkeletonBox } from '../components/ui/SkeletonLoader';
+import { useIsRTL } from '../hooks/useIsRTL';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { AddMealModal } from './nutrition/components/AddMealModal';
 import { CalorieHero } from './nutrition/components/CalorieHero';
@@ -21,11 +22,13 @@ import { MealPresetCard } from './nutrition/components/MealPresetCard';
 import { NutritionTrendChart } from './nutrition/components/NutritionTrendChart';
 import { WaterHistoryChart } from './nutrition/components/WaterHistoryChart';
 import { useNutritionData } from './nutrition/hooks/useNutritionData';
+import { arrowKeyTargetIndex } from './progress/components/SegmentedControl';
 
 type MealTab = 'log' | 'library' | 'presets';
 
 export default function NutritionPage() {
   const shouldReduceMotion = useReducedMotion();
+  const isRTL = useIsRTL();
   const {
     todayEntries,
     todayMacros,
@@ -87,6 +90,23 @@ export default function NutritionPage() {
       { key: 'presets', label: 'ארוחות', icon: <BookOpen size={15} /> },
     ],
     []
+  );
+
+  // Roving-tabindex arrow stepping, delegated to the shared SegmentedControl
+  // helper so this tablist moves by VISUAL direction like every other one in the
+  // app: in Hebrew ArrowLeft advances and ArrowRight goes back. This used to be a
+  // hand-rolled ArrowRight = +1 / ArrowLeft = -1 pair, which is inverted in RTL.
+  const handleTabKeyDown = useCallback(
+    (e: React.KeyboardEvent, idx: number) => {
+      const targetIdx = arrowKeyTargetIndex(e.key, isRTL, idx, TABS.length);
+      if (targetIdx === null) return;
+      e.preventDefault();
+      const next = TABS[targetIdx];
+      if (!next) return;
+      setActiveTab(next.key);
+      document.getElementById(`nutrition-tab-${next.key}`)?.focus();
+    },
+    [isRTL, TABS, setActiveTab]
   );
 
   return (
@@ -196,21 +216,7 @@ export default function NutritionPage() {
                 aria-controls={`nutrition-panel-${tab.key}`}
                 tabIndex={activeTab === tab.key ? 0 : -1}
                 onClick={() => setActiveTab(tab.key)}
-                onKeyDown={(e) => {
-                  if (e.key === 'ArrowRight') {
-                    e.preventDefault();
-                    const next = TABS[(idx + 1) % TABS.length];
-                    if (!next) return;
-                    setActiveTab(next.key);
-                    document.getElementById(`nutrition-tab-${next.key}`)?.focus();
-                  } else if (e.key === 'ArrowLeft') {
-                    e.preventDefault();
-                    const prev = TABS[(idx - 1 + TABS.length) % TABS.length];
-                    if (!prev) return;
-                    setActiveTab(prev.key);
-                    document.getElementById(`nutrition-tab-${prev.key}`)?.focus();
-                  }
-                }}
+                onKeyDown={(e) => handleTabKeyDown(e, idx)}
                 className={`tab-item ${activeTab === tab.key ? 'active' : ''} flex items-center gap-1.5`}
               >
                 {tab.icon}

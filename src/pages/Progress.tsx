@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom';
 import { FadeIn } from '../components/motion/FadeIn';
 import { showToast } from '../components/ui/GlobalToast';
 import PageHeader from '../components/ui/PageHeader';
+import { useIsRTL } from '../hooks/useIsRTL';
 import {
   addBodyMeasurement,
   addBodyWeight,
@@ -18,6 +19,7 @@ import { todayStr } from '../utils/dateUtils';
 import { triggerHapticEffect } from '../utils/haptics';
 import { safeJsonParse } from '../utils/safeJson';
 import { ProgressSkeleton } from './progress/components/ProgressSkeleton';
+import { arrowKeyTargetIndex } from './progress/components/SegmentedControl';
 import { AddMeasurementModal } from './progress/modals/AddMeasurementModal';
 import { AddRecoveryModal } from './progress/modals/AddRecoveryModal';
 import { AddWeightModal } from './progress/modals/AddWeightModal';
@@ -50,10 +52,28 @@ export default function ProgressPage() {
   // A forward navigation (e.g. finishing a workout) can request a starting tab
   // via location state; fall back to the overview for a normal visit.
   const location = useLocation();
+  const isRTL = useIsRTL();
   const [activeTab, setActiveTab] = useState<ProgressTab>(() => {
     const requested = (location.state as { tab?: string } | null)?.tab;
     return TABS.some((t) => t.key === requested) ? (requested as ProgressTab) : 'overview';
   });
+
+  // Roving-tabindex arrow stepping, delegated to the shared SegmentedControl
+  // helper so this tablist moves by VISUAL direction like every other one in the
+  // app: in Hebrew ArrowLeft advances and ArrowRight goes back. This used to be a
+  // hand-rolled ArrowRight = +1 / ArrowLeft = -1 pair, which is inverted in RTL.
+  const handleTabKeyDown = useCallback(
+    (e: React.KeyboardEvent, idx: number) => {
+      const targetIdx = arrowKeyTargetIndex(e.key, isRTL, idx, TABS.length);
+      if (targetIdx === null) return;
+      e.preventDefault();
+      const next = TABS[targetIdx];
+      if (!next) return;
+      setActiveTab(next.key);
+      document.getElementById(`progress-tab-${next.key}`)?.focus();
+    },
+    [isRTL]
+  );
   // Same-page deep links (the big-three widget lives ON this page) arrive as a
   // new location.state while already mounted — the useState initializer above
   // never re-runs for those, so react to state changes here too.
@@ -218,21 +238,7 @@ export default function ProgressPage() {
               tabIndex={activeTab === tab.key ? 0 : -1}
               onClick={() => setActiveTab(tab.key)}
               className="active:scale-[0.97] motion-reduce:active:scale-100"
-              onKeyDown={(e) => {
-                if (e.key === 'ArrowRight') {
-                  e.preventDefault();
-                  const next = TABS[(idx + 1) % TABS.length];
-                  if (!next) return;
-                  setActiveTab(next.key);
-                  document.getElementById(`progress-tab-${next.key}`)?.focus();
-                } else if (e.key === 'ArrowLeft') {
-                  e.preventDefault();
-                  const prev = TABS[(idx - 1 + TABS.length) % TABS.length];
-                  if (!prev) return;
-                  setActiveTab(prev.key);
-                  document.getElementById(`progress-tab-${prev.key}`)?.focus();
-                }
-              }}
+              onKeyDown={(e) => handleTabKeyDown(e, idx)}
               style={{
                 display: 'flex',
                 alignItems: 'center',

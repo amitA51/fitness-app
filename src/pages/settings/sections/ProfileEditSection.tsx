@@ -17,6 +17,7 @@
 import { Camera, Globe, Loader2, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { SectionLabel } from '../../../components/ui/SettingsSectionLabel';
+import { SettingsToggle } from '../../../components/ui/SettingsToggle';
 import {
   getMyProfile,
   updateProfile,
@@ -407,7 +408,6 @@ export function ProfileEditSection() {
             />
             <span style={{ minWidth: 0 }}>
               <span
-                id="profile-public-label"
                 style={{
                   display: 'block',
                   fontFamily: 'var(--font-body)',
@@ -420,39 +420,17 @@ export function ProfileEditSection() {
               <span style={HELPER_STYLE}>כשמופעל, אחרים יכולים לצפות בפרופיל שלך.</span>
             </span>
           </span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={isPublic}
-            aria-labelledby="profile-public-label"
-            onClick={handleToggle}
-            className="active:scale-[0.98]"
-            style={{
-              width: 52,
-              height: 30,
-              borderRadius: 999,
-              border: 'none',
-              cursor: 'pointer',
-              position: 'relative',
-              flexShrink: 0,
-              background: isPublic ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
-              transition: 'background 0.15s ease',
-            }}
-          >
-            <span
-              aria-hidden="true"
-              style={{
-                position: 'absolute',
-                top: 3,
-                insetInlineStart: isPublic ? 25 : 3,
-                width: 24,
-                height: 24,
-                borderRadius: '50%',
-                background: isPublic ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
-                transition: 'inset-inline-start 0.15s ease',
-              }}
-            />
-          </button>
+          {/* The switch VISUAL is the shared component, not a copy of it. The copy
+              that stood here was 52x30 with `border: 'none'` and inverted knob
+              tokens: --color-ink-on-accent (#071412) when ON, where the canonical
+              switch paints --fs-ink (#132327) when OFF. Those two are 1.16:1 apart
+              — the same near-black to the eye — so on THIS screen a dark knob
+              meant OFF on the rows above and ON on this one. The 30px height was
+              also 14px under the 44px touch floor, and with no border the OFF
+              track was its own boundary against the card (1.25:1 in dark, under
+              the 3:1 of WCAG 1.4.11). All three are properties of the shared
+              component, so rendering it is the whole fix. */}
+          <SettingsToggle checked={isPublic} onChange={handleToggle} label="פרופיל ציבורי" />
         </div>
       </div>
     </div>
