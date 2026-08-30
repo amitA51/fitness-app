@@ -124,9 +124,18 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
         transition={{ delay: 0.45 }}
         className="px-6 pb-8 pt-4"
       >
+        {/* Call it with NO arguments — do not "simplify" this to
+            `onClick={onNext}`. The function actually passed down is the wizard's
+            `goNext(updates?)`, so a bare reference makes React hand the
+            MouseEvent in as `updates` and spread it into the wizard data. The
+            data then carries circular members (`view` — the Window — plus
+            `target` / `currentTarget`), the finish payload's JSON.stringify
+            throws, and the last step of onboarding freezes with no message
+            (T-098). This prop is typed `() => void`, which is exactly what let
+            the mistake type-check. */}
         <button
           type="button"
-          onClick={onNext}
+          onClick={() => onNext()}
           className="start-workout-btn focus-ring"
           style={{ minHeight: 56 }}
         >

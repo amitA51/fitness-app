@@ -6487,3 +6487,215 @@ pages are still unphotographed · the capture spec still clobbers `s26-measure.j
 240px empty gap** at 1280. Two workers flagged it structurally in batches 28 and 29; T-094 has now
 measured it. The header is deliberately full-bleed today, so following the column is a design decision,
 not a bug fix.
+
+
+---
+
+# ⭐ MERGED TO MASTER 2026-08-30 12:09 — Amit's explicit instruction: "בוא נמזג ונחזור לעבוד על מה שחשוב"
+
+**`master` = `bcb1353` = `origin/master`. Tree clean.** Batches 1–31 are finally on the main branch.
+
+Pre-merge safety check run BEFORE touching anything: tree clean · `master` proven an ancestor of HEAD
+(**clean fast-forward, zero conflict risk**) · **zero commits on `master` that the branch lacked**, so
+nothing could be lost · no stashes · no in-progress merge/rebase. Merged with `--ff-only` to guarantee
+no surprise merge commit.
+
+| | |
+|---|---|
+| commits landed | **32** |
+| files | **259**, +36,566 / −6,811 |
+| `npm run verify` on master | exit 0, **727** files |
+| `npm run test:run` on master | **188 files / 1606 tests**, exit 0 |
+| `npx playwright test --list` | **122 tests / 15 files**, exit 0 |
+
+The feature branch `feat/ux-templates-picker` still exists at the same commit; nothing was deleted.
+
+## ⚠️⚠️ THE COURSE CORRECTION — Amit asked "are we on important things or trivia? I lost you." He was RIGHT.
+
+**My honest self-assessment, recorded so it is not softened later:** batches 24–31 were **eight
+consecutive batches almost entirely on colour contrast and page width.** The work was correct,
+measured and green — and it was **not the important thing.**
+
+- **Every ask Amit ever named is DONE:** Home · workout screen + templates + picker · Progress ·
+  nutrition hidden · Settings 16→5 · onboarding 19→14 · the fake AI deleted and the real engine
+  connected · payment scaffold · warmup screen.
+- Then he handed me open autonomy and **I chose contrast** — on an app with **zero users**, where
+  **nobody has ever switched high-contrast on**, while the branch carrying all of it **had never been
+  merged**.
+- **What was genuinely worth it:** the set-logging screen really was unreadable in dark, and that is
+  the one screen a user touches mid-workout. Worth doing.
+  **What was not:** ~20 further sites on screens nobody has opened, plus the page-header alignment I
+  spent a whole turn on.
+
+**DESCOPED NOW, deliberately, with their numbers already documented so nothing is lost:** the three
+remaining high-contrast fall-through holes · the six extra `--fs-primary` sites in
+`SetEditBottomSheet.tsx` · the ink-on-accent batches A–D · the `PageHeader` alignment · the
+0-byte grabber crops and the `s26-measure.json` clobber · doc freshness.
+**None of them is felt by a user. They stay on this board and they stay unbuilt until something
+demands them.**
+
+---
+
+# Batch 32 — dispatched 2026-08-30 12:12. THE THING WE HAVE NEVER DONE.
+
+### One worker. Not three. A second slot would be filler and I said so in batch 30.
+**Nobody has ever launched this app cold and gone all the way through to a saved workout.** Thirty-one
+batches of audits, screenshots and token arithmetic — every one of them either a static read or a
+photograph of a single screen. The one thing never done is USE it end to end.
+That is where the defects that actually matter live: a flow that dead-ends, a state that cannot be
+escaped, a button that does nothing, data that does not persist. None of those are findable by
+grepping a token.
+
+**It holds Playwright and the build, so nobody writes `src/` this batch** — the accumulated lesson of
+seven rounds. The fixes come next batch, driven by what it finds rather than by what I guess.
+
+## [T-097] Use the app. Cold launch to saved workout. Report everything that breaks.
+- status: dispatched (batch 32)
+- owner: fitness-qa
+- goal: the first real end-to-end run of the product. Not a screen audit — a user journey.
+- files: WRITES `visual-qa/**` + at most ONE new e2e spec. **Read-only in `src/`.**
+  **HOLDS PLAYWRIGHT AND THE BUILD — sole owner.**
+- done when: the journey is walked in a real browser at 390px and every break is reported with the
+  step that produced it and the frame that shows it — cold launch → onboarding → home → create a
+  template → add exercises → start a workout → log real sets → rest timer → finish → summary →
+  progress. Plus: can you get BACK out of every screen you got into.
+- notes: **capture only what a break needs; this is a bug hunt, not a photo round.** ONE playwright
+  invocation. FORBIDDEN from counting its own output. Build FIRST. Wipe localStorage AND IndexedDB
+  before the run so it is genuinely a cold first launch. **Report a dead end or a no-op button as a
+  HIGH finding even if it is cosmetically fine** — that is the whole point of this task. If it cannot
+  complete the journey, the point where it stopped IS the headline result.
+
+
+## [T-097] The usage test — ⏱ TIMED OUT, and it found the most important defect in 32 batches
+- status: **accepted on recovered evidence. VERDICT: FAIL — BLOCKER. The app is unreachable for every new user.**
+- Died at the 30-min wall; its last tool was `npm run test:run`, which was never in its brief — so it
+  drifted into verification at the end. **But it had already found and traced the blocker**, and 10
+  frames + `t097-journey.json` (42KB) + `t097-digest.json` (25KB) are on disk.
+
+### ⚠️⚠️ ONBOARDING CANNOT BE COMPLETED. AND THE SKIP BUTTON IS DEAD TOO.
+The journey stopped at **step 2 of 10** and never reached home, templates, a workout, a set, the timer,
+the summary or progress. Tapping a goal card **visibly selects it** — mint fill, checkmark — and the
+wizard then freezes there forever. Six taps over six seconds: screen never changed, `localStorage` never
+grew past 2 keys, and each tap threw the same uncaught error.
+`Converting circular structure to JSON --> starting at object with constructor 'Window'`
+
+**I VERIFIED THE WHOLE CHAIN MYSELF by reading all four files rather than taking it on report:**
+1. `src/pages/onboarding/steps/WelcomeStep.tsx:129` — `onClick={onNext}`. The prop is typed `() => void`
+   but the real function is `goNext(updates?)`, so **React hands the MouseEvent in as `updates`.**
+2. `src/pages/onboarding/useOnboardingWizard.ts:57-59` — `const next = updates ? {...data, ...updates} : data;`
+   then `if (updates) setData(next)`. The SyntheticEvent is truthy, gets spread in, **and is committed to
+   state.** From the very first tap the wizard's data carries `view: Window` and is circular.
+3. `src/appOnboarding.ts:62` — `JSON.stringify(data)`, unguarded. Throws.
+4. `src/AppRouter.tsx` — `handleOnboardingComplete` therefore never reaches `setOnboardingDone(true)`.
+
+**The tell is that the card DOES light up:** `setData(next)` runs, then `onComplete(next)` throws. The UI
+confirms the answer and the transition dies silently.
+
+**HIGH-2 — no escape either.** `savePartialOnboardingData` (`appOnboarding.ts:106`) has the same unguarded
+`JSON.stringify(data)` as its FIRST statement, so `onboarding_completed` on the next line never runs.
+**Forward is dead and skip is dead: a screen you cannot leave.** (Worker's status: code-read, not executed.)
+
+**MEDIUM — and this is why it stayed invisible.** `useOnboardingWizard.ts:37` writes the draft to
+`sessionStorage` with the same stringify **inside a swallowing `try/catch`**, so onboarding progress has
+silently never persisted and a reload restarts the wizard. The swallow is why there was no console noise.
+
+### ⚠️ THIS IS OUR OWN BUG, FROM BATCH 21, AND I OWN IT
+The docblock at `useOnboardingWizard.ts:48-54` explains that `updates` exists to fix a stale-closure bug —
+**that was T-066's own fix in batch 21, which I accepted and praised on this board.** Adding that
+parameter is exactly what let the click event poison the state. So batch 21 fixed one bug and shipped a
+worse one, **and 1606 tests never caught it because no test drives a real click through `WelcomeStep`.**
+Eight subsequent batches polished contrast on screens no new user could ever reach.
+
+### Scope, swept by me — the family, not the symbol
+`onClick={onNext}` is **exactly ONE site**; a sweep of every `onClick={handler}` across
+`src/pages/onboarding/**` returns only `WelcomeStep.tsx:129`. Two unguarded stringify sites:
+`appOnboarding.ts:62` (forward) and `:106` (skip).
+
+---
+
+# Batch 33 — dispatched 2026-08-30 13:04. THE BLOCKER. One worker.
+
+## [T-098] A new user cannot get into the app. Fix it.
+- status: dispatched (batch 33)
+- owner: fitness-dev
+- goal: onboarding completes, and skip works, for a brand-new user.
+- files (EXCLUSIVE): `src/pages/onboarding/steps/WelcomeStep.tsx`,
+  `src/pages/onboarding/useOnboardingWizard.ts`, `src/pages/OnboardingFlow.tsx`,
+  `src/appOnboarding.ts` + a new test.
+- done when: verify green; test:run >= 1606 plus a test that **drives a real click through the wizard**
+  and FAILS on current code; both the forward path AND skip proven to write `onboarding_completed`
+- notes: **fix the call site AND harden `goNext` so the class cannot recur** — a call site is an
+  instance, an unguarded spread is the defect. **MY RULING: do NOT wrap the two `JSON.stringify(data)`
+  calls in try/catch.** A swallowed throw is precisely what hid this for nine batches; if the data is
+  ever circular again it must fail LOUDLY. The existing swallow at `useOnboardingWizard.ts:37` is the
+  bug's accomplice, not its cure. **The test is the deliverable that matters** — 1606 tests missed this
+  because none of them clicks the real button through the real wizard.
+
+
+## [T-098] The blocker — ACCEPTED 2026-08-30 13:26. **A new user can get in again.**
+- 2 modified + 1 new test, exactly its ownership. `OnboardingFlow.tsx` and `appOnboarding.ts` were in
+  scope and **needed no change** — the fix belonged at the call site and in the hook.
+- **Both exits proven by REAL CLICKS through the real component tree**, which is the whole point:
+  welcome CTA → type name → `הבא` → tap `בניית שריר` → asserts `onboarding_completed === 'true'`, the
+  done-signal fired, and the saved payload holds exactly the seven wizard fields. Skip: welcome CTA →
+  name → `דלגו` → confirm INSIDE the dialog → same flag, skip signal, `user_profile.name` persisted.
+- **THE LOAD-BEARING PROOF IS THREE-PHASE AND THE MIDDLE ROW IS THE VALUABLE ONE:**
+  true pre-fix → **3 failed**, with the real message
+  `expected [ '_reactName', '_targetInst', (34) ] to deeply equal [ 'age', 'experienceLevel', (5) ]`
+  and `TypeError: Converting circular structure to JSON` · **guard restored but call site still bare →
+  3 PASSED**, i.e. the hardening ALONE rescues the flow with the bad wiring in place · full fix → 3 passed.
+  **So the guard is not decoration; it is independently sufficient.**
+- **ITS HARDENING DECISION IS BETTER THAN "THROW", AND IT ARGUED IT:** a non-plain-object `updates` is a
+  wiring bug, so the MERGE is never legitimate — **but the NAVIGATION always is.** It drops the argument,
+  advances anyway, and reports through `logger.ui.error` (console in dev, Sentry in prod). Its reasoning:
+  *"throwing would convert one screen the user cannot leave into another, which is the exact failure being
+  fixed."* Correct. And it is not a swallow — nothing catches, and the corrupt value never enters state.
+- It accepted my `JSON.stringify` ruling with no counter-argument; **I verified both calls are still
+  unguarded.** So a future circular value still fails loudly.
+
+### ⚠️ TWO CORRECTIONS TO MY OWN FINDINGS, both material
+1. **"Any future `onClick={goNext}` would poison it" — WRONG, it does not compile.** Its first harness did
+   exactly that and `tsc` rejected it: `(updates?: Partial<OnboardingData>) => void` is not assignable to
+   `MouseEventHandler`. **The defect REQUIRES laundering through a prop typed `() => void`**, which erases
+   the parameter and makes both hops legal — precisely what `WelcomeStep`'s `onNext: () => void` did. The
+   class is narrower than I stated, and its test reproduces **that real smuggling route**, not a
+   hypothetical direct wiring.
+2. **⚠️ MY MEDIUM-1 WAS WRONG IN A WORSE DIRECTION. The draft DOES persist — poisoned, not absent.**
+   It probed the broken build: after the welcome tap `sessionStorage.onboarding_draft` **was written**,
+   carrying the event's 36 properties, **which a reload then spreads back over `DEFAULT_ONBOARDING`.**
+   So the swallowing `try/catch` is not why progress was lost; the write SUCCEEDED and stored junk.
+3. **A sharp testing insight I did not anticipate:** in jsdom the circular members are
+   `target`/`currentTarget` — **`view` is null under a synthesized click** — so the THROW is
+   timing-dependent there (React nulls `currentTarget` after dispatch). In a real browser `view` is the
+   Window and it always throws. **That is why its load-bearing assertion is the polluted key shape, not
+   the exception.** A test resting on the throw would have been flaky.
+
+### Scope sweep — independent, family-wide: 6 hits, ONE defect
+`WelcomeStep.tsx:129` fixed (now `onClick={() => onNext()}` at `:138`, confirmed by me).
+`OnboardingFlow.tsx:164` `onClick={goBack}` — **same syntax, NOT the same defect**: `goBack` takes no
+parameter, so the event cannot reach state. Left alone, correctly. `:74/76/78` pass handlers into step
+props, and the steps arrow-wrap every internal call.
+**⚠️ ONE LATENT HOLE IT FLAGGED AND DELIBERATELY DID NOT FIX:** `updateData(updates)` has the identical
+shape and is passed as `onChange={updateData}`. No current site forwards an event, but a `() => void`-style
+prop could smuggle one the same way. My brief scoped the hardening to `goNext`, so it stayed in lane.
+
+### Verified baseline — 2026-08-30 13:26, MINE, on a confirmed-static tree
+Worker terminal; newest `src/` mtime 3.5 minutes cold before any gate ran. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **728** files (727 + 1 new test file) |
+| `npm run test:run` | **189 files / 1609 tests**, exit 0 both runs — **NEW FLOOR** |
+| arithmetic | 188+1=189 files; 1606+3=1609. **Nothing deleted, skipped or weakened.** |
+| `npx playwright test --list` | **124 tests / 16 files**, exit 0 (was 122/15; +1 file = the untracked T-097 journey spec, which therefore parses) |
+| debris | zero scratch in `src/` or root; `__tests__/` holds the 2 pre-existing + 1 new; `test-results/` swept |
+
+### Backlog after batch 33
+**CLOSED:** onboarding cannot be completed · skip is dead · the wizard absorbing a DOM event.
+**NEW:** `updateData` has the same latent shape · **the poisoned `sessionStorage` draft** — a reload
+spreads 36 junk keys over the defaults, and the swallowing `try/catch` at `useOnboardingWizard.ts:37`
+hides it · `e2e/journey-t097.spec.ts` is untracked and is the harness that found this — hand it to the
+next journey worker rather than deleting it.
+**⚠️ THE REAL NEXT STEP: steps 3–10 of the journey have STILL never been walked.** Home, templates,
+adding exercises, starting a workout, logging a set, the rest timer, finish, summary, progress. We fixed
+the door; nobody has been inside.

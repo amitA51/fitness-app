@@ -1,5 +1,29 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { logger } from '../../utils/logger';
 import { DEFAULT_ONBOARDING, type OnboardingData, type OnboardingStep, STEPS } from './types';
+
+/**
+ * Is `value` a plain data object, i.e. something that may legitimately be
+ * spread into the wizard data?
+ *
+ * `goNext(updates?)` looks exactly like an event handler, so `onClick={goNext}`
+ * is a mistake a reader cannot see: React then passes the MouseEvent in as
+ * `updates`. A SyntheticEvent is truthy, so an unguarded spread merged all 36 of
+ * its own properties into the wizard data. Several of them are circular — `view`
+ * (the Window) in a real browser, plus `target` / `currentTarget` — so the finish
+ * payload's `JSON.stringify` threw and froze the last onboarding step with no
+ * message at all (T-098).
+ *
+ * The prototype check is what rejects it: a SyntheticEvent, a native Event, a
+ * DOM node and a Window are all class instances, so their prototype is not
+ * `Object.prototype`. Object literals (`{ primaryGoal: 'muscle' }`) and
+ * null-prototype objects pass; arrays do not (their prototype is Array's).
+ */
+function isOnboardingUpdates(value: unknown): value is Partial<OnboardingData> {
+  if (typeof value !== 'object' || value === null) return false;
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
 
 export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) {
   const [currentStep, setCurrentStep] = useState(() => {
@@ -53,12 +77,31 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
    * out of the finish payload's stale closure. Calling `updateData` and then
    * `goNext` in the same handler would complete onboarding with the PREVIOUS
    * data, silently dropping the goal the user just picked.
+   *
+   * A non-plain-object `updates` is a wiring bug at the call site, never a user
+   * intent, so the argument is DROPPED rather than merged — the navigation it
+   * asked for still happens, and the corrupt value never reaches state. It is
+   * reported through `logger.error` (console in dev, Sentry in prod), so it is
+   * refused loudly rather than swallowed. Throwing here instead would only
+   * trade one screen the user cannot leave for another.
    */
   const goNext = useCallback(
     (updates?: Partial<OnboardingData>) => {
       setDirection(1);
-      const next = updates ? { ...data, ...updates } : data;
-      if (updates) setData(next);
+      let merge: Partial<OnboardingData> | undefined;
+      if (updates === undefined || updates === null) {
+        merge = undefined;
+      } else if (isOnboardingUpdates(updates)) {
+        merge = updates;
+      } else {
+        merge = undefined;
+        logger.ui.error(
+          'goNext received a non-data argument and ignored it — a handler is probably wired as onClick={goNext} instead of onClick={() => goNext()}',
+          { received: Object.prototype.toString.call(updates) }
+        );
+      }
+      const next = merge ? { ...data, ...merge } : data;
+      if (merge) setData(next);
       if (safeStep < activeSteps.length - 1) {
         setCurrentStep(safeStep + 1);
       } else {
