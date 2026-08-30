@@ -46,8 +46,9 @@ export const formatDate = (dateLike: string | Date): string => {
 
 /**
  * Workout duration label from a duration in SECONDS (the `WorkoutSession.duration`
- * shape). e.g. 1500 → "25 דקות", 5400 → "שעה ו-30 דקות". Delegates to the
- * canonical `dateUtils.formatDuration`.
+ * shape). e.g. 1500 → "25 דקות", 5400 → "שעה ו-30 דקות". Hebrew keeps the noun
+ * SINGULAR at a cardinal of one ("דקה אחת", a bare "שעה") and uses the dual
+ * "שעתיים" for two hours. Delegates to the canonical `dateUtils.formatDuration`.
  */
 export const formatDuration = (seconds: number): string => formatDurationSeconds(seconds);
 

@@ -7126,3 +7126,173 @@ All three workers terminal; newest `src/` mtime 4 minutes cold before any gate r
 | `npx playwright test --list` | **126 tests / 17 files**, exit 0 (unchanged) |
 | RTL | **zero new physical-direction CSS** — all 6 hits are pre-existing files this batch never touched |
 | debris | zero scratch in `src/` or root; `test-results/` swept |
+
+
+---
+
+# Housekeeping 2026-08-30 16:2x — pushed, swept, Supabase checked. Amit: "תעשה פוש ותנקה זבל… ותבדוק שזה supabase"
+
+### Pushed
+- **`a6f57f9`** (batch 37, the five walkthrough fixes) — `e90a62a..a6f57f9`, 0 ahead.
+- **`48a3a9d`** (this cleanup) — pushed. Tree fully clean, zero untracked.
+
+### The harness decision, and it is a REVERSAL of my own standing call
+I have written on this board for three batches that both journey specs stay UNTRACKED, because
+Playwright globs `e2e/` and t099 had hung mid-run. **That reason is now gone**, so the call flips:
+- **`e2e/journey-t099.spec.ts` is now TRACKED (1576 lines).** I proved it first rather than assuming:
+  `npm run build` then `npx playwright test e2e/journey-t099.spec.ts --global-timeout=300000` →
+  **2 passed, exit 0, 3.5 minutes.** It is the ONLY test in this repo that walks cold launch →
+  onboarding → live workout → real logged sets → rest timer → finish → summary → Progress **and
+  cross-checks that the reported volume equals the typed volume.** 1606 unit tests missed the
+  onboarding blocker; this walks it. 3.5 min is mostly deliberate waits (the sub-60s gate is a 48s hold).
+- **`e2e/journey-t097.spec.ts` DELETED** (38KB, was untracked). Its finding is fixed AND covered by a
+  unit test that drives real clicks; t099 walks the same ground plus steps 3-10 on a debugged harness.
+- **⚠️ A git trap worth recording: `git add` on a deleted-UNTRACKED path aborts the WHOLE `git add`.**
+  My first attempt staged nothing at all and the commit silently did nothing. Stage only paths that exist.
+
+### Counts after the sweep — MINE
+| Gate | Result |
+|---|---|
+| `npx playwright test --list` | **124 tests / 16 files**, exit 0 (was 126/17; −2/−1 = exactly t097) |
+| `npm run test:run` | **193 files / 1630 tests**, exit 0 — unmoved, correct: deleting an e2e file must not move vitest |
+| `npm run build` | exit 0, 11.8s |
+| debris | `test-results/`, `playwright-report/`, root `*.log` all swept. **`dist/` deleted and rebuilt fresh** — the old one was built at 14:49, i.e. BEFORE batch 37, and a stale bundle has already produced one false bug report on this project (the `start-0` scare in batch 5). |
+
+### ⭐ THE SUPABASE ANSWER — configured and working, with one real latent defect
+**Working today.** `.env.local` carries a real project URL (40 chars) and a real JWT-shaped anon key
+(208 chars). 55 migrations, 9 DB test suites, 8 edge functions. **No secret is tracked** — `git ls-files`
+returns only `.env.example`, and `.gitignore:12-14` is correct (`.env`, `.env.*`, `!.env.example`).
+Values were never printed; only key names and lengths.
+
+**⚠️ THE DEFECT: `.env` holds PLACEHOLDERS and the config check cannot tell.**
+`.env` has `VITE_SUPABASE_URL` at **22 chars** and `VITE_SUPABASE_ANON_KEY` at **27 chars** — neither is
+a real value (a Supabase URL is ~40, an anon key is a ~200+ char JWT). `.env.local` overrides it in
+Vite's precedence, so the app works **on this machine only**.
+`src/lib/supabase.ts:10` is `const isConfigured = Boolean(supabaseUrl && supabaseAnonKey)` — **a
+truthiness check that never validates the values.** The comment one line below states the design intent:
+*"when missing, the app runs in local-only mode."*
+**So on any machine without `.env.local` — a fresh clone, a deploy that ships only `.env` — the
+placeholders are non-empty, `isConfigured` is TRUE, a real client is constructed against a host that is
+not a Supabase project, and the graceful local-only path is BYPASSED.** The failure is not "no cloud",
+it is "broken cloud": every sync call fails against a bad host.
+**This is the same defect shape this project keeps hitting — a value that is PRESENT but false is worse
+than absent.** Identical to the poisoned onboarding draft (36 junk keys rehydrated over the defaults,
+worse than losing it) and the fabricated `activityLevel`. **LATENT today, real on any other machine.**
+
+### Ownership map — batch 38, disjoint, NOBODY holds the browser or the build
+- **T-105** → `src/utils/dateUtils.ts`, `src/utils/workoutFormatters.ts`,
+  `src/components/workout/WorkoutSummary.tsx` + their tests.
+- **T-106** → `src/lib/supabase.ts` + a test. **MUST NOT touch any `.env*` file.**
+- **T-107** → `e2e/journey-t099.spec.ts` only. **No browser run** — `--list` + grep prove it.
+- **NO PLAYWRIGHT, NO BUILD, NO SERVER anywhere this batch.** T-105 and T-106 write `src/`, which
+  invalidates `dist/`, so a browser run this batch would photograph a moving tree.
+
+## [T-105] The duration formatter family my own file boundary left half-fixed
+- status: dispatched (batch 38)
+- owner: fitness-dev
+- goal: `dateUtils.formatDuration` hardcodes the plural noun, so `1 דקות` is still live on workout
+  history, workout detail and performance analytics. Batch 37 fixed only the summary, with a LOCAL
+  copy, because I scoped that task to two files.
+- done when: verify green; test:run >= 1630 plus a test per Hebrew form; the local `formatDurationHe`
+  in `WorkoutSummary.tsx` DELETED and its callers pointed at the shared one; every consumer named
+- notes: the correct forms are already derived and shipping in `WorkoutSummary.tsx` — **lift that
+  logic into the shared formatter, do not re-derive it.** It covers the singular (`דקה אחת`, bare
+  `שעה`), the DUAL `שעתיים`, and the vav rule (`ודקה` attaches to a word, `ו-30` takes a hyphen before
+  a numeral). Grammar only — **no number may change.** Reuse `pluralizeHe`/`HE_NOUNS` where it fits.
+
+## [T-106] The Supabase config check that cannot tell a real key from a placeholder
+- status: dispatched (batch 38)
+- owner: fitness-dev
+- goal: make the truthiness check an actual check, so a machine without `.env.local` degrades to the
+  local-only mode the file's own comment promises instead of building a client against a bad host.
+- done when: verify green; test:run >= 1630 plus a test proving a placeholder-shaped value yields
+  `isSupabaseConfigured() === false` AND a real-shaped one yields `true`; the current real config
+  proven still to work
+- notes: **do NOT read, print, edit or delete any `.env*` file** — the values are secrets and they are
+  correctly gitignored. Validate SHAPE only: the URL must parse as an absolute `https:` URL, the anon
+  key must be JWT-shaped (three dot-separated segments). **Fail CLOSED to local-only, never throw** —
+  a hard throw at module scope would turn a config problem into a white screen, and this app is
+  offline-first by design so local-only is a legitimate state. Log once via the existing `logger`.
+
+## [T-107] Assertions that stopped asserting when batch 37 changed the copy
+- status: dispatched (batch 38)
+- owner: fitness-qa
+- goal: batch 37 rewrote the resume-dialog copy and the first-run guidance. Any assertion in the now-
+  TRACKED journey spec that greps an old string is inert — it does not fail, it silently stops checking.
+- done when: every Hebrew string literal the spec searches for is proven present in current `src/`, or
+  updated to the string that is; `npx playwright test --list` still reports 124 tests / 16 files exit 0
+- notes: the known instance is the mismatch detector at **`e2e/journey-t099.spec.ts:362`**, whose regex
+  `/הכפתור הגדול 'התחל אימון'/` can no longer match. **But sweep the whole file rather than fixing only
+  that line** — the resume dialog's text changed too, and a spec that passed green can still contain a
+  check that proves nothing. **NO browser run, no build** — two other workers are writing `src/`.
+  Report each string as old → new, and say which ones were genuinely inert versus already correct.
+
+
+## Batch 38 — ALL THREE ACCEPTED 2026-08-30 16:48.
+
+### [T-105] The formatter family — ACCEPTED. The local copy is gone, verified by me.
+- 6 files. **`formatDurationHe` greps to ZERO in `src/`** — I checked myself, not on report.
+- `dateUtils.formatDuration` now routes through the shared `pluralizeHe`. Forms: `דקה אחת` · `30 דקות` ·
+  bare **`שעה`** (Hebrew does not say "one hour") · the DUAL **`שעתיים`** · `3 שעות` · `שעה ודקה` ·
+  `שעה ו-30 דקות`.
+- **⚠️ IT CAUGHT A GENDER ERROR I DID NOT SPECIFY: minute is FEMININE**, so `דקה אחת`, never `דקה אחד`.
+- **It declared the minute forms locally with a stated reason** rather than adding them to `HE_NOUNS`:
+  duration is the only surface that counts minutes, but **the agreement MECHANISM is still the shared
+  one.** Defensible line, and it said where the line is.
+- Arithmetic untouched, as instructed: sub-hour rounds to whole minutes, hour-plus floors and rounds the
+  remainder. **No number changed.** Five consumers fixed by fixing the shared function — 
+  `PerformanceAnalytics.tsx` (4 sites), `WorkoutHistory.tsx`, `workout-detail/helpers.ts`,
+  `WorkoutDetail.tsx`, `workoutSessionBuilder.ts`.
+
+### [T-106] The Supabase config guard — ACCEPTED, and I verified the real config myself.
+- 1 modified + 1 new test (7 tests). Client options, `clockObservingFetch`, `persistSession`,
+  `autoRefreshToken` and both exports untouched.
+- `isHttpsUrl` uses `new URL()`; `isJwtShaped` requires three non-empty dot-separated segments.
+  **No length heuristics, no network call.** Fails CLOSED, never throws.
+- **The log names the variable and never the value.**
+- **⚠️ A DISTINCTION IT MADE THAT I DID NOT ASK FOR AND IS CORRECT: absent config is SILENT, only
+  MALFORMED config warns.** No cloud is a designed state; a bogus host is a defect. Warning on the
+  former would train the owner to ignore the latter.
+- **MY OWN VERIFICATION, shape only, no value printed:**
+  | | URL | key | verdict |
+  |---|---|---|---|
+  | `.env.local` (real) | `https://…supabase.co`, parses | **3** JWT segments, all non-empty | **configured** |
+  | `.env` (placeholder) | not `https://` | **1** segment | **local-only — the designed state** |
+- Test stubs `import.meta.env` + `vi.resetModules()` **following the pattern already in
+  `logger.test.ts`** — house pattern found, not invented — and mocks `createClient` so no client is
+  ever built. Every fixture invented.
+
+### [T-107] The inert assertions — ACCEPTED. **Best-evidenced task of the batch.**
+- 1 file, +9/−3. Enumerated **137 Hebrew-bearing lines → 91 literals the spec actually searches for**,
+  then substring-matched every one against all 732 files in `src/`.
+  **VERDICT: 89 of 91 present. 2 missing. Only ONE cost coverage.**
+- **⚠️ THE KNOWN INSTANCE WAS WORSE THAN I DESCRIBED.** It was not one stale regex — the detector was a
+  standalone `if` GATE, so once the copy changed **the gate never opened and the button-existence check
+  AND its MEDIUM finding inside it both became dead code.** Its own words: *this is the check that
+  should have caught the rewrite; it could no longer fire.*
+- **It verified the apostrophe BYTE-FOR-BYTE** — ASCII U+0027 in both `guidanceSteps.tsx:31` and the new
+  regex — because a typographic quote there would fail silently. That is the level this needed.
+- **Two coupled strings had to move with it** or the detector would contradict itself. It found the
+  coupling instead of fixing one line.
+- **⚠️⚠️ TWO IT NEARLY MIS-REPORTED AS INERT — THE MOST VALUABLE PART.** `aria-label^="משקל:"` and
+  `aria-label*=" עם "` exist NOWHERE statically: they are **composed at runtime**
+  (`SetInputCard.tsx:211` builds the label from `label="משקל"` + the value). **A plain grep would have
+  called them inert and "fixed" them into breakage.** Same family-vs-symbol trap, new shape, caught.
+- **⚠️ MY SECOND SUSPICION WAS WRONG AND IT SAID SO.** I claimed the draft-conflict dialog's changed
+  copy might have left stale assertions. **The spec never grepped the paragraph** — only the title and
+  the two button labels, all three unchanged. Nothing to fix there.
+- `לדף הבית` is inert but **coverage-neutral**: it appears twice, both times as one alternative among
+  live siblings, so nothing silently passed. It did NOT delete it or invent copy — left both, with a
+  comment recording why. Correct restraint.
+- All three negative assertions still live and correct.
+
+### Verified baseline — 2026-08-30 16:48, MINE, on a confirmed-static tree
+All three terminal; newest `src/` mtime 4 minutes cold before any gate ran. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **733** files (732 + 1 new test file) |
+| `npm run test:run` | **194 files / 1644 tests**, exit 0 both runs — **NEW FLOOR** |
+| arithmetic | 193+1=194 files; 1630+14=1644. **Nothing deleted, skipped or weakened** — the two edited test files gained assertions, they did not lose any. |
+| `npx playwright test --list` | **124 tests / 16 files**, exit 0 (unchanged) |
+| debris | 6 of our own `visual-qa/*.log` swept. **4 left alone on purpose** — `.codegraph/daemon.log` is LIVE (written this minute), and `.codegraph/errors.log`, `.cursor/`, `.gstack/` belong to other tools. Not ours to delete. None of the ten was ever visible to git. |

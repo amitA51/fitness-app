@@ -4,13 +4,56 @@
  */
 
 import { type SupabaseClient as SupabaseClientType, createClient } from '@supabase/supabase-js';
+import { logger } from '../utils/logger';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-const isConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+/**
+ * A real project URL is an absolute `https:` URL (`https://<ref>.supabase.co`).
+ *
+ * Placeholder text in a committed `.env` (`your-supabase-url-here`) is a non-empty
+ * string, so the previous `Boolean(url && key)` test accepted it: a client was built
+ * against a host that is not a Supabase project and every sync call failed. The URL
+ * parser rejects it — no network call, no length heuristics.
+ */
+const isHttpsUrl = (value: string): boolean => {
+  try {
+    return new URL(value).protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
 
-// Supabase configuration is optional — when missing, the app runs in local-only mode.
+/**
+ * The anon key is a JWT (JWS compact serialisation): three non-empty dot-separated
+ * segments. Shape only — signature and contents are the server's business.
+ */
+const isJwtShaped = (value: string): boolean => {
+  const segments = value.split('.');
+  return segments.length === 3 && segments.every((segment) => segment.length > 0);
+};
+
+// Names only — a malformed value is still a secret and never reaches the log.
+const malformedVars: string[] = [];
+if (supabaseUrl && !isHttpsUrl(supabaseUrl)) {
+  malformedVars.push('VITE_SUPABASE_URL');
+}
+if (supabaseAnonKey && !isJwtShaped(supabaseAnonKey)) {
+  malformedVars.push('VITE_SUPABASE_ANON_KEY');
+}
+
+// Supabase configuration is optional — when missing OR malformed, the app runs in
+// local-only mode. Fail closed: this app is offline-first, so no cloud is a designed
+// state, while a client pointed at a bogus host is a stream of silent sync failures.
+// Never throw here — a module-scope throw would turn a config typo into a blank boot.
+const isConfigured = Boolean(supabaseUrl && supabaseAnonKey) && malformedVars.length === 0;
+
+if (malformedVars.length > 0) {
+  logger.sync.warn(
+    `Supabase config ignored, running in local-only mode. Malformed (value not shown): ${malformedVars.join(', ')}`
+  );
+}
 
 /**
  * Wrap fetch so every response teaches us the server's clock.

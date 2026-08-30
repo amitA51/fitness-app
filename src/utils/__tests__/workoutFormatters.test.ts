@@ -30,6 +30,23 @@ describe('workoutFormatters duration/volume (seconds-based contract)', () => {
     expect(formatDuration(1500)).toMatch(/\d/);
   });
 
+  // The re-export must carry the canonical Hebrew agreement through unchanged —
+  // WorkoutHistory reads its duration label from here, so a regression in the
+  // delegation would ship "1 דקות" to the history list.
+  it('carries the singular minute through the delegation, never "1 דקות"', () => {
+    expect(formatDuration(69)).toBe('דקה אחת');
+  });
+
+  it('carries the bare singular hour and the dual through the delegation', () => {
+    expect(formatDuration(3600)).toBe('שעה');
+    expect(formatDuration(7200)).toBe('שעתיים');
+  });
+
+  it('carries both vav conjunction forms through the delegation', () => {
+    expect(formatDuration(3660)).toBe('שעה ודקה');
+    expect(formatDuration(5400)).toBe('שעה ו-30 דקות');
+  });
+
   it('formats a volume into a non-empty label', () => {
     expect(formatVolume(12500)).toMatch(/\d/);
   });

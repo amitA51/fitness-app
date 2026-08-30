@@ -359,15 +359,17 @@ test('T-100 finish the workout, read the summary, cross-check Progress', async (
     if (coachUp) {
       note('first-run guidance coach is over the home screen on arrival');
       // Does its instruction match the UI it points at?
-      if (/הכפתור הגדול 'התחל אימון'/.test(raw.text)) {
-        const hasThatButton = raw.controls.some((c) => /^התחל אימון$/.test(c.name.trim()));
+      if (/'בחרו תבנית מוכנה'/.test(raw.text)) {
+        const hasThatButton = raw.controls.some((c) =>
+          /^(בחרו תבנית מוכנה|התחילו בלי תבנית)$/.test(c.name.trim())
+        );
         if (!hasThatButton) {
           const f = await shoot(page, '02-coach-copy-mismatch');
           find(
             'MEDIUM',
             '2-home',
             'the coach tells the user to press a button that exists',
-            `it says press "התחל אימון" but home's buttons are "${raw.controls
+            `it says press "בחרו תבנית מוכנה" but home's buttons are "${raw.controls
               .filter((c) => /תבנית|בלי תבנית/.test(c.name))
               .map((c) => c.name)
               .join('" / "')}"`,
@@ -1087,6 +1089,10 @@ test('T-100 finish the workout, read the summary, cross-check Progress', async (
     }
     if (!viaSummaryCta) {
       // Leave the summary the way a user would, then use the bottom nav.
+      // T-107: "לדף הבית" matches nothing in current src — the summary's only
+      // home/close action is the primary "סיום" (WorkoutSummary.tsx:1095). Kept
+      // as a fallback branch rather than removed: it costs one tap MISS note and
+      // the live sibling above it carries the coverage.
       let left = false;
       for (const sel of [
         'button:has-text("סיום")',

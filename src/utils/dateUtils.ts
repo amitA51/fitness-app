@@ -1,3 +1,5 @@
+import { pluralizeHe } from './pluralizeHe';
+
 /**
  * Returns the start of the calendar week containing `d`, at local midnight.
  * Weeks start on SUNDAY (יום ראשון) — the Israeli week — so a Sunday workout
@@ -132,12 +134,39 @@ export function formatHebrewTime(isoString: string): string {
   });
 }
 
+/**
+ * Minute forms for `pluralizeHe`. Feminine — "דקה אחת", not "דקה אחד".
+ * Declared here rather than in HE_NOUNS because duration is the only surface
+ * that counts minutes; the agreement MECHANISM is still the shared one.
+ */
+const HE_MINUTE = { one: 'דקה', many: 'דקות', oneWord: 'אחת' } as const;
+
+/**
+ * Human Hebrew duration label from a duration in SECONDS.
+ *
+ * GRAMMAR ONLY — the arithmetic is unchanged: sub-hour rounds to whole minutes,
+ * an hour-plus floors to hours and rounds the remainder. Hebrew keeps the noun
+ * SINGULAR at a cardinal of one, which the previous hardcoded plural got wrong
+ * in both directions: 69s rendered "1 דקות" ("1 minutes") and 1h30m rendered
+ * "1 שעה" where Hebrew wants a bare "שעה".
+ *
+ * - 69s      → "דקה אחת"      (singular, no numeral)
+ * - 1800s    → "30 דקות"
+ * - 3600s    → "שעה"          (bare — Hebrew does not say "one hour")
+ * - 7200s    → "שעתיים"       (the Hebrew DUAL, not "2 שעות")
+ * - 10800s   → "3 שעות"
+ * - 3660s    → "שעה ודקה"     (vav attaches directly to a word)
+ * - 5400s    → "שעה ו-30 דקות" (vav takes a HYPHEN before a numeral)
+ */
 export function formatDuration(seconds: number): string {
-  if (seconds < 3600) return `${Math.round(seconds / 60)} דקות`;
+  if (seconds < 3600) return pluralizeHe(Math.round(seconds / 60), HE_MINUTE);
   const h = Math.floor(seconds / 3600);
   const m = Math.round((seconds % 3600) / 60);
-  if (m > 0) return `${h} שעה ו-${m} דקות`;
-  return h === 1 ? 'שעה' : `${h} שעות`;
+  const hoursLabel = h === 1 ? 'שעה' : h === 2 ? 'שעתיים' : `${h} שעות`;
+  if (m === 0) return hoursLabel;
+  // The vav conjunction attaches to a word ("ודקה") but hyphenates before a
+  // numeral ("ו-30"), so the two branches genuinely differ.
+  return m === 1 ? `${hoursLabel} ודקה` : `${hoursLabel} ו-${m} דקות`;
 }
 
 export function formatDurationCompact(seconds: number): string {

@@ -13,21 +13,46 @@ import {
   todayStr,
 } from '../dateUtils';
 
+// Hebrew keeps the noun SINGULAR at a cardinal of one and has a dedicated DUAL
+// for two, so a count-plus-noun label cannot be built as `${n} <plural>`.
+//
+// Two assertions here were INVERTED (not deleted) when the formatter was fixed:
+// - 7200s pinned "2 שעות"; Hebrew uses the dual "שעתיים".
+// - 5400s pinned "1 שעה ו-30 דקות"; Hebrew wants a bare "שעה" with no numeral.
+// Both were pinning the defect. The NUMBERS are unchanged in every case.
 describe('formatDuration', () => {
   it('uses the singular form for exactly one hour', () => {
     expect(formatDuration(3600)).toBe('שעה');
   });
 
-  it('uses the plural form for multiple whole hours', () => {
-    expect(formatDuration(7200)).toBe('2 שעות');
+  it('uses the Hebrew DUAL for exactly two hours, never "2 שעות"', () => {
+    expect(formatDuration(7200)).toBe('שעתיים');
   });
 
-  it('includes minutes when present', () => {
-    expect(formatDuration(5400)).toBe('1 שעה ו-30 דקות');
+  it('uses the plural form from three hours up', () => {
+    expect(formatDuration(10800)).toBe('3 שעות');
+  });
+
+  it('includes minutes when present, with no numeral before the singular hour', () => {
+    expect(formatDuration(5400)).toBe('שעה ו-30 דקות');
+  });
+
+  it('attaches the vav directly for a single trailing minute (no hyphen)', () => {
+    expect(formatDuration(3660)).toBe('שעה ודקה');
+  });
+
+  it('hyphenates the vav before a numeral for multiple trailing minutes', () => {
+    expect(formatDuration(9000)).toBe('שעתיים ו-30 דקות');
   });
 
   it('shows minutes for sub-hour durations', () => {
     expect(formatDuration(1800)).toBe('30 דקות');
+  });
+
+  it('uses the singular minute for a one-minute session, never "1 דקות"', () => {
+    // 69s rounds to one minute — the ARITHMETIC is untouched, only the noun.
+    expect(formatDuration(69)).toBe('דקה אחת');
+    expect(formatDuration(60)).toBe('דקה אחת');
   });
 });
 
