@@ -104,14 +104,21 @@ function PageShell({ title, children }: { title: string; children: React.ReactNo
     else navigate('/community');
   };
   return (
+    // The wash stays FULL-BLEED: capping the element that paints the
+    // background/ambient mesh would shrink it to a 480px strip down the middle
+    // of a wide screen. The cap belongs on the <main> column below.
     <div
-      className="min-h-screen min-h-[100dvh] pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))] ambient-mesh ambient-mesh-soft"
+      className="min-h-screen min-h-[100dvh] ambient-mesh ambient-mesh-soft"
       style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
       lang="he"
     >
       <PageHeader title={title} eyebrow="SparkOS Fitness" onBack={goBack} />
-      <main className="px-5 pt-6">{children}</main>
+      {/* `.page-shell` (components.css) is the house content container: 480px
+          max-width + margin-inline auto + 20px padding-inline + the fixed-nav
+          bottom clearance. It replaces the old `px-5` (identical 20px) and the
+          hand-rolled `pb-[max(7rem,…)]` that used to sit on the wash. */}
+      <main className="page-shell pt-6">{children}</main>
     </div>
   );
 }

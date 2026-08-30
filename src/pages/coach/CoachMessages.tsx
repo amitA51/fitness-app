@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import EmptyState from '../../components/ui/EmptyState';
 import { Input } from '../../components/ui/Input';
 import { useAuth } from '../../contexts/AuthContext';
+import { useIsRTL } from '../../hooks/useIsRTL';
 import { listGroupThreads } from '../../services/coach/groupMessageService';
 import { type ClientThreadSummary, listClientThreads } from '../../services/coach/messageService';
 import {
@@ -18,6 +19,7 @@ import {
   subscribeToCoachGroupMessages,
 } from '../../services/coach/realtime';
 import type { GroupThreadSummary } from '../../types/coach';
+import { arrowKeyTargetIndex } from '../progress/components/SegmentedControl';
 import {
   CoachPage,
   ListRow,
@@ -203,13 +205,16 @@ const tabId = (t: Tab) => `coach-msgs-tab-${t}`;
 const panelId = (t: Tab) => `coach-msgs-panel-${t}`;
 
 function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
-  // Roving tabindex + ArrowLeft/Right per the WAI tabs pattern. In this RTL
-  // layout ArrowLeft moves to the NEXT tab and ArrowRight to the previous.
+  const isRTL = useIsRTL();
+  // Roving tabindex + ArrowLeft/Right per the WAI tabs pattern. The direction
+  // rule itself is NOT restated here: `arrowKeyTargetIndex` is the one place the
+  // app decides that in RTL ArrowLeft moves to the NEXT tab and ArrowRight to the
+  // previous, so this tablist cannot drift from the other three consumers.
   const onKeyDown = (e: React.KeyboardEvent, index: number) => {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const targetIndex = arrowKeyTargetIndex(e.key, isRTL, index, TABS.length);
+    if (targetIndex === null) return;
     e.preventDefault();
-    const delta = e.key === 'ArrowLeft' ? 1 : -1;
-    const next = TABS[(index + delta + TABS.length) % TABS.length];
+    const next = TABS[targetIndex];
     if (next) onChange(next);
   };
 

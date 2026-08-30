@@ -205,8 +205,11 @@ export default function ProgressPage() {
   );
 
   return (
+    // The wash stays FULL-BLEED: capping the element that paints the
+    // background/ambient mesh would shrink it to a 480px strip down the middle
+    // of a wide screen. The cap belongs on the content column below.
     <div
-      className="ambient-mesh ambient-mesh-soft pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
+      className="ambient-mesh ambient-mesh-soft"
       style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
@@ -215,168 +218,179 @@ export default function ProgressPage() {
           date kicker becomes the eyebrow; its numbers render dir="ltr". */}
       <PageHeader title="התקדמות" eyebrow={<span dir="ltr">{todayLabel}</span>} size="large" />
 
-      {/* Editorial Tab Bar — four primary sections */}
-      <FadeIn className="px-5 pt-4 pb-2">
-        <div
-          className="flex gap-1 overflow-x-auto"
-          style={{
-            borderBottom: '1px solid var(--fs-surface-2)',
-            gap: 0,
-            scrollbarWidth: 'none',
-          }}
-          role="tablist"
-          aria-label="התקדמות"
-        >
-          {TABS.map((tab, idx) => (
-            <button
-              type="button"
-              key={tab.key}
-              role="tab"
-              id={`progress-tab-${tab.key}`}
-              aria-selected={activeTab === tab.key}
-              aria-controls={`progress-panel-${tab.key}`}
-              tabIndex={activeTab === tab.key ? 0 : -1}
-              onClick={() => setActiveTab(tab.key)}
-              className="active:scale-[0.97] motion-reduce:active:scale-100"
-              onKeyDown={(e) => handleTabKeyDown(e, idx)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '10px 14px',
-                minHeight: 44,
-                flex: 1,
-                justifyContent: 'center',
-                fontFamily: 'var(--font-body)',
-                fontSize: 12,
-                letterSpacing: '-0.01em',
-                fontWeight: activeTab === tab.key ? 600 : 500,
-                color: activeTab === tab.key ? 'var(--fs-ink)' : 'var(--fs-muted)',
-                background: 'none',
-                border: 'none',
-                borderBottom:
-                  activeTab === tab.key ? '2px solid var(--fs-accent)' : '2px solid transparent',
-                cursor: 'pointer',
-                transition: 'color 0.15s, border-color 0.15s, transform 0.1s',
-                marginBottom: -1,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </FadeIn>
-
-      {/* Tab Content — exactly ONE logical section visible at a time */}
-      <div className="px-5">
-        {isLoading ? (
-          <ProgressSkeleton />
-        ) : loadError ? (
-          // Explicit load-failure state. Without it, users WITH data saw the
-          // "complete your first workout" empty state after a failed load.
+      {/* `.page-shell` (components.css) is the house content container: 480px
+          max-width + margin-inline auto + 20px padding-inline + the fixed-nav
+          bottom clearance. The tab bar and the tab panels are ONE column, so
+          they share a single shell — putting it on each would pay the bottom
+          clearance twice, once in the middle of the page. It replaces the two
+          `px-5` (identical 20px) and the hand-rolled `pb-[max(7rem,…)]` that
+          used to sit on the wash. */}
+      <div className="page-shell">
+        {/* Editorial Tab Bar — four primary sections */}
+        <FadeIn className="pt-4 pb-2">
           <div
+            className="flex gap-1 overflow-x-auto"
             style={{
-              background: 'var(--fs-surface)',
-              borderRadius: 'var(--radius-card)',
-              border: '1px solid var(--fs-surface-2)',
-              padding: 16,
-              marginTop: 16,
+              borderBottom: '1px solid var(--fs-surface-2)',
+              gap: 0,
+              scrollbarWidth: 'none',
             }}
+            role="tablist"
+            aria-label="התקדמות"
           >
-            <div className="flex flex-col items-center py-10 text-center gap-3">
-              <CloudOff size={32} style={{ color: 'var(--fs-muted)' }} aria-hidden="true" />
-              <p style={{ fontSize: 14, color: 'var(--fs-muted)', margin: 0 }}>
-                טעינת נתוני ההתקדמות נכשלה
-              </p>
+            {TABS.map((tab, idx) => (
               <button
                 type="button"
-                onClick={handleRetry}
-                disabled={isRetrying}
-                className="btn-primary"
-                style={{ minHeight: 44, opacity: isRetrying ? 0.6 : 1 }}
+                key={tab.key}
+                role="tab"
+                id={`progress-tab-${tab.key}`}
+                aria-selected={activeTab === tab.key}
+                aria-controls={`progress-panel-${tab.key}`}
+                tabIndex={activeTab === tab.key ? 0 : -1}
+                onClick={() => setActiveTab(tab.key)}
+                className="active:scale-[0.97] motion-reduce:active:scale-100"
+                onKeyDown={(e) => handleTabKeyDown(e, idx)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '10px 14px',
+                  minHeight: 44,
+                  flex: 1,
+                  justifyContent: 'center',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 12,
+                  letterSpacing: '-0.01em',
+                  fontWeight: activeTab === tab.key ? 600 : 500,
+                  color: activeTab === tab.key ? 'var(--fs-ink)' : 'var(--fs-muted)',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom:
+                    activeTab === tab.key ? '2px solid var(--fs-accent)' : '2px solid transparent',
+                  cursor: 'pointer',
+                  transition: 'color 0.15s, border-color 0.15s, transform 0.1s',
+                  marginBottom: -1,
+                  whiteSpace: 'nowrap',
+                }}
               >
-                {isRetrying ? 'טוען…' : 'נסו שוב'}
+                {tab.icon}
+                {tab.label}
               </button>
-            </div>
+            ))}
           </div>
-        ) : (
-          <AnimatePresence mode="sync">
-            {activeTab === 'overview' && (
-              <m.div
-                key="overview"
-                id="progress-panel-overview"
-                role="tabpanel"
-                aria-labelledby="progress-tab-overview"
-                {...motionProps}
-              >
-                <OverviewTab sessions={completedSessions} prs={prs} />
-              </m.div>
-            )}
-            {activeTab === 'workouts' && (
-              <m.div
-                key="workouts"
-                id="progress-panel-workouts"
-                role="tabpanel"
-                aria-labelledby="progress-tab-workouts"
-                {...motionProps}
-              >
-                <WorkoutsTab
-                  sessions={completedSessions}
-                  prs={prs}
-                  isLoading={isLoading}
-                  initialSub={
-                    (location.state?.subTab as 'history' | 'strength' | undefined) ?? initialSub
-                  }
-                  initialStrengthSelection={location.state?.exercise}
-                />
-              </m.div>
-            )}
-            {activeTab === 'body' && (
-              <m.div
-                key="body"
-                id="progress-panel-body"
-                role="tabpanel"
-                aria-labelledby="progress-tab-body"
-                {...motionProps}
-              >
-                <BodyTab
-                  latestWeight={latestWeight}
-                  weightTrend={weightTrend}
-                  bmi={bmi}
-                  bmiCategory={bmiCategory}
-                  weightEntries={weightEntries}
-                  latestMeasurement={latestMeasurement}
-                  measurements={measurements}
-                  onAddWeight={handleShowAddWeight}
-                  onAddMeasurement={handleShowAddMeasurement}
-                />
-              </m.div>
-            )}
-            {activeTab === 'recovery' && (
-              <m.div
-                key="recovery"
-                id="progress-panel-recovery"
-                role="tabpanel"
-                aria-labelledby="progress-tab-recovery"
-                {...motionProps}
-              >
-                <RecoveryTab
-                  todayRecovery={todayRecovery}
-                  recoveryScore={recoveryScore}
-                  weeklyRecovery={weeklyRecovery}
-                  history={recoveryHistory}
-                  trainingLoad={trainingLoad}
-                  onAdd={handleShowAddRecovery}
-                />
-              </m.div>
-            )}
-          </AnimatePresence>
-        )}
+        </FadeIn>
+
+        {/* Tab Content — exactly ONE logical section visible at a time */}
+        <div>
+          {isLoading ? (
+            <ProgressSkeleton />
+          ) : loadError ? (
+            // Explicit load-failure state. Without it, users WITH data saw the
+            // "complete your first workout" empty state after a failed load.
+            <div
+              style={{
+                background: 'var(--fs-surface)',
+                borderRadius: 'var(--radius-card)',
+                border: '1px solid var(--fs-surface-2)',
+                padding: 16,
+                marginTop: 16,
+              }}
+            >
+              <div className="flex flex-col items-center py-10 text-center gap-3">
+                <CloudOff size={32} style={{ color: 'var(--fs-muted)' }} aria-hidden="true" />
+                <p style={{ fontSize: 14, color: 'var(--fs-muted)', margin: 0 }}>
+                  טעינת נתוני ההתקדמות נכשלה
+                </p>
+                <button
+                  type="button"
+                  onClick={handleRetry}
+                  disabled={isRetrying}
+                  className="btn-primary"
+                  style={{ minHeight: 44, opacity: isRetrying ? 0.6 : 1 }}
+                >
+                  {isRetrying ? 'טוען…' : 'נסו שוב'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <AnimatePresence mode="sync">
+              {activeTab === 'overview' && (
+                <m.div
+                  key="overview"
+                  id="progress-panel-overview"
+                  role="tabpanel"
+                  aria-labelledby="progress-tab-overview"
+                  {...motionProps}
+                >
+                  <OverviewTab sessions={completedSessions} prs={prs} />
+                </m.div>
+              )}
+              {activeTab === 'workouts' && (
+                <m.div
+                  key="workouts"
+                  id="progress-panel-workouts"
+                  role="tabpanel"
+                  aria-labelledby="progress-tab-workouts"
+                  {...motionProps}
+                >
+                  <WorkoutsTab
+                    sessions={completedSessions}
+                    prs={prs}
+                    isLoading={isLoading}
+                    initialSub={
+                      (location.state?.subTab as 'history' | 'strength' | undefined) ?? initialSub
+                    }
+                    initialStrengthSelection={location.state?.exercise}
+                  />
+                </m.div>
+              )}
+              {activeTab === 'body' && (
+                <m.div
+                  key="body"
+                  id="progress-panel-body"
+                  role="tabpanel"
+                  aria-labelledby="progress-tab-body"
+                  {...motionProps}
+                >
+                  <BodyTab
+                    latestWeight={latestWeight}
+                    weightTrend={weightTrend}
+                    bmi={bmi}
+                    bmiCategory={bmiCategory}
+                    weightEntries={weightEntries}
+                    latestMeasurement={latestMeasurement}
+                    measurements={measurements}
+                    onAddWeight={handleShowAddWeight}
+                    onAddMeasurement={handleShowAddMeasurement}
+                  />
+                </m.div>
+              )}
+              {activeTab === 'recovery' && (
+                <m.div
+                  key="recovery"
+                  id="progress-panel-recovery"
+                  role="tabpanel"
+                  aria-labelledby="progress-tab-recovery"
+                  {...motionProps}
+                >
+                  <RecoveryTab
+                    todayRecovery={todayRecovery}
+                    recoveryScore={recoveryScore}
+                    weeklyRecovery={weeklyRecovery}
+                    history={recoveryHistory}
+                    trainingLoad={trainingLoad}
+                    onAdd={handleShowAddRecovery}
+                  />
+                </m.div>
+              )}
+            </AnimatePresence>
+          )}
+        </div>
       </div>
 
-      {/* Add sheets — always mounted; <Sheet> owns open/close animation. */}
+      {/* Add sheets — always mounted; <Sheet> owns open/close animation.
+          Deliberately OUTSIDE the capped column: they are overlays, not page
+          content, and must not inherit the 480px cap. */}
       <AddWeightModal
         isOpen={showAddWeight}
         onSave={handleSaveWeight}

@@ -66,7 +66,11 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
         <div
           style={{
             background: 'var(--fs-surface-2)',
-            border: '2px solid var(--fs-primary)',
+            // --fs-edge, not --fs-primary: this 2px rule is the only thing marking
+            // "this set is open for editing" against the --fs-surface card behind
+            // it. --fs-primary read 1.05:1 there in dark and 1.06:1 in dark+HC, so
+            // the whole edit panel had no boundary. --fs-edge is 4.10:1 / 21:1.
+            border: '2px solid var(--fs-edge)',
             padding: 12,
             display: 'flex',
             flexDirection: 'column',
@@ -125,7 +129,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                     height: 36,
                     flexShrink: 0,
                     background: 'var(--fs-surface)',
-                    border: '2px solid var(--fs-primary)',
+                    border: '2px solid var(--fs-edge)',
                     borderRadius: 12,
                     cursor: 'pointer',
                     fontFamily: 'var(--font-display)',
@@ -150,7 +154,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                     flex: 1,
                     height: 36,
                     background: 'var(--fs-surface)',
-                    border: '2px solid var(--fs-primary)',
+                    border: '2px solid var(--fs-edge)',
                     borderRadius: 12,
                     textAlign: 'center',
                     fontFamily: 'var(--font-display)',
@@ -172,8 +176,14 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                     width: 36,
                     height: 36,
                     flexShrink: 0,
+                    // Fill stays --fs-primary: the glyph on it is --fs-accent, and
+                    // accent ink measures 3.11:1 (dark) / 1.25:1 (both HC) on
+                    // --fs-edge and 1.00:1 on --fs-panel over this --fs-surface-2
+                    // panel. Converting the fill breaks the label; the 2px --fs-edge
+                    // ring below is what restores the button's outer boundary
+                    // (1.31:1 -> 3.89:1 in dark).
                     background: 'var(--fs-primary)',
-                    border: '2px solid var(--fs-primary)',
+                    border: '2px solid var(--fs-edge)',
                     borderRadius: 12,
                     cursor: 'pointer',
                     fontFamily: 'var(--font-display)',
@@ -213,7 +223,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                     height: 36,
                     flexShrink: 0,
                     background: 'var(--fs-surface)',
-                    border: '2px solid var(--fs-primary)',
+                    border: '2px solid var(--fs-edge)',
                     borderRadius: 12,
                     cursor: 'pointer',
                     fontFamily: 'var(--font-display)',
@@ -238,7 +248,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                     flex: 1,
                     height: 36,
                     background: 'var(--fs-surface)',
-                    border: '2px solid var(--fs-primary)',
+                    border: '2px solid var(--fs-edge)',
                     borderRadius: 12,
                     textAlign: 'center',
                     fontFamily: 'var(--font-display)',
@@ -260,8 +270,14 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                     width: 36,
                     height: 36,
                     flexShrink: 0,
+                    // Fill stays --fs-primary: the glyph on it is --fs-accent, and
+                    // accent ink measures 3.11:1 (dark) / 1.25:1 (both HC) on
+                    // --fs-edge and 1.00:1 on --fs-panel over this --fs-surface-2
+                    // panel. Converting the fill breaks the label; the 2px --fs-edge
+                    // ring below is what restores the button's outer boundary
+                    // (1.31:1 -> 3.89:1 in dark).
                     background: 'var(--fs-primary)',
-                    border: '2px solid var(--fs-primary)',
+                    border: '2px solid var(--fs-edge)',
                     borderRadius: 12,
                     cursor: 'pointer',
                     fontFamily: 'var(--font-display)',
@@ -284,7 +300,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                 flex: 1,
                 padding: '10px 16px',
                 background: 'var(--fs-surface-2)',
-                border: '2px solid var(--fs-primary)',
+                border: '2px solid var(--fs-edge)',
                 borderRadius: 12,
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
@@ -303,6 +319,11 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                 flex: 1,
                 padding: '10px 16px',
                 background: 'var(--fs-accent)',
+                // --fs-primary, NOT --fs-edge: this button's own fill is the mint,
+                // which stays bright in all four states, so the near-black ring
+                // reads at 7.16:1 (light) to 15.85:1 (dark+HC) against it. --fs-edge
+                // is rgba(255,255,255,.42) in dark and composites to 1.24:1 over the
+                // mint — the ring would vanish. Do not sweep this one with the rest.
                 border: '2px solid var(--fs-primary)',
                 borderRadius: 12,
                 cursor: 'pointer',

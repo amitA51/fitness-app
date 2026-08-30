@@ -5996,3 +5996,91 @@ four exported `use*Settings` hooks with zero consumers.
 the two divergent defaults. **DISPROVED, not fixed:** the tutorial's "missing" accessible name (the
 wiring is correct) and "the tutorial is not a sheet" (correct, but it is the right shape — my
 bookkeeping was wrong, four sheets were migrated, not six).
+
+
+---
+
+# Batch 29 — dispatched 2026-08-30 10:22. Amit: "תתקן ותעשה מה שצריך אני סומך אלייך".
+
+Full delegation of the WORK again. **The merge is NOT delegated** — he has been offered it three
+times and has not taken it, so per my own rule I state it once and stop re-raising: the branch stays
+off `master` until he says so in the moment.
+
+### Sequencing decided, not defaulted: code first, ONE capture round after
+Batch 28's figures are arithmetic-only — no human eye has seen the new grabber, the capped Settings
+or the numpad cue. That is the biggest gap on the board. But **a capture round must photograph a
+settled tree**, and this batch changes page containers and 31 token sites. Photographing now would
+photograph a tree about to change — the mistake batches 24-26 avoided by shooting once, after.
+**So batch 30 is the capture round and it photographs batches 28 AND 29 together.** NOBODY holds the
+browser or the build this batch, which is what makes that round trustworthy.
+
+### Ground truth I established MYSELF before writing the briefs — do not re-derive
+- **FIVE pages still hand-roll `pb-[max(...)]` with no `.page-shell`:** `legal/LegalDocPage.tsx:72`,
+  `profile/PublicProfilePage.tsx:108`, `AccessibilityStatement.tsx:66`, `Progress.tsx:209`,
+  `WorkoutDetail.tsx:113`. (`Settings.tsx:174` also matches, but that hit is inside T-087's own
+  explanatory COMMENT — the live code there is already `.page-shell`. Do not "fix" it again.)
+- **`.page-shell` is an established pattern, not an invention:** already live at `Dashboard.tsx:245`,
+  `Nutrition.tsx:127`, `Settings.tsx:191`, `Templates.tsx:66`.
+- **The two remaining RTL arrow copies are in DIFFERENT directories**, which is what lets them share a
+  batch with the token sweep: `pages/coach/CoachMessages.tsx:206-211` and
+  `components/workout/ExerciseTutorial.tsx:343-348`.
+- **`src/pages/progress/components/SegmentedControl.tsx:44-65` already holds the correct shared
+  helper** (`arrowKeyTargetIndex`), landed in batch 27. It is an import, not a re-derivation.
+
+### Ownership map — disjoint, verified by grep against the clean tree
+- **T-089** → `src/pages/legal/LegalDocPage.tsx`, `src/pages/profile/PublicProfilePage.tsx`,
+  `src/pages/AccessibilityStatement.tsx`, `src/pages/Progress.tsx`, `src/pages/WorkoutDetail.tsx`,
+  `src/pages/Dashboard.tsx` + tests. **MUST NOT open `src/styles/**` or `src/pages/Settings.tsx`.**
+- **T-090** → `src/components/workout/**` **EXCEPT** `overlays/NumpadOverlay.tsx` (done in batch 28)
+  **and EXCEPT** `ExerciseTutorial.tsx` (T-091 holds it). **MUST NOT open `src/styles/**`** — the two
+  replacement tokens already exist in all three theme blocks.
+- **T-091** → `src/pages/coach/CoachMessages.tsx`, `src/components/workout/ExerciseTutorial.tsx` + tests.
+- **DECLARED SEAM, stated in BOTH briefs:** `ExerciseTutorial.tsx` sits inside T-090's directory but
+  belongs to T-091. If T-090 finds a token site in it, it reports and skips.
+- **NO PLAYWRIGHT, NO BUILD, NO SERVER anywhere this batch.**
+
+## [T-089] The uncapped-page family — Settings was the second instance, not the last
+- status: dispatched (batch 29)
+- owner: fitness-design
+- goal: five more pages stretch to full width on desktop for exactly the reason Settings did — they
+  hand-roll the bottom padding and skip the width cap entirely.
+- done when: verify green; test:run >= 1554; each page's content width at 1280 stated before and
+  after; 390px proven unchanged on the inline axis; `Dashboard.tsx`'s double bottom padding removed
+- notes: **reuse `.page-shell`**, do not add a `max-w-*`. Follow `Dashboard.tsx`'s own split — page
+  wash full-bleed on an outer element, `.page-shell` on the inner content column — or capping the
+  wrong layer shrinks the background to a 480px strip. `.page-shell`'s bottom padding is COMPOSED
+  from the real `--nav-height`; the hand-rolled `max(112px, …)` collapsed to a 14px gap once the
+  safe-area inset passed 34px, so adopting it is a fix, not a swap. If any page's wash and content
+  are the same element, say so and solve it rather than capping the wash.
+
+## [T-090] The set-logging screen — enabled and disabled look identical in dark
+- status: dispatched (batch 29)
+- owner: fitness-design
+- goal: the `--fs-primary` sweep's set-logging segment. This is the app's hottest path and
+  `PRODUCT.md`'s first rule is that nothing may slow set entry — yet a user mid-workout cannot read
+  which control is active.
+- done when: verify green; test:run >= 1554; every converted site stated as a number in all FOUR
+  theme states before and after; light proven byte-identical or the change named; both HC states
+  proven not to regress
+- notes: **`plans/FS-PRIMARY-EXPOSURE.md` is the authority for the grouping but its COUNTS have
+  drifted twice** (247/251/85 → 253/257/84) and batch 28 converted two sites inside
+  `NumpadOverlay.tsx`. **Re-derive the site list from the tree, do not trust the doc's totals.**
+  `--fs-primary` must NOT move — it is dual-use, also the ink on `--fs-signal`. `--fs-edge` and
+  `--fs-panel` already exist in all three theme blocks; `--color-border-strong` is DISQUALIFIED
+  (2.10-2.35:1). **The consumption rule is written next to `--fs-panel`: over a `--fs-surface-2`
+  backdrop it is 1.00:1 in dark — confirm each site's real backdrop before converting it.** A site
+  whose surround is `--fs-accent` or `--fs-signal` is CORRECT as-is; converting it breaks working
+  code. 12 such sites were caught in an earlier round.
+
+## [T-091] The last two copies of the RTL arrow rule
+- status: dispatched (batch 29)
+- owner: fitness-dev
+- goal: batch 27 extracted the shared arrow-key helper and pointed three consumers at it. Two more
+  files still hand-roll the same rule.
+- done when: verify green; test:run >= 1554 plus a test per site proving arrow order in RTL; the
+  shared helper IMPORTED, not re-implemented
+- notes: `src/pages/progress/components/SegmentedControl.tsx:44-65` exports `arrowKeyTargetIndex` —
+  import it. A third copy of that logic is exactly the defect the copy sweep spent a batch
+  cataloguing. **Both files may already hardcode RTL semantics with no `dir` check** — if a file is
+  already correct for Hebrew today, say so and convert it anyway so it cannot break in LTR, or
+  explain why not. Do NOT touch `SegmentedControl.tsx` itself.

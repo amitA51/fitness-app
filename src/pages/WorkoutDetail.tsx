@@ -109,8 +109,13 @@ export default function WorkoutDetail() {
   const { totalSets, totalReps } = computeSessionStats(session, { excludeWarmup: true });
 
   return (
+    // The wash stays FULL-BLEED: capping the element that paints the
+    // background/ambient mesh would shrink it to a 480px strip down the middle
+    // of a wide screen. The cap belongs on the content column below. The sticky
+    // glass header is chrome on this same full-bleed layer, matching Settings /
+    // Dashboard where PageHeader also sits outside the capped column.
     <div
-      className="ambient-mesh ambient-mesh-soft pb-[max(100px,calc(env(safe-area-inset-bottom, 0px) + 100px))]"
+      className="ambient-mesh ambient-mesh-soft"
       style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
@@ -176,7 +181,12 @@ export default function WorkoutDetail() {
         </div>
       </div>
 
-      <div className="px-4 pt-4">
+      {/* `.page-shell` (components.css) is the house content container: 480px
+          max-width + margin-inline auto + 20px padding-inline + the fixed-nav
+          bottom clearance. NOTE this page hand-rolled `px-4` (16px), 4px tighter
+          than the app's `--content-padding`; adopting the shell brings it onto
+          the house value, so the cards move 4px inward at every width. */}
+      <div className="page-shell pt-4">
         {/* Time Info */}
         <m.div
           initial={{ opacity: 0, y: 20 }}

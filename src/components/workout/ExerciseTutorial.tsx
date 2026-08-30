@@ -27,6 +27,8 @@ import {
 } from '../../constants/exerciseClassification';
 import { getExerciseImages } from '../../data/exerciseImages';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useIsRTL } from '../../hooks/useIsRTL';
+import { arrowKeyTargetIndex } from '../../pages/progress/components/SegmentedControl';
 import { logger } from '../../utils/logger';
 import { MuscleMap } from '../fitness/MuscleMap';
 import { splitInstructionSteps } from './instructionSteps';
@@ -138,6 +140,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
 }) => {
   const [tab, setTab] = useState<TabId>('guide');
   const [activeStep, setActiveStep] = useState(0);
+  const isRTL = useIsRTL();
   // Track demo-image failures per index, so one broken frame hides only itself —
   // the working frame stays visible instead of the whole demonstration block.
   const [failedImgs, setFailedImgs] = useState<ReadonlySet<number>>(() => new Set());
@@ -340,12 +343,18 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
       : []),
   ];
 
-  // RTL tablist: ArrowLeft moves to the NEXT tab (the one drawn to the left).
+  // Tablist arrows resolve through the shared `arrowKeyTargetIndex` rule — the one
+  // place that decides RTL steps ArrowLeft forward and ArrowRight back — so this
+  // tablist steps identically to the app's other tablists (and wraps at both ends
+  // like they do). Home/End stay local; the helper only owns the arrows.
   const handleTabKey = (e: React.KeyboardEvent) => {
-    const i = TABS.findIndex((t) => t.id === tab);
-    let next = i;
-    if (e.key === 'ArrowLeft') next = Math.min(i + 1, TABS.length - 1);
-    else if (e.key === 'ArrowRight') next = Math.max(i - 1, 0);
+    const i = Math.max(
+      0,
+      TABS.findIndex((t) => t.id === tab)
+    );
+    const arrowIndex = arrowKeyTargetIndex(e.key, isRTL, i, TABS.length);
+    let next: number;
+    if (arrowIndex !== null) next = arrowIndex;
     else if (e.key === 'Home') next = 0;
     else if (e.key === 'End') next = TABS.length - 1;
     else return;

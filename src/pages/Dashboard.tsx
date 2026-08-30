@@ -180,7 +180,9 @@ export default function Dashboard() {
         minHeight: '100dvh',
         touchAction: 'pan-y',
         WebkitOverflowScrolling: 'touch',
-        paddingBottom: 'max(7rem, calc(4rem + env(safe-area-inset-bottom)))',
+        // No bottom padding here on purpose: the inner `.page-shell` column
+        // already carries the fixed-nav clearance. Paying it on both layers
+        // stacked ~204px of dead space under the last card.
       }}
       {...handlers}
     >

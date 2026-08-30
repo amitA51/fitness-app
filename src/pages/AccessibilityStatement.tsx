@@ -62,8 +62,11 @@ const MUTED_TEXT_STYLE: React.CSSProperties = {
 
 export default function AccessibilityStatement() {
   return (
+    // The wash stays FULL-BLEED: capping the element that paints the
+    // background/ambient mesh would shrink it to a 480px strip down the middle
+    // of a wide screen. The cap belongs on the content column below.
     <div
-      className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))] ambient-mesh ambient-mesh-soft"
+      className="ambient-mesh ambient-mesh-soft"
       style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
       lang="he"
@@ -87,7 +90,11 @@ export default function AccessibilityStatement() {
       </header>
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
-      <article className="px-5 pt-6" aria-label="הצהרת נגישות">
+      {/* `.page-shell` (components.css) is the house content container: 480px
+          max-width + margin-inline auto + 20px padding-inline + the fixed-nav
+          bottom clearance. It replaces the old `px-5` (identical 20px) and the
+          hand-rolled `pb-[max(7rem,…)]` that used to sit on the wash. */}
+      <article className="page-shell pt-6" aria-label="הצהרת נגישות">
         {/* ── Commitment ─────────────────────────────────────────────────── */}
         <section
           className="mb-6"
