@@ -2,6 +2,7 @@
 // Provides actual functionality connected to the settings
 
 import { useCallback, useEffect, useRef } from 'react';
+import { DEFAULT_WORKOUT_SETTINGS } from '../../../contexts/SettingsContext';
 import type { WorkoutSettings, WorkoutTheme } from '../../../types';
 import { logger } from '../../../utils/logger';
 import { useWorkoutDispatch, useWorkoutState } from '../core/WorkoutContext';
@@ -11,107 +12,18 @@ import { useAudioBeep, useVoiceCountdown } from './useVoiceCountdown';
 // DEFAULT SETTINGS
 // ============================================================
 
-export const DEFAULT_WORKOUT_SETTINGS: WorkoutSettings = {
-  defaultRestTime: 90,
-  defaultSets: 3,
-  soundEnabled: true,
-  hapticsEnabled: true,
-  keepAwake: true,
-  oledMode: false,
-
-  defaultWorkoutGoal: 'general',
-  enableWarmup: true,
-  enableCooldown: true,
-  warmupPreference: 'ask',
-  cooldownPreference: 'ask',
-
-  waterReminderEnabled: false,
-  waterReminderInterval: 15,
-  workoutRemindersEnabled: false,
-  workoutReminderTime: '18:00',
-  reminderDays: [1, 2, 3, 4, 5], // Mon-Fri
-
-  selectedTheme: 'deepCosmos',
-  trackBodyWeight: false,
-
-  // Display settings
-  showGhostValues: true,
-  showVolumePreview: true,
-  showIntensityMeter: false,
-  compactMode: false,
-
-  // Rest timer
-  autoStartRest: true,
-  restTimerVibrate: true,
-  restTimerSound: true,
-
-  // Voice & audio
-  voiceCountdownEnabled: false,
-  voiceLanguage: 'he-IL',
-  voiceVolume: 0.8,
-  countdownBeepEnabled: true,
-
-  // Performance
-  showPerformanceStats: false,
-  showSetHistory: true,
-  autoIncrementWeight: false,
-  weightIncrementAmount: 2.5,
-
-  // Accessibility
-  reducedAnimations: false,
-  largeText: false,
-  highContrast: false,
-
-  // === ADVANCED SETTINGS DEFAULTS ===
-
-  // Progressive Overload & Smart Features
-  enableProgressiveOverload: true,
-  progressiveOverloadPercent: 2.5,
-  enableOneRepMaxTracking: true,
-  showExerciseNotes: true,
-
-  // Smart Rest Timer
-  smartRestEnabled: false,
-  shortRestTime: 60,
-  mediumRestTime: 90,
-  longRestTime: 180,
-  extendRestAfterFailure: true,
-
-  // Workout Flow
-  autoAdvanceExercise: false,
-  confirmExerciseComplete: true,
-  enableSupersets: false,
-  showRestBetweenExercises: true,
-  // Sets are fixed to the user/template-defined count by default; extra sets are
-  // added manually. Set true to restore the legacy auto-append-on-last-set flow.
-  autoAddSets: false,
-
-  // Personal Records
-  prCelebrationIntensity: 'full',
-  trackVolumeRecords: true,
-
-  // Data & Analytics
-  enableWorkoutAnalytics: true,
-  showMuscleGroupBalance: false,
-  enableExportToCSV: true,
-
-  // Timer Display
-  timerDisplayMode: 'countdown',
-  showTimerInHeader: true,
-
-  // Quick Actions
-  enableQuickWeightButtons: true,
-  quickWeightIncrement: 2.5,
-  enableQuickRepsButtons: true,
-
-  // Gym Mode
-  gymModeEnabled: false,
-  gymModeAutoLock: false,
-
-  // Body Weight Tracking
-  promptWeightBeforeWorkout: false,
-  promptWeightAfterWorkout: false,
-};
+/**
+ * Re-exported, NOT redeclared. This module used to hold a second
+ * `DEFAULT_WORKOUT_SETTINGS` literal that disagreed with the context's copy on
+ * seven values, so which defaults a new user got depended on read order. The
+ * single definition lives in contexts/SettingsContext — the store that owns the
+ * `appSettings` storage key and whose values were the ones actually reaching the
+ * user; see the note there for the per-key resolution.
+ *
+ * Importers of this path (core/workoutReducerHelpers,
+ * core/workoutReducerUiHandlers, overlays/WorkoutSettingsOverlay) are unchanged.
+ */
+export { DEFAULT_WORKOUT_SETTINGS };
 
 // ============================================================
 // TYPES

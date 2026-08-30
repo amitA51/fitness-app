@@ -14,7 +14,29 @@ import { setSoundEnabled } from '../utils/audio';
 import { setHapticsEnabled } from '../utils/haptics';
 import { safeJsonParse } from '../utils/safeJson';
 
-// Default workout settings
+/**
+ * The ONLY definition of the workout-settings defaults.
+ *
+ * `components/workout/hooks/useWorkoutSettings` used to declare a second object
+ * under the same name. The two disagreed on seven values (voiceVolume,
+ * longRestTime, extendRestAfterFailure, autoAdvanceExercise,
+ * confirmExerciseComplete, timerDisplayMode, showMuscleGroupBalance) and the
+ * workout copy carried seven keys this one lacked.
+ *
+ * Every disagreement resolved in favour of the values below, because those are
+ * the ones that actually reach the user: SettingsProvider is mounted above the
+ * whole tree (App.tsx), it seeds a COMPLETE settings object from these defaults,
+ * and WorkoutProvider seeds `state.appSettings` from that context object
+ * (core/WorkoutProvider.tsx). Every workout-side read — `get()`,
+ * `useWorkoutSettingValue`, the `??` fallbacks in core/workoutReducerHelpers,
+ * the spread base in core/workoutReducerUiHandlers, the overlay's own `get()` —
+ * consults its defaults only when a key is `undefined`, which for a shared key
+ * it never was. The workout copy's seven differing values were unreachable.
+ *
+ * The seven keys only that copy had are kept (marked below); they are the values
+ * that shipped for those keys, since this object left them `undefined` and the
+ * workout-side fallback supplied them.
+ */
 export const DEFAULT_WORKOUT_SETTINGS: WorkoutSettings = {
   oledMode: false,
   selectedTheme: 'deepCosmos',
@@ -24,6 +46,8 @@ export const DEFAULT_WORKOUT_SETTINGS: WorkoutSettings = {
   autoStartRest: true,
   warmupPreference: 'ask',
   cooldownPreference: 'ask',
+  enableWarmup: true,
+  enableCooldown: true,
   keepAwake: true,
   hapticsEnabled: true,
   autoIncrementWeight: false,
@@ -32,6 +56,7 @@ export const DEFAULT_WORKOUT_SETTINGS: WorkoutSettings = {
   showVolumePreview: true,
   showIntensityMeter: false,
   showPerformanceStats: false,
+  showSetHistory: true,
   compactMode: false,
   soundEnabled: true,
   voiceCountdownEnabled: false,
@@ -43,6 +68,9 @@ export const DEFAULT_WORKOUT_SETTINGS: WorkoutSettings = {
   waterReminderEnabled: false,
   waterReminderInterval: 15,
   workoutRemindersEnabled: false,
+  workoutReminderTime: '18:00',
+  reminderDays: [1, 2, 3, 4, 5], // Mon-Fri
+  trackBodyWeight: false,
   reducedAnimations: false,
   largeText: false,
   highContrast: false,
@@ -59,6 +87,9 @@ export const DEFAULT_WORKOUT_SETTINGS: WorkoutSettings = {
   confirmExerciseComplete: false,
   enableSupersets: false,
   showRestBetweenExercises: true,
+  // Sets are fixed to the user/template-defined count by default; extra sets are
+  // added manually. Set true to restore the legacy auto-append-on-last-set flow.
+  autoAddSets: false,
   prCelebrationIntensity: 'full',
   trackVolumeRecords: true,
   timerDisplayMode: 'countup',

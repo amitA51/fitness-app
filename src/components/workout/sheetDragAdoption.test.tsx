@@ -37,7 +37,11 @@ vi.mock('../templates/EmbeddedTemplatePicker', () => ({
 vi.mock('../../services/dataService', () => ({
   incrementExerciseUse: vi.fn(() => Promise.resolve()),
 }));
-vi.mock('../../contexts/SettingsContext', () => ({
+// Partial: `useSettings` stays stubbed (this file is about sheet chrome, not the
+// settings store), but the rest of the module must stay real — WorkoutSettingsOverlay
+// reads DEFAULT_WORKOUT_SETTINGS, which lives here as the single definition.
+vi.mock('../../contexts/SettingsContext', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../contexts/SettingsContext')>()),
   useSettings: () => ({
     settings: { darkMode: false, workoutSettings: {} },
     updateSettings: vi.fn(),

@@ -5733,3 +5733,130 @@ documented plural. Not an app-wide rewrite. Folded into T-017.
 
 ---
 
+
+
+---
+
+# Batch 27 CLOSED — committed `07106b7`, pushed. Batch 28 dispatched 2026-08-30 09:45.
+
+### Verified baseline — 2026-08-30 09:32, MINE, on a confirmed-static tree
+The overnight session died before it could gate or commit batch 27. All four workers' output was
+recovered from disk (newest `src/` mtime 01:29, i.e. 8 hours cold) rather than re-run.
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **715** files (710 + 5 new test files) |
+| `npm run test:run` | **176 files / 1533 tests**, exit 0 **both** runs — **NEW FLOOR** |
+| arithmetic | 171+5=176 files; 1489 + 18 (T-083) + 10 (T-085) + 16 (T-084) = 1533. **Nothing deleted, skipped or weakened.** |
+| `npx playwright test --list` | **112 tests / 15 files**, exit 0 (was 104/14; +8 from `switch-parity-s27.spec.ts`) |
+| debris | `test-results/` swept; `playwright-report/` absent |
+| commit | **`07106b7`**, 14 files, +1866/−115. HEAD == origin. `master` untouched at `3bf1f7f`. Tree clean. |
+
+**One file beyond a declared list, logged not silent:** `e2e/switch-parity-s27.spec.ts` (531 lines) from
+the T-084 worker. It is a test and `--list` proves it parses, so accepted in-latitude.
+
+### ⚠️ THE BIGGEST LIABILITY ON THIS PROJECT IS NOT A DEFECT — IT IS THE BRANCH
+`feat/ux-templates-picker` is **27 commits / 237 files / +32,052 −6,519 ahead of `master`.** Every gate
+is green and `master` is clean, but none of this work has ever landed. Raised with Amit; he has not
+merged, and I will not merge or push `master` without an explicit in-the-moment instruction.
+
+## Batch 28 — the three things that are genuinely wrong, after I disproved two of them
+
+**Amit's instruction: "תעשה מה שצריך"** — full delegation of the work, NOT of the merge.
+My focused shortlist was four items. I verified all four in the code first, and **two collapsed:**
+
+1. **⚠️ `reports/visual-qa-s26.md`'s D4 IS WRONG, and I checked rather than dispatching it.**
+   It reports the tutorial dialog has no accessible name. `ExerciseTutorial.tsx:366-368` carries
+   `role="dialog"` + `aria-modal` + `aria-labelledby="tutorial-title"`, **and `id="tutorial-title"`
+   really exists at `:395`.** The wiring is correct. If a screen reader still finds it unnamed, the
+   cause would be conditional rendering of that heading, which is a DOM question and not a source
+   fix. **Dropped from the batch. The verdict worker inferred this from pixels; the file wins.**
+2. **"The tutorial is not a sheet" is a correction to MY bookkeeping, not a defect.**
+   It is a `role="dialog"` full-screen surface with square corners, and that is the RIGHT shape for a
+   multi-step guide with a carousel and an ask tab. A full-screen dialog does not want a drag handle.
+   **My "six sheets migrated" claim was wrong — four were. Recorded; nothing to fix.** Turning it into
+   a sheet would be inventing work.
+
+### Ground truth I established MYSELF before writing the briefs — do not re-derive
+- **The visible grabber is ONE token in ONE place.** `Sheet.tsx:78-86` paints a 36×4 pill filled with
+  `var(--color-drag-handle)`. So every canonical sheet is fixed by fixing the token.
+- **`--color-drag-handle` is declared TWICE, not three times** — `tokens.css:140`
+  `rgba(19,35,39,0.2)` and `:552` `rgba(255,255,255,0.2)`. **There is NO `html.high-contrast`
+  declaration**, so light+HC inherits `:root`'s near-black pill onto a black page. That is exactly the
+  trap T-074 documented for `--fs-panel` and the reason its 1.14–2.63:1 range spans four states.
+- **The numpad IS draggable — the report's wording misleads.** `NumpadOverlay.tsx:612` does set
+  `data-sheet-drag-handle`, on its navy masthead, with `touchAction: none` and `cursor: grab`. What it
+  has **no** grabber pill, because it does NOT use the shared `Sheet` — it hand-rolls its own surface
+  (`max-w-md`, its own `24px 24px 0 0` radius). So the gesture works and nothing advertises it.
+- **The same numpad carries `--fs-primary` twice, right there:** `borderTop: '2px solid
+  var(--fs-primary)'` and the masthead's own `backgroundColor`. In dark that is `#0a0a0a` on a
+  `#000000` page — **so the edge of the one region you are meant to grab is invisible.** Contrast and
+  discoverability are the same defect here, which is why they go to one worker.
+- **Settings has NO width cap at all** — zero `max-w`/`maxWidth` matches in `src/pages/Settings.tsx`.
+  **And the house answer already exists:** `.page-shell` (`components.css:999-1005`) is
+  `max-width: var(--max-width)` = **480px** (`tokens.css:405`) + `margin-inline: auto` +
+  `padding-inline` + bottom padding that clears the nav. `Settings.tsx:160` hand-rolls that bottom
+  padding as `pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]` and misses the cap.
+  **This is the SECOND screen with this exact defect** — T-022 found the warmup screen at 1240px in
+  batch 8 and fixed it by adopting the documented 480px. Same fix, same reason.
+- **Two `DEFAULT_WORKOUT_SETTINGS` confirmed:** `SettingsContext.tsx:18` and
+  `useWorkoutSettings.ts:14`, with 17 reference sites across 6 files.
+
+### Ownership map — disjoint, verified against the clean tree
+- **T-086** → `src/styles/tokens.css` (the `--color-drag-handle` declarations ONLY) +
+  `src/components/workout/overlays/NumpadOverlay.tsx` + a test.
+- **T-087** → `src/pages/Settings.tsx` + a test. **MUST NOT open `src/styles/**`.**
+- **T-088** → `src/contexts/SettingsContext.tsx`,
+  `src/components/workout/hooks/useWorkoutSettings.ts`,
+  `src/components/workout/overlays/WorkoutSettingsOverlay.tsx` + tests.
+- **`src/styles/tokens.css` is lead-serialized and T-086 holds it alone this batch.**
+- **DECLARED SEAM:** T-086 fixes `NumpadOverlay.tsx`'s two `--fs-primary` sites because they are the
+  same defect as the missing grab cue and it is already in that file. **The token sweep's Batch 2
+  (the set-logging screen, 31 sites) must therefore SKIP `NumpadOverlay.tsx` and re-derive its own
+  count.** Recorded so a later batch does not undo or duplicate this.
+- **NO PLAYWRIGHT, NO BUILD, NO SERVER anywhere this batch.** The capture round that proves the new
+  handle is batch 29, on a settled tree, per the rule that has held for six rounds.
+
+## [T-086] The only cue a sheet can be dragged is nearly invisible
+- status: dispatched (batch 28)
+- owner: fitness-design
+- goal: `--color-drag-handle` measures 1.14–2.63:1 across the four theme states against a 3:1
+  non-text floor, and the numpad advertises nothing at all while its grabbable region has an
+  invisible edge in dark.
+- files (EXCLUSIVE): `src/styles/tokens.css` (that token only), `NumpadOverlay.tsx`, + a test
+- done when: verify green; test:run >= 1533; the handle stated as a number in ALL FOUR theme states
+  before and after, measured against `--fs-surface` (the sheet's own fill, NOT the page); a
+  `html.high-contrast` declaration added; the numpad's grab affordance visible and its masthead edge
+  clearing 3:1 in dark
+- notes: **the house precedent is `--fs-edge`** — `rgba(255,255,255,0.42)`, i.e. the app's own border
+  idiom raised until it clears the floor. Derive the alpha; do not copy a number from this brief.
+  **A token missing from the HC block silently hands light+HC the LIGHT value on a black page** —
+  that is why this defect spans four states. Do NOT move `--fs-primary` (dual-use).
+
+## [T-087] Settings is uncapped on desktop
+- status: dispatched (batch 28)
+- owner: fitness-design
+- goal: at 1280 the Settings card runs 1238px wide, leaving ~1100px between a label and the control
+  it belongs to. Every other page is capped at the documented 480px.
+- files (EXCLUSIVE): `src/pages/Settings.tsx` + a test
+- done when: verify green; test:run >= 1533; the measured content width at 1280 stated before and
+  after; 390px proven unchanged
+- notes: **reuse `.page-shell`** (`components.css:999`) rather than adding a `max-w-*`. It already
+  carries the 480px cap, the inline centring, the inline padding AND the bottom padding that
+  `Settings.tsx:160` currently hand-rolls — so adopting it deletes a hand-rolled copy instead of
+  adding a rule. `src/styles/**` is OFF-LIMITS (T-086 owns the tokens).
+
+## [T-088] Which defaults a new user gets depends on which store woke first
+- status: dispatched (batch 28)
+- owner: fitness-dev
+- goal: two `DEFAULT_WORKOUT_SETTINGS` objects disagree on ~7 values (`timerDisplayMode`
+  countup/countdown, `longRestTime` 120/180 and five more), and the workout one has 7 keys the other
+  lacks. Found by T-057 in batch 19 and correctly left alone then.
+- files (EXCLUSIVE): `src/contexts/SettingsContext.tsx`,
+  `src/components/workout/hooks/useWorkoutSettings.ts`, `WorkoutSettingsOverlay.tsx` + tests
+- done when: verify green; test:run >= 1533 plus a test that FAILS if the two ever diverge again;
+  every differing key listed with the value chosen and why
+- notes: ONE object, imported by both — a test that merely compares two copies still allows two
+  copies. **Where they disagree, the value that SHIPS today on the surface the user actually meets
+  wins**; say which surface that is per key rather than picking by preference. Do NOT change what an
+  existing user has already stored, and do NOT touch `src/styles/**` or `src/pages/**`.

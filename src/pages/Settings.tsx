@@ -155,15 +155,40 @@ export default function Settings() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
+  // Two layers, deliberately — the page WASH and the content COLUMN are
+  // different concerns:
+  //
+  //   outer  full-bleed. Owns `--fs-bg` + the ambient mesh, so the wash still
+  //          covers the whole viewport on a wide screen. Capping this element
+  //          would shrink the mesh to a 480px strip down the middle.
+  //   inner  `.page-shell` — the house container (components.css). It supplies
+  //          max-width: var(--max-width) (480px), margin-inline: auto,
+  //          padding-inline: var(--content-padding) (20px) and the bottom
+  //          clearance for the fixed nav.
+  //
+  // Before this, the page had NO cap at all: at 1280px the content ran the full
+  // ~1238px, which pushed a row's label and its control ~1100px apart so the two
+  // stopped reading as one row. Same defect the warmup screen had, same fix —
+  // adopt `.page-shell` rather than hand-roll a `max-w-*`.
+  //
+  // The old hand-rolled `pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]`
+  // is gone because `.page-shell` already owns the bottom padding. The two are
+  // NOT identical: the old rule clamped to a magic 112px floor, while
+  // `.page-shell` composes it from the real nav height
+  // (calc(var(--nav-height) + 28px + env(safe-area-inset-bottom))). page-shell's
+  // is the correct one — it guarantees the same 28px gap above the 64px nav on
+  // every device, where the max() floor collapsed to a 14px gap once the inset
+  // passed 34px. `px-5` is likewise dropped: `--content-padding` is the same
+  // 20px, so the inline layout at 390px is unchanged.
   return (
     <div
-      className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))] ambient-mesh ambient-mesh-soft"
+      className="ambient-mesh ambient-mesh-soft"
       style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
       <PageHeader title="הגדרות" eyebrow="התאמות אישיות וסנכרון" size="large" />
 
-      <div className="px-5 pt-6">
+      <div className="page-shell pt-6">
         {/* ── 1 · חשבון ─────────────────────────────────────────────────── */}
         <SettingsGroup title="חשבון">
           <AccountSection authEmail={state.authEmail} onSignOut={handleSignOut} showLabel={false} />

@@ -599,7 +599,14 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
           className="w-full max-w-md mx-auto overflow-hidden glass-surface-dark"
           style={{
             backgroundColor: 'var(--fs-bg)',
-            borderTop: '2px solid var(--fs-primary)',
+            // --fs-edge, not --fs-primary: this 2px rule is the sheet's only
+            // separation from the page, because the fill (--fs-bg) IS the page
+            // colour. --fs-primary is #0a0a0a on a #000 page in dark, so the edge
+            // of the region you are meant to grab measured 1.06:1 — invisible.
+            // --fs-edge is the app's control-edge token and clears 1.4.11 in every
+            // state (light 13.48:1 unchanged, dark 3.95:1, HC 21:1). The token
+            // itself must not move: it is also the ink on --fs-signal.
+            borderTop: '2px solid var(--fs-edge)',
             borderRadius: '24px 24px 0 0',
             boxShadow: '0 -12px 32px rgba(11,26,43,0.2)',
           }}
@@ -612,11 +619,34 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
             data-sheet-drag-handle
             className="px-6 py-4"
             style={{
-              backgroundColor: 'var(--fs-primary)',
+              // --fs-panel is the token for exactly this (mastheads, hero bands,
+              // full-bleed dark chrome) over a page/card backdrop, which --fs-bg
+              // is. --fs-primary sat at 1.06:1 against the sheet body in dark, so
+              // the grab region had no visible bounds. Light is byte-identical:
+              // :root aliases --fs-panel to --fs-primary.
+              backgroundColor: 'var(--fs-panel)',
               touchAction: 'none',
               cursor: 'grab',
             }}
           >
+            {/* Grab cue — the shared Sheet's 36x4 pill (ui/Sheet.tsx), so both
+                sheet shapes advertise the gesture identically. It cannot use
+                --color-drag-handle: that token is tuned against --fs-surface and
+                is dark ink in light, which on this navy masthead is 1.02:1. The
+                masthead is dark chrome in ALL FOUR states, and the ink token for
+                dark chrome is --color-ink-on-dark (11.2-15.1:1 here). Decorative
+                only — the whole masthead is the handle. */}
+            <div className="flex justify-center mb-3" aria-hidden="true">
+              <div
+                data-numpad-grabber
+                style={{
+                  width: 36,
+                  height: 4,
+                  borderRadius: 'var(--radius-full)',
+                  background: 'var(--color-ink-on-dark)',
+                }}
+              />
+            </div>
             {exerciseName && (
               <m.div
                 className="text-center mb-1"
