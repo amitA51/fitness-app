@@ -7,6 +7,7 @@ import {
   UtensilsCrossed,
   Zap,
 } from 'lucide-react';
+import { isSupabaseConfigured } from '../lib/supabase';
 import type { FoodItem, MacroNutrients, MealEntry, MealType } from '../types';
 import { toLocalDateStr, todayStr } from '../utils/dateUtils';
 import { generateId } from '../utils/id';
@@ -15,6 +16,8 @@ import { writeJsonStorage } from '../utils/safeJson';
 import { STORES, dbDelete, dbGetAll, dbGetByRange, dbPut } from './indexedDBCore';
 import { mirrorLocalKey } from './localStateMirror';
 import { FOOD_LIBRARY, MEAL_PRESETS, type MealPreset } from './nutritionData';
+import { queueMutation } from './offlineQueue';
+import { clearUnsyncedRecordMarker, markRecordUnsynced } from './sessionDb';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudNutritionLog, syncNutritionLog } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
@@ -143,38 +146,54 @@ export async function addFoodFromPreset(
 
   await dbPut(STORES.NUTRITION_LOGS, mealEntry);
 
+  const syncPayload = {
+    id: mealEntry.id,
+    date: mealEntry.date,
+    calories: Math.round(mealEntry.totalMacros.calories),
+    protein: Math.round(mealEntry.totalMacros.protein),
+    carbs: Math.round(mealEntry.totalMacros.carbs),
+    fat: Math.round(mealEntry.totalMacros.fat),
+    meals: mealEntry.meals.map((m) => ({
+      id: m.id,
+      name: m.name,
+      calories: Math.round(m.totalMacros.calories),
+      protein: Math.round(m.totalMacros.protein),
+      carbs: Math.round(m.totalMacros.carbs),
+      fat: Math.round(m.totalMacros.fat),
+      time: m.time,
+    })),
+    notes: mealEntry.notes,
+    createdAt: mealEntry.createdAt,
+  };
+
+  // Deliberately off the caller's critical path — the UI only waits for the
+  // local write. It is NOT, however, unaccounted for: the old version of this
+  // block wrapped the whole auth+sync attempt in a bare `catch {}` commented
+  // "failure is handled by the retry queue", which was UNTRUE precisely when
+  // getCurrentUser() returned null — nothing was enqueued, so no queue row
+  // existed for the retry machinery to handle. Every branch below now either
+  // confirms the cloud write or hands the payload to the queue.
   void (async () => {
-    try {
-      const user = await getCurrentUser();
-      if (user) {
-        const syncPayload = {
-          id: mealEntry.id,
-          date: mealEntry.date,
-          calories: Math.round(mealEntry.totalMacros.calories),
-          protein: Math.round(mealEntry.totalMacros.protein),
-          carbs: Math.round(mealEntry.totalMacros.carbs),
-          fat: Math.round(mealEntry.totalMacros.fat),
-          meals: mealEntry.meals.map((m) => ({
-            id: m.id,
-            name: m.name,
-            calories: Math.round(m.totalMacros.calories),
-            protein: Math.round(m.totalMacros.protein),
-            carbs: Math.round(m.totalMacros.carbs),
-            fat: Math.round(m.totalMacros.fat),
-            time: m.time,
-          })),
-          notes: mealEntry.notes,
-          createdAt: mealEntry.createdAt,
-        };
-        syncWithRetry(
-          () => syncNutritionLog(user.id, syncPayload),
-          `addMealEntryFromPreset:${mealEntry.id}`,
-          3,
-          { type: 'nutrition:update', payload: syncPayload }
-        );
-      }
-    } catch {
-      // Best-effort sync — failure is handled by the retry queue
+    if (!isSupabaseConfigured()) return;
+
+    // Ledger FIRST (services/sessionDb), so the meal is countable by the
+    // sign-out guard and the offline indicator from this instant on.
+    await markRecordUnsynced(STORES.NUTRITION_LOGS, mealEntry.id);
+
+    // A THROW here is the same situation as a null user — auth cannot answer —
+    // so it must take the same path, not skip the queue.
+    const user = await getCurrentUser().catch(() => null);
+
+    if (user) {
+      const synced = await syncWithRetry(
+        () => syncNutritionLog(user.id, syncPayload),
+        `addMealEntryFromPreset:${mealEntry.id}`,
+        3,
+        { type: 'nutrition:update', payload: syncPayload }
+      );
+      if (synced) await clearUnsyncedRecordMarker(STORES.NUTRITION_LOGS, mealEntry.id);
+    } else {
+      await queueMutation('nutrition:update', syncPayload);
     }
   })();
 
@@ -191,30 +210,44 @@ export async function addMealEntry(entry: Omit<MealEntry, 'id' | 'createdAt'>): 
   await dbPut(STORES.NUTRITION_LOGS, newEntry);
 
   const user = await getCurrentUser();
-  if (user) {
-    const syncPayload = {
-      id: newEntry.id,
-      date: newEntry.date,
-      calories: Math.round(newEntry.totalMacros.calories),
-      protein: Math.round(newEntry.totalMacros.protein),
-      carbs: Math.round(newEntry.totalMacros.carbs),
-      fat: Math.round(newEntry.totalMacros.fat),
-      meals: newEntry.meals.map((m) => ({
-        id: m.id,
-        name: m.name,
-        calories: Math.round(m.totalMacros.calories),
-        protein: Math.round(m.totalMacros.protein),
-        carbs: Math.round(m.totalMacros.carbs),
-        fat: Math.round(m.totalMacros.fat),
-        time: m.time,
-      })),
-      notes: newEntry.notes,
-      createdAt: newEntry.createdAt,
-    };
-    syncWithRetry(() => syncNutritionLog(user.id, syncPayload), `addMealEntry:${newEntry.id}`, 3, {
-      type: 'nutrition:update',
-      payload: syncPayload,
-    });
+  const syncPayload = {
+    id: newEntry.id,
+    date: newEntry.date,
+    calories: Math.round(newEntry.totalMacros.calories),
+    protein: Math.round(newEntry.totalMacros.protein),
+    carbs: Math.round(newEntry.totalMacros.carbs),
+    fat: Math.round(newEntry.totalMacros.fat),
+    meals: newEntry.meals.map((m) => ({
+      id: m.id,
+      name: m.name,
+      calories: Math.round(m.totalMacros.calories),
+      protein: Math.round(m.totalMacros.protein),
+      carbs: Math.round(m.totalMacros.carbs),
+      fat: Math.round(m.totalMacros.fat),
+      time: m.time,
+    })),
+    notes: newEntry.notes,
+    createdAt: newEntry.createdAt,
+  };
+
+  if (isSupabaseConfigured()) {
+    await markRecordUnsynced(STORES.NUTRITION_LOGS, newEntry.id);
+
+    if (user) {
+      void syncWithRetry(
+        () => syncNutritionLog(user.id, syncPayload),
+        `addMealEntry:${newEntry.id}`,
+        3,
+        { type: 'nutrition:update', payload: syncPayload }
+      ).then((synced) => {
+        if (synced) void clearUnsyncedRecordMarker(STORES.NUTRITION_LOGS, newEntry.id);
+      });
+    } else {
+      // Same fix as saveWorkoutSession: this enqueue used to be reachable only
+      // with a resolved user, so a meal logged during a failed token refresh was
+      // written locally and never scheduled to push.
+      await queueMutation('nutrition:update', syncPayload);
+    }
   }
 
   return newEntry;
@@ -224,42 +257,64 @@ export async function updateMealEntry(entry: MealEntry): Promise<void> {
   await dbPut(STORES.NUTRITION_LOGS, entry);
 
   const user = await getCurrentUser();
-  if (user) {
-    const syncPayload = {
-      id: entry.id,
-      date: entry.date,
-      calories: Math.round(entry.totalMacros.calories),
-      protein: Math.round(entry.totalMacros.protein),
-      carbs: Math.round(entry.totalMacros.carbs),
-      fat: Math.round(entry.totalMacros.fat),
-      meals: entry.meals.map((m) => ({
-        id: m.id,
-        name: m.name,
-        calories: Math.round(m.totalMacros.calories),
-        protein: Math.round(m.totalMacros.protein),
-        carbs: Math.round(m.totalMacros.carbs),
-        fat: Math.round(m.totalMacros.fat),
-        time: m.time,
-      })),
-      notes: entry.notes,
-      createdAt: entry.createdAt,
-    };
-    syncWithRetry(() => syncNutritionLog(user.id, syncPayload), `updateMealEntry:${entry.id}`, 3, {
-      type: 'nutrition:update',
-      payload: syncPayload,
-    });
+  const syncPayload = {
+    id: entry.id,
+    date: entry.date,
+    calories: Math.round(entry.totalMacros.calories),
+    protein: Math.round(entry.totalMacros.protein),
+    carbs: Math.round(entry.totalMacros.carbs),
+    fat: Math.round(entry.totalMacros.fat),
+    meals: entry.meals.map((m) => ({
+      id: m.id,
+      name: m.name,
+      calories: Math.round(m.totalMacros.calories),
+      protein: Math.round(m.totalMacros.protein),
+      carbs: Math.round(m.totalMacros.carbs),
+      fat: Math.round(m.totalMacros.fat),
+      time: m.time,
+    })),
+    notes: entry.notes,
+    createdAt: entry.createdAt,
+  };
+
+  if (isSupabaseConfigured()) {
+    await markRecordUnsynced(STORES.NUTRITION_LOGS, entry.id);
+
+    if (user) {
+      void syncWithRetry(
+        () => syncNutritionLog(user.id, syncPayload),
+        `updateMealEntry:${entry.id}`,
+        3,
+        { type: 'nutrition:update', payload: syncPayload }
+      ).then((synced) => {
+        if (synced) void clearUnsyncedRecordMarker(STORES.NUTRITION_LOGS, entry.id);
+      });
+    } else {
+      await queueMutation('nutrition:update', syncPayload);
+    }
   }
 }
 
 export async function deleteMealEntry(id: string): Promise<void> {
   await dbDelete(STORES.NUTRITION_LOGS, id);
+  // The local row is gone, so it is no longer a meal that can be lost.
+  await clearUnsyncedRecordMarker(STORES.NUTRITION_LOGS, id);
 
   const user = await getCurrentUser();
-  if (user) {
-    syncWithRetry(() => deleteCloudNutritionLog(user.id, id), `deleteMealEntry:${id}`, 3, {
-      type: 'nutrition:delete',
-      payload: id,
-    });
+
+  if (isSupabaseConfigured()) {
+    if (user) {
+      void syncWithRetry(() => deleteCloudNutritionLog(user.id, id), `deleteMealEntry:${id}`, 3, {
+        type: 'nutrition:delete',
+        payload: id,
+      });
+    } else {
+      // The DELETE half of the same asymmetry: the local row is hard-deleted
+      // above regardless of auth, while the cloud tombstone used to be reachable
+      // only with a resolved user. With a null user the deletion existed on this
+      // device only, and the next pull RESURRECTED the meal the user deleted.
+      await queueMutation('nutrition:delete', id);
+    }
   }
 }
 

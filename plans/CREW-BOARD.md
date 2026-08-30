@@ -7696,3 +7696,191 @@ T-111 had not landed yet and two workers inventing two fixes for one shape is th
 repeated defect. **T-111 has now landed, so the pattern exists and can be copied rather than invented.**
 That is the next batch, plus extending the ledger beyond `WORKOUT_SESSIONS` so the sign-out guard stops
 being blind to those three stores.
+
+
+---
+
+# Batch 41 — FINISH THE FAMILY + BUILD THE ANDROID SHELL. Amit: "יש לי 12 בודקי תכונה"
+
+**⭐ THE 12 TESTERS CHANGE THE CRITICAL PATH.** Google Play requires a NEW personal developer
+account to run a closed test with **12 testers for 14 consecutive days** before it may publish to
+production. That is a CALENDAR dependency, not a work dependency — so the clock should start as
+early as possible and run in parallel with the remaining fixes. **But the testers are useless until
+there is an artifact to give them, and right now there is none.**
+
+### ⭐ I VERIFIED THE TOOLCHAIN MYSELF — the wrap is genuinely buildable on this machine
+- **JDK 21.0.11 LTS present** (Microsoft OpenJDK).
+- **Android SDK present and complete** at `C:\Users\amit0\AppData\Local\Android\Sdk` —
+  `build-tools`, `platform-tools`, `platforms`, `emulator`, `system-images`.
+- **⚠️ `ANDROID_HOME` and `ANDROID_SDK_ROOT` are BOTH UNSET.** Gradle will not find the SDK on env
+  alone, so `android/local.properties` must carry `sdk.dir` explicitly. That file is
+  machine-specific and must NEVER be committed.
+- `android/` and `ios/` **absent**; `@capacitor/*` **absent from `package.json`**; but
+  `capacitor.config.ts` exists and is already correct — `appId: 'com.sparkos.fitness'`,
+  `appName: 'SparkOS Fitness'`, `webDir: 'dist'`.
+- **Pushed before dispatching:** `b13056a..77e67c8`. `master` == `origin/master`, 0 ahead.
+  Note for the record: a push on THIS repo deploys nothing — it is a backup to origin, unlike
+  pgishonim where a push is a live deploy. That is why it was safe to take on "תעשה מה שצריך".
+
+### ⚠️ THE ANDROID TASK'S REAL RISK, and the mitigation
+`npx cap add android` followed by a first Gradle build downloads Gradle itself plus the Android
+Gradle Plugin — easily 20+ minutes cold. **That is exactly the shape that killed nine capture
+rounds: the valuable work finishes and the wall lands on the epilogue.** So the task carries a
+binding priority order, the artifact-producing step is LAST, and the worker is forbidden from
+enumerating its own output or writing a long report. Steps 1-4 survive on disk even if Gradle is
+still downloading at the wall.
+
+### ⚠️ A FACT ABOUT THE STORE BUILD HE SHOULD NOT BE SURPRISED BY
+Vite inlines env at build time, so a build on this machine bakes the **real** Supabase URL and anon
+key into the bundle. That is normal and correct for Supabase — the anon key is public by design and
+RLS is what protects the data. This project has already verified RLS is enforced server-side
+(`billing_core`, the coach policies, `app_admins`). **The consequence to state plainly: a build made
+WITHOUT `.env.local` ships with no cloud sync at all, silently degrading to local-only** — T-106's
+shape validator makes that fail cleanly rather than break, but the pipeline must inject real values.
+
+### Ownership map — disjoint, verified by grep
+- **T-115** → `src/services/waterService.ts`, `src/services/nutritionService.ts`,
+  `src/services/bodyStatsService.ts`, `src/services/sessionDb.ts`,
+  `src/components/ui/OfflineIndicator.tsx`, `src/pages/Settings.tsx` + tests.
+- **T-116** → `package.json`, `package-lock.json`, `android/**` (new), `.gitignore`, `docs/**`.
+  **MUST NOT touch anything under `src/`.**
+- **T-117** → WRITES ONLY `plans/SYNC-SHAPE-SWEEP.md`. Read-only everywhere.
+- **T-115 owns the whole data-loss family in ONE task on purpose.** Splitting the three enqueues
+  from the ledger extension would put two workers on one defect shape and one marker format — the
+  divergence this project has now catalogued five times.
+- **NO PLAYWRIGHT, NO dev server.** T-116 alone may run `npm run build` and Gradle.
+
+## [T-115] The same silent data loss, in three more services
+- status: dispatched (batch 41)
+- owner: fitness-dev
+- goal: water, nutrition and body-stats repeat `sessionDb`'s enqueue-inside-an-auth-guard shape, so a
+  record written while `getCurrentUser()` is null is never queued and never pushed — and the new
+  unsynced ledger covers `WORKOUT_SESSIONS` only, so the sign-out warning is honest about workouts
+  and blind to those three.
+- done when: verify green; test:run >= 1679 plus a test per service proving a record written with a
+  null user is still recoverable, and a test proving the sign-out warning fires for each store
+- notes: **ORDERED — fix the three enqueues FIRST (that is the data loss), then extend the ledger
+  (that is the visibility).** Partial-in-order is acceptable. **The pattern already exists in
+  `sessionDb.ts:177,224` — COPY it, do not invent a second one.** `nutritionService.ts:146-179` also
+  carries a bare `catch {}` whose comment claims the retry queue handles failure, which is untrue
+  when there is no user — fix the comment or the code, not neither. `bodyStatsService.ts`
+  `addRecoveryLog` has a second asymmetry: it hard-deletes same-day duplicates locally OUTSIDE the
+  guard while the cloud tombstone sits INSIDE it, so a null user resurrects the deleted duplicate on
+  the next pull. Do NOT redesign the queue and do NOT change what gets synced.
+
+## [T-116] There is no Android project, so the 12 testers have nothing to install
+- status: dispatched (batch 41)
+- owner: fitness-dev
+- goal: a real `android/` project that builds, so a closed-test artifact becomes possible.
+- done when, IN THIS BINDING ORDER: (1) `@capacitor/core` + `@capacitor/cli` + `@capacitor/android`
+  installed at PINNED exact versions; (2) `npx cap add android` succeeds; (3)
+  `android/local.properties` carries `sdk.dir` and is gitignored; (4) `npm run build` then
+  `npx cap sync android` both succeed; (5) ONLY IF TIME REMAINS, a debug assemble
+- notes: JDK 21 and the SDK are both installed — **`ANDROID_HOME` is UNSET, so step 3 is not
+  optional.** `capacitor.config.ts` already has the right appId/appName/webDir — do not change them.
+  **FORBIDDEN: enumerating or counting your own output, and writing a long report.** Report the four
+  step outcomes in four lines and stop. **Do not attempt a signed release build, do not create a
+  keystore, and do not touch the Play Console** — those are the owner's, and a keystore generated by
+  an agent is a keystore he cannot trust. **Nothing under `src/` may be touched.**
+
+## [T-117] The five services nobody has opened
+- status: dispatched (batch 41)
+- owner: fitness-qa
+- goal: the sweep that found three fresh instances explicitly declined to open five more files that
+  import the same `syncWithRetry` idiom, and said so rather than claiming they were clean.
+- done when: `plans/SYNC-SHAPE-SWEEP.md` states, per write function with file:line, whether the
+  enqueue sits inside an auth guard, and whether a record written with a null user can be lost
+- notes: the five are `templateDb`, `exerciseDb`, `prService`, `personalItemsDb`,
+  `programProgressService`. **The mechanical key: the enqueue IS the 4th argument to `syncWithRetry`
+  (`syncEngine.ts:80-113`) — when the guarded call never runs, no queue row exists at all.**
+  Read-only, ONE plan file, no gates, no browser. **REPORT, DO NOT FIX** — a sibling is fixing this
+  shape in three other services right now and both must end identical. **The shell truncates at the
+  first Hebrew character with exit 0** — that is what defeated an earlier attempt at this sweep, so
+  use the `read`/`grep` tools, never a shell pipeline. A clean result is a fine outcome; say so
+  plainly with the line that proves it.
+
+
+## Batch 41 — ALL THREE ACCEPTED 2026-08-30 19:00. **There is a real APK, and the family is bigger than I said.**
+
+### [T-115] The three services + the shared ledger — ACCEPTED. It did MORE than I briefed.
+- **The three enqueues are real and cover create/update/delete, not one write each** — I grepped
+  myself: `queueMutation` now at `waterService.ts:116,127,132`, `nutritionService.ts:196,249,293,316`,
+  `bodyStatsService.ts:134,175,198,302,399,407,450,471`.
+- **⭐ THE LEDGER GENERALISATION IS BETTER THAN MY BRIEF ASKED FOR.** It re-keyed the ledger by
+  `(store, recordId)` — **and kept the legacy `unsynced-session:<id>` tag for workouts on purpose so
+  markers already sitting on devices still count.** One mechanism, no migration. I specified "keep ONE
+  marker mechanism"; it delivered that AND backward compatibility I did not think to ask for.
+- **⭐ IT CAUGHT A CROSS-CONTAMINATION HAZARD IN ITS OWN NEW CODE.** `flushUnsyncedSessions` pushes
+  through `syncWorkoutSession`, so once the ledger became shared, **a water row flowing through there
+  would have written garbage into the workouts table.** It filtered to session markers only and wrote
+  the reason in the code.
+- **Its stated failure principle is the right one:** an unreadable store is assumed live, "because
+  over-warning is recoverable and under-warning is the bug."
+
+### [T-116] The Android shell — ACCEPTED. **A REAL 7.9MB DEBUG APK EXISTS.**
+- Capacitor `8.5.0` pinned exact (no `^`) on all three packages — I confirmed in `package.json`.
+- `npx cap add android` succeeded; `npm run build` + `npx cap sync android` both exit 0; web assets
+  copied into `android/app/src/main/assets/public`. **`.\gradlew.bat assembleDebug` → BUILD SUCCESSFUL
+  in 1m53s, APK 7.9MB.** Much faster than the 20+ min I budgeted for.
+- Native project agrees with the config: `namespace` + `applicationId` both `com.sparkos.fitness`,
+  `versionCode 1`, `versionName "1.0"`.
+- **`android/local.properties` IS gitignored — verified by me** via `git check-ignore`:
+  `android/.gitignore:27:local.properties`. That was my top worry and it is clean.
+- It obeyed every hard limit: no release build, no keystore, no Play Console, nothing under `src/`.
+
+### ⚠️ THE KEYSTORE TRAP — I FOUND IT, VERIFIED IT, AND FIXED IT MYSELF
+`android/.gitignore:57-58` shipped with `#*.jks` / `#*.keystore` **commented out**, and
+`git check-ignore -v android/app/release.keystore` returned NOTHING — i.e. **a signing key placed
+there would have been committed.** A signing key in git is a security problem, and it is the one
+artifact that cannot be regenerated: lose it and the app can never be updated under the same Play
+listing again. Uncommented both lines with that reason written above them. **One protective line in a
+generated ignore file — not production code, and it had to happen BEFORE Amit creates the key.**
+
+### ⭐ [T-117] The five unopened services — ACCEPTED. **3 of 5 repeat the bug.**
+- **`templateDb.ts` — YES, 3/3 writes** (guards `:101,:133,:154`, enqueue inside each, no `else`).
+- **`prService.ts` — YES, 2/2.** And `deletePR` has `if (!user) return;` at `:173` — **AFTER the local
+  delete at `:170`.** So the local delete happens and the cloud tombstone never does.
+- **`exerciseDb.ts` — YES, 4/4** (`:154,:189,:232,:332`), three of them via a floating
+  `getCurrentUser().then()` **with no `.catch` either.**
+- **`personalItemsDb.ts` — NO.** No enqueue exists to guard; local-only by documented design.
+- **`programProgressService.ts` — NO.** `queueMutation` at `:86` is **unconditional.** Already correct.
+- **It ranked by what a user would actually mourn, which is the useful part:** templates first —
+  **authored and non-regenerable**; then PRs, and the sharp observation that **the app fires a
+  congratulatory notification for a record with no cloud copy**, while `rebuildPRsFromHistory` has
+  **no caller anywhere in `src/`**, so the theoretical repair does not exist. Exercises split: custom
+  ones matter, built-ins re-seed themselves for free at `exerciseDb.ts:29-53`.
+- It confirmed the loss chain end to end rather than assuming: the bulk push does read these stores
+  (`supabaseSyncOrchestrator.ts:170-183`) but only on a manual Settings sync or guest adoption; pulls
+  MERGE rather than replace, so the row survives a pull and stays local-only; the wipe covers every
+  store. **A real mitigation, not a reliable one** — which is why it graded HIGH, not blocker.
+
+### ⚠️⚠️ AND IT FOUND A RESIDUE IN THE FILE I ALREADY ACCEPTED AS FIXED — I CONFIRMED IT MYSELF
+`deleteWorkoutSession` at **`sessionDb.ts:503`** still has a bare `if (user)` with **no `else`**. Read
+by me: the local row is deleted, the marker is cleared, and with a null user **no cloud tombstone is
+enqueued — so the next pull resurrects a workout the user deleted.** The comment three lines below it
+even documents a previous tombstone bug of this exact family.
+**MY SCOPING GAP, and it is the same shape a third time: I fixed the SAVE path and left the DELETE
+path.** Batch 40 closed the save; batch 40's own file still leaks on delete.
+
+### ⭐ THE HONEST HEADLINE: THIS FAMILY IS 7 SERVICES, NOT 4
+sessionDb save (fixed b40) · water · nutrition · body-stats (fixed b41) · templates · PRs · exercises
+(open) — **plus the delete paths in sessionDb, prService and exerciseDb, which are their own sub-shape.**
+**Three sweeps, each one found more.** I have twice reported this family as closing and been wrong
+twice. **New rule: it is not closed until a sweep comes back EMPTY.**
+
+### Verified baseline — 2026-08-30 19:00, MINE, on a confirmed-static tree
+All three terminal. Newest `src/` mtime 2.5 min cold before any gate ran. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **739** files (738 + 1 new test file) |
+| `npm run test:run` | **200 files / 1709 tests**, exit 0 both runs — **NEW FLOOR** |
+| arithmetic | 199+1=200 files; 1679 + 30 = 1709. **Nothing deleted, skipped or weakened.** |
+| Android | debug APK **7.9MB** at `android/app/build/outputs/apk/debug/app-debug.apk`; `local.properties` ignored; keystore ignore now ACTIVE |
+
+### Next, and it is now unambiguous
+1. **The three remaining services** (templates, PRs, exercises) — the pattern exists in three places
+   now, so it is a copy job, not a design job.
+2. **The delete-path sub-shape** — `sessionDb:503`, `deletePR`, `deletePersonalExercise`. All three
+   skip the cloud tombstone under null auth, so deleted records come back.
+3. **Then a sweep that must come back EMPTY** before I call this family closed.

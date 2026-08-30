@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getQueueDepth, processQueue } from '../../services/offlineQueue';
-import { flushUnsyncedSessions, getUnsyncedSessionCount } from '../../services/sessionDb';
+import { flushUnsyncedSessions, getUnsyncedRecordCounts } from '../../services/sessionDb';
 
 interface OfflineIndicatorProps {
   /**
@@ -16,12 +16,17 @@ export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [queueDepth, setQueueDepth] = useState(0);
   // Queue depth alone was a blind spot with the same shape as the sign-out
-  // guard's: a workout written while getCurrentUser() returned null (a 401
+  // guard's: a record written while getCurrentUser() returned null (a 401
   // during token refresh) entered no queue, so this component rendered
   // NOTHING — a reassuring "all synced" at the exact moment the only copy of
-  // that workout was on the device. The ledger in sessionDb is the second
+  // that record was on the device. The ledger in sessionDb is the second
   // input that closes it.
+  //
+  // T-115: the ledger now covers nutrition, water and body-stat rows too, so
+  // `others` is counted alongside workouts. Before that, an orphaned meal or
+  // weigh-in was counted by nothing and wiped by sign-out's store loop.
   const [unsyncedSessions, setUnsyncedSessions] = useState(0);
+  const [unsyncedOthers, setUnsyncedOthers] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const refreshQueueDepth = useCallback(async () => {
@@ -32,9 +37,13 @@ export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
       // ignore - depth stays at last known value
     }
     try {
-      setUnsyncedSessions(isGuest ? 0 : await getUnsyncedSessionCount());
+      const counts = isGuest
+        ? { sessions: 0, others: 0, total: 0 }
+        : await getUnsyncedRecordCounts();
+      setUnsyncedSessions(counts.sessions);
+      setUnsyncedOthers(counts.others);
     } catch {
-      // ignore — count stays at last known value
+      // ignore — counts stay at last known value
     }
   }, [isGuest]);
 
@@ -77,7 +86,8 @@ export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
 
   // A signed-out visitor with leftover queued rows used to poll every 5s
   // forever behind a banner they could never clear.
-  const shouldPoll = !isGuest && (isOffline || queueDepth > 0 || unsyncedSessions > 0);
+  const shouldPoll =
+    !isGuest && (isOffline || queueDepth > 0 || unsyncedSessions > 0 || unsyncedOthers > 0);
 
   useEffect(() => {
     if (!shouldPoll) return;
@@ -92,10 +102,13 @@ export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
         // ignore — depth stays at last known value
       }
       try {
-        const pending = await getUnsyncedSessionCount();
-        if (active) setUnsyncedSessions(pending);
+        const counts = await getUnsyncedRecordCounts();
+        if (active) {
+          setUnsyncedSessions(counts.sessions);
+          setUnsyncedOthers(counts.others);
+        }
       } catch {
-        // ignore — count stays at last known value
+        // ignore — counts stay at last known value
       }
     };
 
@@ -106,15 +119,43 @@ export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
     };
   }, [shouldPoll]);
 
-  // Only ever counted for a real account: a guest's local-only workouts are not
+  // Only ever counted for a real account: a guest's local-only records are not
   // "waiting for the cloud", so they must not raise this banner.
   const atRiskSessions = isGuest ? 0 : unsyncedSessions;
+  const atRiskOthers = isGuest ? 0 : unsyncedOthers;
+  const atRiskTotal = atRiskSessions + atRiskOthers;
+
+  // Naming the thing is the whole point — "0 pending" was the lie. Workouts get
+  // named as workouts; once other kinds are mixed in, the honest word for the
+  // combined set is רשומות.
+  const atRiskLabel =
+    atRiskOthers === 0 ? (
+      atRiskSessions === 1 ? (
+        'אימון אחד שמור במכשיר בלבד'
+      ) : (
+        <>
+          <span dir="ltr" className="kinetic-number">
+            {atRiskSessions}
+          </span>{' '}
+          אימונים שמורים במכשיר בלבד
+        </>
+      )
+    ) : atRiskTotal === 1 ? (
+      'רשומה אחת שמורה במכשיר בלבד'
+    ) : (
+      <>
+        <span dir="ltr" className="kinetic-number">
+          {atRiskTotal}
+        </span>{' '}
+        רשומות שמורות במכשיר בלבד
+      </>
+    );
 
   if (isGuest && !isOffline) return null;
 
-  if (!isOffline && queueDepth === 0 && atRiskSessions === 0) return null;
+  if (!isOffline && queueDepth === 0 && atRiskTotal === 0) return null;
 
-  if (!isOffline && (queueDepth > 0 || atRiskSessions > 0)) {
+  if (!isOffline && (queueDepth > 0 || atRiskTotal > 0)) {
     return (
       <div
         role="status"
@@ -135,20 +176,8 @@ export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
             {queueDepth === 1 ? 'פעולה אחת ממתינה לסנכרון' : 'פעולות ממתינות לסנכרון'}
           </span>
         ) : (
-          // The queue is empty and a workout still exists only here. Naming the
-          // workout is the whole point: "0 pending" was the lie.
-          <span>
-            {atRiskSessions === 1 ? (
-              'אימון אחד שמור במכשיר בלבד'
-            ) : (
-              <>
-                <span dir="ltr" className="kinetic-number">
-                  {atRiskSessions}
-                </span>{' '}
-                אימונים שמורים במכשיר בלבד
-              </>
-            )}
-          </span>
+          // The queue is empty and a record still exists only here.
+          <span>{atRiskLabel}</span>
         )}
         <button
           type="button"
@@ -195,20 +224,8 @@ export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
           </span>{' '}
           פעולות בתור
         </span>
-      ) : atRiskSessions > 0 ? (
-        <span>
-          לא מחובר ·{' '}
-          {atRiskSessions === 1 ? (
-            'אימון אחד שמור במכשיר בלבד'
-          ) : (
-            <>
-              <span dir="ltr" className="kinetic-number">
-                {atRiskSessions}
-              </span>{' '}
-              אימונים שמורים במכשיר בלבד
-            </>
-          )}
-        </span>
+      ) : atRiskTotal > 0 ? (
+        <span>לא מחובר · {atRiskLabel}</span>
       ) : (
         'אין חיבור - האפליקציה פועלת במצב לא מקוון'
       )}

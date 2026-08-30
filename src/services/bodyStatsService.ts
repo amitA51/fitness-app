@@ -1,6 +1,9 @@
 import { ValidationError } from '../errors';
+import { isSupabaseConfigured } from '../lib/supabase';
 import { generateId } from '../utils/id';
 import { STORES, dbDelete, dbGetAll, dbGetByRange, dbPut } from './indexedDBCore';
+import { queueMutation } from './offlineQueue';
+import { clearUnsyncedRecordMarker, markRecordUnsynced } from './sessionDb';
 import { getCurrentUser } from './supabaseAuth';
 import {
   deleteCloudBodyWeight,
@@ -110,11 +113,26 @@ export async function addBodyWeight(
   await dbPut(STORES.BODY_WEIGHT, newEntry);
 
   const user = await getCurrentUser();
-  if (user) {
-    syncWithRetry(() => syncBodyWeight(user.id, newEntry), `addBodyWeight:${newEntry.id}`, 3, {
-      type: 'bodyweight:create',
-      payload: newEntry,
-    });
+  if (isSupabaseConfigured()) {
+    // Ledger FIRST (services/sessionDb) — see saveWorkoutSession for the full
+    // reasoning. Until the cloud confirms, this row exists in exactly one place.
+    await markRecordUnsynced(STORES.BODY_WEIGHT, newEntry.id);
+
+    if (user) {
+      void syncWithRetry(
+        () => syncBodyWeight(user.id, newEntry),
+        `addBodyWeight:${newEntry.id}`,
+        3,
+        { type: 'bodyweight:create', payload: newEntry }
+      ).then((synced) => {
+        if (synced) void clearUnsyncedRecordMarker(STORES.BODY_WEIGHT, newEntry.id);
+      });
+    } else {
+      // THE FIX — the enqueue IS syncWithRetry's 4th argument, so a guarded call
+      // that never runs leaves no queue row at all. getCurrentUser() returns null
+      // for a signed-in user mid-failed-token-refresh too, not only for a guest.
+      await queueMutation('bodyweight:create', newEntry);
+    }
   }
 
   // Notify TDEE-aware consumers (Settings / Nutrition) that latest weight has changed.
@@ -141,25 +159,44 @@ export async function updateBodyWeight(entry: BodyWeightEntry): Promise<void> {
   await dbPut(STORES.BODY_WEIGHT, updated);
 
   const user = await getCurrentUser();
-  if (user) {
-    syncWithRetry(() => syncBodyWeight(user.id, updated), `updateBodyWeight:${updated.id}`, 3, {
-      type: 'bodyweight:create',
-      payload: updated,
-    });
+  if (isSupabaseConfigured()) {
+    await markRecordUnsynced(STORES.BODY_WEIGHT, updated.id);
+
+    if (user) {
+      void syncWithRetry(
+        () => syncBodyWeight(user.id, updated),
+        `updateBodyWeight:${updated.id}`,
+        3,
+        { type: 'bodyweight:create', payload: updated }
+      ).then((synced) => {
+        if (synced) void clearUnsyncedRecordMarker(STORES.BODY_WEIGHT, updated.id);
+      });
+    } else {
+      await queueMutation('bodyweight:create', updated);
+    }
   }
 }
 
 export async function deleteBodyWeight(id: string): Promise<void> {
   await dbDelete(STORES.BODY_WEIGHT, id);
+  // The local row is gone, so it can no longer be lost.
+  await clearUnsyncedRecordMarker(STORES.BODY_WEIGHT, id);
 
   const user = await getCurrentUser();
-  if (user) {
-    // Targeted soft-delete UPDATE (house pattern) — the previous tombstone
-    // upsert sent date: '' which Postgres rejected (22007), losing the delete.
-    syncWithRetry(() => deleteCloudBodyWeight(user.id, id), `deleteBodyWeight:${id}`, 3, {
-      type: 'bodyweight:delete',
-      payload: id,
-    });
+  if (isSupabaseConfigured()) {
+    if (user) {
+      // Targeted soft-delete UPDATE (house pattern) — the previous tombstone
+      // upsert sent date: '' which Postgres rejected (22007), losing the delete.
+      void syncWithRetry(() => deleteCloudBodyWeight(user.id, id), `deleteBodyWeight:${id}`, 3, {
+        type: 'bodyweight:delete',
+        payload: id,
+      });
+    } else {
+      // The local delete above is unconditional while the cloud tombstone was
+      // reachable only with a resolved user — so a null user deleted the row here
+      // and the next pull brought it straight back.
+      await queueMutation('bodyweight:delete', id);
+    }
   }
 }
 
@@ -229,32 +266,41 @@ export async function addBodyMeasurement(
   await dbPut(BODY_MEASUREMENTS_STORE, newEntry);
 
   const user = await getCurrentUser();
-  if (user) {
-    // The queue replays the payload straight into syncBodyMeasurement, so the
-    // descriptor must carry the mapper shape (nested `measurements`), not the
-    // flat local entry — a flat payload replayed as `measurements: undefined`.
-    const syncPayload = {
-      id: newEntry.id,
-      date: newEntry.date,
-      measurements: {
-        chest: newEntry.chest,
-        waist: newEntry.waist,
-        hips: newEntry.hips,
-        arms: newEntry.arms,
-        thighs: newEntry.thighs,
-        neck: newEntry.neck,
-        bodyFat: newEntry.bodyFat,
-      },
-      notes: newEntry.notes,
-      createdAt: newEntry.createdAt,
-      updatedAt: newEntry.updatedAt,
-    };
-    syncWithRetry(
-      () => syncBodyMeasurement(user.id, syncPayload),
-      `addBodyMeasurement:${newEntry.id}`,
-      3,
-      { type: 'measurement:create', payload: syncPayload }
-    );
+  // The queue replays the payload straight into syncBodyMeasurement, so the
+  // descriptor must carry the mapper shape (nested `measurements`), not the
+  // flat local entry — a flat payload replayed as `measurements: undefined`.
+  const syncPayload = {
+    id: newEntry.id,
+    date: newEntry.date,
+    measurements: {
+      chest: newEntry.chest,
+      waist: newEntry.waist,
+      hips: newEntry.hips,
+      arms: newEntry.arms,
+      thighs: newEntry.thighs,
+      neck: newEntry.neck,
+      bodyFat: newEntry.bodyFat,
+    },
+    notes: newEntry.notes,
+    createdAt: newEntry.createdAt,
+    updatedAt: newEntry.updatedAt,
+  };
+
+  if (isSupabaseConfigured()) {
+    await markRecordUnsynced(BODY_MEASUREMENTS_STORE, newEntry.id);
+
+    if (user) {
+      void syncWithRetry(
+        () => syncBodyMeasurement(user.id, syncPayload),
+        `addBodyMeasurement:${newEntry.id}`,
+        3,
+        { type: 'measurement:create', payload: syncPayload }
+      ).then((synced) => {
+        if (synced) void clearUnsyncedRecordMarker(BODY_MEASUREMENTS_STORE, newEntry.id);
+      });
+    } else {
+      await queueMutation('measurement:create', syncPayload);
+    }
   }
 
   return newEntry;
@@ -305,38 +351,62 @@ export async function addRecoveryLog(
 
   const duplicateLogs = existingForDate.slice(1);
   await Promise.all(duplicateLogs.map((log) => dbDelete(STORES.RECOVERY_LOGS, log.id)));
+  // Those rows are gone locally, so they are no longer at risk either way.
+  await Promise.all(
+    duplicateLogs.map((log) => clearUnsyncedRecordMarker(STORES.RECOVERY_LOGS, log.id))
+  );
 
   const user = await getCurrentUser();
-  if (user) {
-    const syncPayload = {
-      id: newEntry.id,
-      date: newEntry.date,
-      sleepHours: newEntry.sleepHours,
-      sleepQuality: newEntry.sleepQuality,
-      sorenessLevel: newEntry.sorenessLevel,
-      energyLevel: newEntry.energyLevel,
-      stressLevel: newEntry.stressLevel,
-      tightAreas: newEntry.tightAreas,
-      overallScore: newEntry.overallScore,
-      sessionId: newEntry.sessionId,
-      notes: newEntry.notes,
-      createdAt: newEntry.createdAt,
-      updatedAt: newEntry.updatedAt,
-    };
-    syncWithRetry(() => syncRecoveryLog(user.id, syncPayload), `addRecoveryLog:${newEntry.id}`, 3, {
-      type: 'recovery:create',
-      payload: syncPayload,
-    });
-    duplicateLogs.forEach((log) => {
-      // Targeted soft-delete UPDATE (house pattern) — the previous tombstone
-      // upsert sent date: '' which Postgres rejected (22007), losing the delete.
-      syncWithRetry(
-        () => deleteCloudRecoveryLog(user.id, log.id),
-        `deleteRecoveryLog:${log.id}`,
+  const syncPayload = {
+    id: newEntry.id,
+    date: newEntry.date,
+    sleepHours: newEntry.sleepHours,
+    sleepQuality: newEntry.sleepQuality,
+    sorenessLevel: newEntry.sorenessLevel,
+    energyLevel: newEntry.energyLevel,
+    stressLevel: newEntry.stressLevel,
+    tightAreas: newEntry.tightAreas,
+    overallScore: newEntry.overallScore,
+    sessionId: newEntry.sessionId,
+    notes: newEntry.notes,
+    createdAt: newEntry.createdAt,
+    updatedAt: newEntry.updatedAt,
+  };
+
+  if (isSupabaseConfigured()) {
+    await markRecordUnsynced(STORES.RECOVERY_LOGS, newEntry.id);
+
+    if (user) {
+      void syncWithRetry(
+        () => syncRecoveryLog(user.id, syncPayload),
+        `addRecoveryLog:${newEntry.id}`,
         3,
-        { type: 'recovery:delete', payload: log.id }
-      );
-    });
+        { type: 'recovery:create', payload: syncPayload }
+      ).then((synced) => {
+        if (synced) void clearUnsyncedRecordMarker(STORES.RECOVERY_LOGS, newEntry.id);
+      });
+      for (const log of duplicateLogs) {
+        // Targeted soft-delete UPDATE (house pattern) — the previous tombstone
+        // upsert sent date: '' which Postgres rejected (22007), losing the delete.
+        void syncWithRetry(
+          () => deleteCloudRecoveryLog(user.id, log.id),
+          `deleteRecoveryLog:${log.id}`,
+          3,
+          { type: 'recovery:delete', payload: log.id }
+        );
+      }
+    } else {
+      await queueMutation('recovery:create', syncPayload);
+      // THE SECOND ASYMMETRY, and the half that is easy to miss: the duplicate
+      // same-day logs are HARD-DELETED locally above, outside any auth guard,
+      // while their cloud tombstones sat INSIDE `if (user)`. With a null user the
+      // local delete happened and the cloud delete did not, so the next pull
+      // RESURRECTED the duplicate the user had just replaced. Queueing the
+      // tombstones keeps the two halves symmetric.
+      for (const log of duplicateLogs) {
+        await queueMutation('recovery:delete', log.id);
+      }
+    }
   }
 
   return newEntry;
@@ -348,42 +418,58 @@ export async function updateRecoveryLog(entry: RecoveryLog): Promise<void> {
   await dbPut(STORES.RECOVERY_LOGS, updated);
 
   const user = await getCurrentUser();
-  if (user) {
-    const syncPayload = {
-      id: updated.id,
-      date: updated.date,
-      sleepHours: updated.sleepHours,
-      sleepQuality: updated.sleepQuality,
-      sorenessLevel: updated.sorenessLevel,
-      energyLevel: updated.energyLevel,
-      stressLevel: updated.stressLevel,
-      tightAreas: updated.tightAreas,
-      overallScore: updated.overallScore,
-      sessionId: updated.sessionId,
-      notes: updated.notes,
-      createdAt: updated.createdAt,
-      updatedAt: updated.updatedAt,
-    };
-    syncWithRetry(
-      () => syncRecoveryLog(user.id, syncPayload),
-      `updateRecoveryLog:${updated.id}`,
-      3,
-      { type: 'recovery:create', payload: syncPayload }
-    );
+  const syncPayload = {
+    id: updated.id,
+    date: updated.date,
+    sleepHours: updated.sleepHours,
+    sleepQuality: updated.sleepQuality,
+    sorenessLevel: updated.sorenessLevel,
+    energyLevel: updated.energyLevel,
+    stressLevel: updated.stressLevel,
+    tightAreas: updated.tightAreas,
+    overallScore: updated.overallScore,
+    sessionId: updated.sessionId,
+    notes: updated.notes,
+    createdAt: updated.createdAt,
+    updatedAt: updated.updatedAt,
+  };
+
+  if (isSupabaseConfigured()) {
+    await markRecordUnsynced(STORES.RECOVERY_LOGS, updated.id);
+
+    if (user) {
+      void syncWithRetry(
+        () => syncRecoveryLog(user.id, syncPayload),
+        `updateRecoveryLog:${updated.id}`,
+        3,
+        { type: 'recovery:create', payload: syncPayload }
+      ).then((synced) => {
+        if (synced) void clearUnsyncedRecordMarker(STORES.RECOVERY_LOGS, updated.id);
+      });
+    } else {
+      await queueMutation('recovery:create', syncPayload);
+    }
   }
 }
 
 export async function deleteRecoveryLog(id: string): Promise<void> {
   await dbDelete(STORES.RECOVERY_LOGS, id);
+  await clearUnsyncedRecordMarker(STORES.RECOVERY_LOGS, id);
 
   const user = await getCurrentUser();
-  if (user) {
-    // Targeted soft-delete UPDATE (house pattern) — the previous tombstone
-    // upsert sent date: '' which Postgres rejected (22007), losing the delete.
-    syncWithRetry(() => deleteCloudRecoveryLog(user.id, id), `deleteRecoveryLog:${id}`, 3, {
-      type: 'recovery:delete',
-      payload: id,
-    });
+  if (isSupabaseConfigured()) {
+    if (user) {
+      // Targeted soft-delete UPDATE (house pattern) — the previous tombstone
+      // upsert sent date: '' which Postgres rejected (22007), losing the delete.
+      void syncWithRetry(() => deleteCloudRecoveryLog(user.id, id), `deleteRecoveryLog:${id}`, 3, {
+        type: 'recovery:delete',
+        payload: id,
+      });
+    } else {
+      // Local delete is unconditional, so the cloud tombstone must be too —
+      // otherwise the next pull resurrects the log.
+      await queueMutation('recovery:delete', id);
+    }
   }
 }
 

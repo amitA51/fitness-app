@@ -5,7 +5,7 @@ import { OfflineIndicator } from './OfflineIndicator';
 
 const getQueueDepth = vi.fn();
 const processQueue = vi.fn();
-const getUnsyncedSessionCount = vi.fn();
+const getUnsyncedRecordCounts = vi.fn();
 const flushUnsyncedSessions = vi.fn();
 
 vi.mock('../../services/offlineQueue', () => ({
@@ -14,9 +14,17 @@ vi.mock('../../services/offlineQueue', () => ({
 }));
 
 vi.mock('../../services/sessionDb', () => ({
-  getUnsyncedSessionCount: () => getUnsyncedSessionCount(),
+  getUnsyncedRecordCounts: () => getUnsyncedRecordCounts(),
   flushUnsyncedSessions: () => flushUnsyncedSessions(),
 }));
+
+/** One ledger, two buckets: workouts and everything else (nutrition/water/body). */
+const setUnsynced = (sessions: number, others = 0) =>
+  getUnsyncedRecordCounts.mockResolvedValue({
+    sessions,
+    others,
+    total: sessions + others,
+  });
 
 const setOnline = (online: boolean) => {
   Object.defineProperty(window.navigator, 'onLine', {
@@ -28,7 +36,7 @@ const setOnline = (online: boolean) => {
 beforeEach(() => {
   vi.clearAllMocks();
   setOnline(true);
-  getUnsyncedSessionCount.mockResolvedValue(0);
+  setUnsynced(0);
   flushUnsyncedSessions.mockResolvedValue({ pushed: 0, queued: 0 });
 });
 
@@ -81,7 +89,7 @@ describe('OfflineIndicator', () => {
 describe('OfflineIndicator with an empty queue and an unsynced local workout', () => {
   it('warns about the workout instead of rendering nothing', async () => {
     getQueueDepth.mockResolvedValue(0);
-    getUnsyncedSessionCount.mockResolvedValue(1);
+    setUnsynced(1);
 
     render(<OfflineIndicator />);
 
@@ -91,7 +99,7 @@ describe('OfflineIndicator with an empty queue and an unsynced local workout', (
 
   it('keeps the count out of the Hebrew run when there is more than one', async () => {
     getQueueDepth.mockResolvedValue(0);
-    getUnsyncedSessionCount.mockResolvedValue(4);
+    setUnsynced(4);
 
     render(<OfflineIndicator />);
 
@@ -102,7 +110,11 @@ describe('OfflineIndicator with an empty queue and an unsynced local workout', (
   it('flushes the ledger on "סנכרן עכשיו", since processQueue alone cannot see it', async () => {
     getQueueDepth.mockResolvedValue(0);
     let pending = 1;
-    getUnsyncedSessionCount.mockImplementation(async () => pending);
+    getUnsyncedRecordCounts.mockImplementation(async () => ({
+      sessions: pending,
+      others: 0,
+      total: pending,
+    }));
     flushUnsyncedSessions.mockImplementation(async () => {
       pending = 0;
       return { pushed: 1, queued: 0 };
@@ -125,7 +137,7 @@ describe('OfflineIndicator with an empty queue and an unsynced local workout', (
 
   it('says nothing extra for a guest, whose data is local by design', async () => {
     getQueueDepth.mockResolvedValue(0);
-    getUnsyncedSessionCount.mockResolvedValue(2);
+    setUnsynced(2);
 
     const { container } = render(<OfflineIndicator isGuest />);
 
@@ -136,11 +148,70 @@ describe('OfflineIndicator with an empty queue and an unsynced local workout', (
   it('names the workout in the offline banner too', async () => {
     setOnline(false);
     getQueueDepth.mockResolvedValue(0);
-    getUnsyncedSessionCount.mockResolvedValue(1);
+    setUnsynced(1);
 
     render(<OfflineIndicator />);
 
     expect(await screen.findByText(/אימון אחד שמור במכשיר בלבד/)).toBeInTheDocument();
     expect(screen.queryByText(/האפליקציה פועלת במצב לא מקוון/)).not.toBeInTheDocument();
+  });
+});
+
+// ── T-115 · the same blind spot for nutrition / water / body stats ───────────
+// The ledger read its markers against WORKOUT_SESSIONS only, so an orphaned meal,
+// glass of water or weigh-in was counted by NOTHING here — and then wiped by the
+// sign-out routine's Object.values(STORES) loop.
+describe('OfflineIndicator with an unsynced record that is not a workout', () => {
+  it('warns instead of rendering nothing when only a non-workout record is at risk', async () => {
+    getQueueDepth.mockResolvedValue(0);
+    setUnsynced(0, 1);
+
+    render(<OfflineIndicator />);
+
+    expect(await screen.findByText('רשומה אחת שמורה במכשיר בלבד')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'סנכרן עכשיו' })).toBeInTheDocument();
+  });
+
+  it('counts several non-workout records with the digit isolated', async () => {
+    getQueueDepth.mockResolvedValue(0);
+    setUnsynced(0, 3);
+
+    render(<OfflineIndicator />);
+
+    expect(await screen.findByText('3')).toHaveAttribute('dir', 'ltr');
+    expect(screen.getByText(/רשומות שמורות במכשיר בלבד/)).toBeInTheDocument();
+  });
+
+  it('reports the combined total when a workout and other records are both at risk', async () => {
+    getQueueDepth.mockResolvedValue(0);
+    setUnsynced(1, 2);
+
+    render(<OfflineIndicator />);
+
+    // Mixed kinds, so the honest word is רשומות rather than אימונים — and the
+    // total must not silently drop the two non-workout rows.
+    expect(await screen.findByText('3')).toHaveAttribute('dir', 'ltr');
+    expect(screen.getByText(/רשומות שמורות במכשיר בלבד/)).toBeInTheDocument();
+  });
+
+  it('names the non-workout record in the offline banner too', async () => {
+    setOnline(false);
+    getQueueDepth.mockResolvedValue(0);
+    setUnsynced(0, 1);
+
+    render(<OfflineIndicator />);
+
+    expect(await screen.findByText(/רשומה אחת שמורה במכשיר בלבד/)).toBeInTheDocument();
+    expect(screen.queryByText(/האפליקציה פועלת במצב לא מקוון/)).not.toBeInTheDocument();
+  });
+
+  it('still renders nothing when there is genuinely nothing at risk', async () => {
+    getQueueDepth.mockResolvedValue(0);
+    setUnsynced(0, 0);
+
+    const { container } = render(<OfflineIndicator />);
+
+    await waitFor(() => expect(getQueueDepth).toHaveBeenCalled());
+    expect(container).toBeEmptyDOMElement();
   });
 });

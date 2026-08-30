@@ -79,9 +79,16 @@ export default function Settings() {
   // What exactly is at risk, so the dialog can NAME it. A workout that only
   // exists on this device is a different loss from a queued change, and the user
   // cannot weigh "להתנתק בכל זאת?" without being told which one they have.
-  const [signOutRisk, setSignOutRisk] = useState<{ changes: number; sessions: number }>({
+  // `records` is the same risk for nutrition / water / body-stat rows, which the
+  // ledger did not cover until T-115.
+  const [signOutRisk, setSignOutRisk] = useState<{
+    changes: number;
+    sessions: number;
+    records: number;
+  }>({
     changes: 0,
     sessions: 0,
+    records: 0,
   });
 
   // /paywall sits behind AdminGuard (no monetization model has been chosen, so
@@ -128,12 +135,12 @@ export default function Settings() {
       const { getDeadLetterCount, getQueueDepth, processQueue } = await import(
         '../services/offlineQueue'
       );
-      const { flushUnsyncedSessions, getUnsyncedSessionCount } = await import(
+      const { flushUnsyncedSessions, getUnsyncedRecordCounts } = await import(
         '../services/sessionDb'
       );
 
-      // A workout that never entered the queue is invisible to processQueue, so
-      // flush the unsynced-session ledger FIRST — otherwise "flush what we can"
+      // A record that never entered the queue is invisible to processQueue, so
+      // flush the unsynced ledger FIRST — otherwise "flush what we can"
       // silently skips the exact writes this guard exists to protect.
       if (navigator.onLine) {
         await flushUnsyncedSessions();
@@ -150,14 +157,22 @@ export default function Settings() {
       // to zero — so the warning never appeared and sign-out then deleted the
       // very payload the recovery UI was keeping for the user.
       const held = await getDeadLetterCount();
-      // …and the same blind spot one level deeper: a workout written while
+      // …and the same blind spot one level deeper: a record written while
       // getCurrentUser() returned null (a 401 during token refresh) used to
       // reach neither store, so queue depth AND held count were both zero while
-      // the workout existed only on this device. Counting the local ledger is
+      // the record existed only on this device. Counting the local ledger is
       // what stops this dialog from reassuring the user right before the wipe.
-      const unsyncedSessions = await getUnsyncedSessionCount();
-      if (depth + held + unsyncedSessions > 0) {
-        setSignOutRisk({ changes: depth + held, sessions: unsyncedSessions });
+      //
+      // T-115: the ledger covers nutrition, water and body-stat rows as well as
+      // workouts now. They were counted by NOTHING while `Object.values(STORES)`
+      // in the sign-out wipe deleted every one of them.
+      const unsynced = await getUnsyncedRecordCounts();
+      if (depth + held + unsynced.total > 0) {
+        setSignOutRisk({
+          changes: depth + held,
+          sessions: unsynced.sessions,
+          records: unsynced.others,
+        });
         setShowSignOutConfirm(true);
         return;
       }
@@ -182,19 +197,45 @@ export default function Settings() {
 
   // The warning has to NAME what is at risk. "יש שינויים שטרם סונכרנו" reads as
   // plumbing; "אימון שטרם הגיע לענן" is the thing the user would actually mourn.
-  // No leading digit in either sentence — a number at the start of an RTL line
-  // is where mixed-direction text goes wrong.
+  // No leading digit in any sentence — a number at the start of an RTL line is
+  // where mixed-direction text goes wrong.
   const signOutDescription = (() => {
-    const { changes, sessions } = signOutRisk;
-    if (sessions === 0) {
+    const { changes, sessions, records } = signOutRisk;
+    if (sessions === 0 && records === 0) {
       return 'יש שינויים שטרם סונכרנו לענן — להתנתק בכל זאת? שינויים שלא סונכרנו יימחקו.';
     }
-    const workouts =
-      sessions === 1
-        ? 'במכשיר שמור אימון אחד שטרם הגיע לענן.'
-        : `במכשיר שמורים ${sessions} אימונים שטרם הגיעו לענן.`;
-    const alsoChanges = changes > 0 ? ' יש גם שינויים נוספים שטרם סונכרנו.' : '';
-    return `${workouts}${alsoChanges} אם תתנתקו כעת הנתונים האלה יימחקו — בטלו וסנכרנו קודם.`;
+    const parts: string[] = [];
+    if (sessions > 0) {
+      parts.push(
+        sessions === 1
+          ? 'במכשיר שמור אימון אחד שטרם הגיע לענן.'
+          : `במכשיר שמורים ${sessions} אימונים שטרם הגיעו לענן.`
+      );
+    }
+    // Nutrition, water and body-stat rows. Generic on purpose: the ledger counts
+    // them together, and inventing a per-store sentence would claim a precision
+    // the count does not have. Two openings, because "שמורה גם" only reads right
+    // after the workouts sentence.
+    if (records > 0) {
+      if (sessions > 0) {
+        parts.push(
+          records === 1
+            ? 'שמורה גם רשומה אחת נוספת שטרם הגיעה לענן.'
+            : `שמורות גם ${records} רשומות נוספות שטרם הגיעו לענן.`
+        );
+      } else {
+        parts.push(
+          records === 1
+            ? 'במכשיר שמורה רשומה אחת שטרם הגיעה לענן.'
+            : `במכשיר שמורות ${records} רשומות שטרם הגיעו לענן.`
+        );
+      }
+    }
+    if (changes > 0) {
+      parts.push('יש גם שינויים נוספים שטרם סונכרנו.');
+    }
+    parts.push('אם תתנתקו כעת הנתונים האלה יימחקו — בטלו וסנכרנו קודם.');
+    return parts.join(' ');
   })();
 
   // Two layers, deliberately — the page WASH and the content COLUMN are

@@ -11,6 +11,7 @@ import { todayStr } from '../utils/dateUtils';
 import { safeJsonParse, writeJsonStorage } from '../utils/safeJson';
 import { STORES, dbGetAll, dbPut, initDB } from './indexedDBCore';
 import { queueMutation } from './offlineQueue';
+import { clearUnsyncedRecordMarker, markRecordUnsynced } from './sessionDb';
 import { getCurrentUser } from './supabaseAuth';
 import { fetchAllPages } from './supabaseSyncPagination';
 
@@ -97,10 +98,37 @@ export async function addWaterEntry(amountMl: number): Promise<WaterEntry> {
   broadcastWaterUpdated();
 
   const user = await getCurrentUser();
-  if (user) {
-    try {
-      await syncWaterEntryToCloud(user.id, entry);
-    } catch {
+
+  // No cloud configured means nothing to sync to and nothing at risk — mirrors
+  // syncWithRetry, which returns early in that case rather than queueing.
+  if (isSupabaseConfigured()) {
+    // Ledger FIRST (services/sessionDb). From here until the cloud confirms,
+    // this entry exists in exactly one place; recording that is what lets the
+    // sign-out guard and the offline indicator see it at all — including if the
+    // tab is closed while the request is still in flight.
+    await markRecordUnsynced(STORES.WATER_LOGS, entry.id);
+
+    if (user) {
+      try {
+        await syncWaterEntryToCloud(user.id, entry);
+        await clearUnsyncedRecordMarker(STORES.WATER_LOGS, entry.id);
+      } catch {
+        await queueMutation('water:create', entry);
+      }
+    } else {
+      // THE FIX (T-115, same shape as sessionDb.saveWorkoutSession). This
+      // enqueue used to live inside the `if (user)` above, and getCurrentUser()
+      // returns null not only for a guest but for a signed-in user whose token
+      // refresh just failed (services/supabaseAuth models that 401 path). That
+      // user's entry was written locally with NOTHING scheduled to push it: the
+      // enqueue IS syncWithRetry's queue argument everywhere else in this
+      // codebase, so a guarded call that never runs leaves no queue row at all.
+      //
+      // queueMutation resolves and stamps ownership itself (real account id, or
+      // GUEST_OWNER / UNKNOWN_OWNER), so no user id is needed from here. An
+      // ownerless entry is quarantined into the dead-letter store on replay
+      // (claimable from Settings) and re-stamped by adoptGuestDataForUser on a
+      // first sign-in. Either way it is inside the machinery, not invisible to it.
       await queueMutation('water:create', entry);
     }
   }
@@ -220,6 +248,17 @@ export async function mergeWaterLogsFromCloud(cloudEntries: WaterEntry[]): Promi
     if (!localMap.has(cloud.id)) {
       writes.push(cloud);
     }
+  }
+
+  // Any id the CLOUD just reported demonstrably has a cloud copy, so it is not
+  // unsynced local work any more — including the rows this merge leaves
+  // untouched because they are already here. (Sessions clear only the rows they
+  // write, because a session is mutable and a newer local copy really can still
+  // be unsynced; a water entry is an immutable amount, so same id means same
+  // row.) Leaving the marker would make the sign-out warning fire forever for
+  // data that is safely stored.
+  for (const cloud of cloudEntries) {
+    if (cloud.id) await clearUnsyncedRecordMarker(STORES.WATER_LOGS, cloud.id);
   }
 
   if (writes.length === 0 && deletes.length === 0) return;

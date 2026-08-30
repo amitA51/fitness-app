@@ -48,79 +48,199 @@ const isTombstoned = (record: unknown): boolean =>
 // the account's local data, and settingsService deliberately excludes it from
 // JSON backups as plumbing rather than user data. Both stay correct.
 
+// T-115 — the ledger is no longer workouts-only. The identical enqueue hole was
+// in waterService, nutritionService and bodyStatsService, so their records need
+// the same visibility: a nutrition log or a body-weight row written while auth
+// could not answer was counted by NOTHING and then destroyed by the sign-out
+// wipe, which walks every store in `Object.values(STORES)`.
+//
+// ONE mechanism, deliberately: the same `pending_sync` rows, the same
+// mark/clear/reconcile code path, keyed by (store, recordId) instead of by
+// session id. There is no second per-store scheme, because divergent copies of
+// one rule are this project's most repeated defect.
+
 const UNSYNCED_TAG_PREFIX = 'unsynced-session:';
 
-interface UnsyncedSessionMarker {
+/**
+ * Store-qualified tag, used for every store EXCEPT workout_sessions.
+ *
+ * Workouts keep the original `unsynced-session:<id>` tag on purpose: markers
+ * written by the previous version of this ledger already exist on real devices,
+ * and re-keying them would silently stop counting a workout that genuinely has
+ * no cloud copy — the exact loss this ledger exists to prevent. Two tag SHAPES,
+ * one mechanism; both are parsed, reconciled and counted by the code below, and
+ * nothing has to be migrated.
+ */
+const UNSYNCED_RECORD_TAG_PREFIX = 'unsynced-record:';
+
+interface UnsyncedMarkerRow {
   tag: string;
-  sessionId: string;
+  /** Which object store the record lives in. Absent on legacy workout markers. */
+  store?: string;
+  /** Legacy field name — workout sessions only, kept so older markers still read. */
+  sessionId?: string;
+  recordId?: string;
   createdAt: string;
   /** Present only to keep the store's `retryCount` index well-formed. */
   retryCount: number;
 }
 
-const markerTag = (sessionId: string): string => `${UNSYNCED_TAG_PREFIX}${sessionId}`;
+/** A local record with no confirmed cloud copy. */
+export interface UnsyncedRecordRef {
+  store: string;
+  recordId: string;
+}
 
-const isUnsyncedMarker = (row: UnsyncedSessionMarker): boolean =>
-  typeof row?.tag === 'string' &&
-  row.tag.startsWith(UNSYNCED_TAG_PREFIX) &&
-  typeof row.sessionId === 'string' &&
-  row.sessionId.length > 0;
+const markerTag = (store: string, recordId: string): string =>
+  store === STORES.WORKOUT_SESSIONS
+    ? `${UNSYNCED_TAG_PREFIX}${recordId}`
+    : `${UNSYNCED_RECORD_TAG_PREFIX}${store}:${recordId}`;
 
 /**
- * Record that a session exists locally with no confirmed cloud copy.
+ * Normalise a `pending_sync` row into (store, recordId), or null when the row is
+ * not one of our markers. The id is recovered from the TAG when the explicit
+ * fields are missing, so a marker written by any version of this ledger reads.
+ */
+const parseMarker = (row: UnsyncedMarkerRow): UnsyncedRecordRef | null => {
+  if (typeof row?.tag !== 'string') return null;
+
+  if (row.tag.startsWith(UNSYNCED_TAG_PREFIX)) {
+    const recordId = row.sessionId || row.tag.slice(UNSYNCED_TAG_PREFIX.length);
+    return recordId ? { store: STORES.WORKOUT_SESSIONS, recordId } : null;
+  }
+
+  if (row.tag.startsWith(UNSYNCED_RECORD_TAG_PREFIX)) {
+    if (row.store && row.recordId) return { store: row.store, recordId: row.recordId };
+    const rest = row.tag.slice(UNSYNCED_RECORD_TAG_PREFIX.length);
+    const split = rest.indexOf(':');
+    if (split <= 0) return null;
+    const store = rest.slice(0, split);
+    const recordId = rest.slice(split + 1);
+    return store && recordId ? { store, recordId } : null;
+  }
+
+  return null;
+};
+
+const readMarkers = async (): Promise<UnsyncedRecordRef[]> => {
+  const rows = await dbGetAll<UnsyncedMarkerRow>(STORES.PENDING_SYNC);
+  const refs: UnsyncedRecordRef[] = [];
+  for (const row of rows) {
+    const ref = parseMarker(row);
+    if (ref) refs.push(ref);
+  }
+  return refs;
+};
+
+/**
+ * Ids currently present (and not tombstoned) in one store.
+ * `null` means the store could not be read — the caller must then ASSUME the
+ * record is still there, because over-warning is recoverable and under-warning
+ * is the bug this ledger exists to prevent.
+ */
+const liveIdsForStore = async (store: string): Promise<Set<string> | null> => {
+  try {
+    const rows = await dbGetAll<{ id?: string }>(store);
+    const ids = new Set<string>();
+    for (const row of rows) {
+      if (row?.id && !isTombstoned(row)) ids.add(row.id);
+    }
+    return ids;
+  } catch (err) {
+    logger.sync.warn('Could not reconcile the unsynced ledger against a store', { store, err });
+    return null;
+  }
+};
+
+/**
+ * Record that a row exists locally with no confirmed cloud copy.
  * Best-effort: a failure here must never block the local save, which is the
  * write the user actually cares about.
  */
-const markSessionUnsynced = async (sessionId: string): Promise<void> => {
-  if (!sessionId) return;
+export const markRecordUnsynced = async (store: string, recordId: string): Promise<void> => {
+  if (!store || !recordId) return;
   try {
-    const marker: UnsyncedSessionMarker = {
-      tag: markerTag(sessionId),
-      sessionId,
+    const marker: UnsyncedMarkerRow = {
+      tag: markerTag(store, recordId),
+      store,
+      recordId,
+      // Workouts also keep the legacy field populated, so a tab still running an
+      // older bundle keeps counting them.
+      ...(store === STORES.WORKOUT_SESSIONS ? { sessionId: recordId } : {}),
       createdAt: new Date().toISOString(),
       retryCount: 0,
     };
     await dbPut(STORES.PENDING_SYNC, marker);
   } catch (err) {
-    logger.sync.warn('Could not record an unsynced session marker', err);
+    logger.sync.warn('Could not record an unsynced-record marker', { store, err });
   }
 };
 
-/** Drop the marker. Only ever called once the cloud copy is confirmed, or the session is gone. */
-const clearUnsyncedSessionMarker = async (sessionId: string): Promise<void> => {
-  if (!sessionId) return;
+/** Drop the marker. Only ever called once the cloud copy is confirmed, or the row is gone. */
+export const clearUnsyncedRecordMarker = async (store: string, recordId: string): Promise<void> => {
+  if (!store || !recordId) return;
   try {
-    await dbDelete(STORES.PENDING_SYNC, markerTag(sessionId));
+    await dbDelete(STORES.PENDING_SYNC, markerTag(store, recordId));
   } catch (err) {
-    logger.sync.warn('Could not clear an unsynced session marker', err);
+    logger.sync.warn('Could not clear an unsynced-record marker', { store, err });
   }
 };
+
+const markSessionUnsynced = (sessionId: string): Promise<void> =>
+  markRecordUnsynced(STORES.WORKOUT_SESSIONS, sessionId);
+
+const clearUnsyncedSessionMarker = (sessionId: string): Promise<void> =>
+  clearUnsyncedRecordMarker(STORES.WORKOUT_SESSIONS, sessionId);
 
 /**
- * Ids of sessions written locally with no confirmed cloud copy, reconciled
- * against what is actually in the sessions store: a marker whose session was
- * deleted (or replaced by a cloud pull) is stale and is NOT reported, so the
- * sign-out warning cannot cry wolf. Read-only — pruning happens in
- * `flushUnsyncedSessions`, because this runs on a UI poll.
+ * Every local record with no confirmed cloud copy, reconciled against what is
+ * actually in each store: a marker whose record was deleted (or replaced by a
+ * cloud pull) is stale and is NOT reported, so the sign-out warning cannot cry
+ * wolf. Read-only — pruning happens in `flushUnsyncedSessions`, because this
+ * runs on a UI poll.
  */
-export const getUnsyncedSessionIds = async (): Promise<string[]> => {
+export const getUnsyncedRecords = async (): Promise<UnsyncedRecordRef[]> => {
   try {
-    const markers = (await dbGetAll<UnsyncedSessionMarker>(STORES.PENDING_SYNC)).filter(
-      isUnsyncedMarker
-    );
-    if (markers.length === 0) return [];
+    const refs = await readMarkers();
+    if (refs.length === 0) return [];
 
-    const live = new Set(
-      (await dbGetAll<WorkoutSession>(STORES.WORKOUT_SESSIONS))
-        .filter((session) => !isTombstoned(session))
-        .map((session) => session.id)
-    );
-    return markers.map((marker) => marker.sessionId).filter((id) => live.has(id));
+    const live = new Map<string, Set<string> | null>();
+    for (const store of new Set(refs.map((ref) => ref.store))) {
+      live.set(store, await liveIdsForStore(store));
+    }
+
+    return refs.filter((ref) => {
+      const ids = live.get(ref.store);
+      return ids ? ids.has(ref.recordId) : true;
+    });
   } catch (err) {
-    logger.sync.warn('Could not read the unsynced-session ledger', err);
+    logger.sync.warn('Could not read the unsynced-record ledger', err);
     return [];
   }
 };
+
+/** How many unsynced local records exist, split the way the warning copy needs. */
+export interface UnsyncedRecordCounts {
+  /** Workouts. Named separately because the sign-out dialog names them. */
+  sessions: number;
+  /** Nutrition, water and body-stat rows. */
+  others: number;
+  total: number;
+}
+
+export const getUnsyncedRecordCounts = async (): Promise<UnsyncedRecordCounts> => {
+  const refs = await getUnsyncedRecords();
+  const sessions = refs.filter((ref) => ref.store === STORES.WORKOUT_SESSIONS).length;
+  return { sessions, others: refs.length - sessions, total: refs.length };
+};
+
+/**
+ * Ids of sessions written locally with no confirmed cloud copy.
+ */
+export const getUnsyncedSessionIds = async (): Promise<string[]> =>
+  (await getUnsyncedRecords())
+    .filter((ref) => ref.store === STORES.WORKOUT_SESSIONS)
+    .map((ref) => ref.recordId);
 
 /** How many local workouts exist with no confirmed cloud copy. */
 export const getUnsyncedSessionCount = async (): Promise<number> =>
@@ -138,24 +258,29 @@ export const getUnsyncedSessionCount = async (): Promise<number> =>
 export const flushUnsyncedSessions = async (): Promise<{ pushed: number; queued: number }> => {
   if (!isSupabaseConfigured()) return { pushed: 0, queued: 0 };
 
-  let markers: UnsyncedSessionMarker[];
+  let sessionIds: string[];
   try {
-    markers = (await dbGetAll<UnsyncedSessionMarker>(STORES.PENDING_SYNC)).filter(isUnsyncedMarker);
+    // Session markers ONLY. The ledger is shared with nutrition, water and
+    // body-stat rows now, and this function pushes through syncWorkoutSession —
+    // handing it a water row would send garbage to the workouts table.
+    sessionIds = (await readMarkers())
+      .filter((ref) => ref.store === STORES.WORKOUT_SESSIONS)
+      .map((ref) => ref.recordId);
   } catch (err) {
     logger.sync.warn('Could not read the unsynced-session ledger', err);
     return { pushed: 0, queued: 0 };
   }
-  if (markers.length === 0) return { pushed: 0, queued: 0 };
+  if (sessionIds.length === 0) return { pushed: 0, queued: 0 };
 
   const user = await getCurrentUser();
   let pushed = 0;
   let queued = 0;
 
-  for (const marker of markers) {
-    const session = await getWorkoutSession(marker.sessionId);
+  for (const sessionId of sessionIds) {
+    const session = await getWorkoutSession(sessionId);
     if (!session) {
       // Stale: the session was deleted or replaced. Not a risk, so stop counting it.
-      await clearUnsyncedSessionMarker(marker.sessionId);
+      await clearUnsyncedSessionMarker(sessionId);
       continue;
     }
 
