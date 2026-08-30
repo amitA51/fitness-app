@@ -1580,3 +1580,1385 @@ test('T-100 finish the workout, read the summary, cross-check Progress', async (
   log.notes.push(`FINAL taps=${log.taps} setsCommitted=${setsCommitted} liveReached=${liveReached}`);
   flush();
 });
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// T-108 — THE OTHER HALF: build a template, train from it, and get back out.
+// ═══════════════════════════════════════════════════════════════════════════
+// Extends this file's proven harness: same aria-label selectors, same
+// probe/tap/gate/coach semantics, same flush-after-every-step recorder.
+//
+// It keeps its OWN log object and its OWN output file (visual-qa/t108-templates.json)
+// so a T-108 run can never overwrite the T-100 evidence already on disk, and the
+// low-level page reader is duplicated rather than shared for the same reason:
+// not one line of the passing T-100 test is touched.
+//
+// Run: npx playwright test e2e/journey-t099.spec.ts -g "T-108" --project="Mobile Chrome (Pixel 5)"
+
+const LOG108 = path.join(OUT, 't108-templates.json');
+
+/** What src/data/builtInWorkoutTemplates.ts promises a brand-new user. */
+const BUILT_INS: { name: string; exercises: number }[] = [
+  { name: 'אימון כללי', exercises: 7 },
+  { name: 'חזה + כתפיים', exercises: 6 },
+  { name: 'גב + זרועות', exercises: 7 },
+  { name: 'רגליים', exercises: 7 },
+  { name: 'בטן + ליבה', exercises: 6 },
+];
+
+/** אימון כללי, in template order, with its per-exercise targets. */
+const FULL_BODY: { name: string; sets: number; reps: number }[] = [
+  { name: 'סקוואט', sets: 4, reps: 8 },
+  { name: 'לחיצת חזה', sets: 4, reps: 8 },
+  { name: 'מתח', sets: 4, reps: 8 },
+  { name: 'לחיצת כתפיים', sets: 3, reps: 10 },
+  { name: 'כפיפת מוט', sets: 3, reps: 12 },
+  { name: 'פשיטת מרפקים בכבל', sets: 3, reps: 12 },
+  { name: 'פלאנק', sets: 3, reps: 60 },
+];
+
+const MY_TEMPLATE = 'אימון של אמית';
+/** Two exercises added to the user's own template, by search term. */
+const MY_EXERCISES = ['סקוואט', 'חתירה'];
+
+/** Sheet's close button is aria-label="סגירה" — the T-100 regex misses it. */
+const EXIT_RE = /חזור|חזרה|סגור|סגירה|בטל|יציאה|back|close|×|✕/i;
+
+type Db108Template = { name: string; exercises: { name: string; sets: number; reps: number }[] };
+
+const log108: {
+  task: string;
+  startedAt: string;
+  viewport: string;
+  taps: number;
+  timeline: string[];
+  notes: string[];
+  steps: { step: string; url: string }[];
+  findings: { sev: string; step: string; expected: string; actual: string; frame?: string }[];
+  consoleErrors: string[];
+  pageErrors: string[];
+  notReached: string[];
+  p1a_builtIns: {
+    reachedVia: string;
+    headerCount: string;
+    seen: string[];
+    missing: string[];
+    cardExerciseCounts: Record<string, string>;
+    startCtas: string[];
+    db: Db108Template[];
+  };
+  p1b_fromBuiltIn: {
+    template: string;
+    landedOn: string;
+    liveReached: boolean;
+    currentExercise: string;
+    setProgressAria: string;
+    repsAria: string;
+    drawerOrder: string[];
+    expectedOrder: string[];
+    orderMatches: boolean | null;
+    left: string;
+  };
+  p1cd_myTemplate: {
+    createLandedOn: string;
+    toast: string;
+    cardAfterCreate: string;
+    addedChips: string[];
+    countAfterEdit: string;
+    countAfterReturn: string;
+    dbAfterReturn: string[];
+  };
+  p1e_workoutFromMine: { landedOn: string; exercisesSeen: string[]; left: string };
+  p2f_progress: {
+    tabs: { tab: string; selected: string; heading: string; body: string }[];
+    exitViaBottomNav: string;
+    exitViaBrowserBack: string;
+  };
+  p2g_exits: { screen: string; uiExits: string[]; navHome: boolean; escaped: string }[];
+  screens: Record<string, { url: string; controls: string[]; text: string; exits: string[] }>;
+} = {
+  task: 'T-108 templates end to end + getting out',
+  startedAt: new Date().toISOString(),
+  viewport: '390x844',
+  taps: 0,
+  timeline: [],
+  notes: [],
+  steps: [],
+  findings: [],
+  consoleErrors: [],
+  pageErrors: [],
+  notReached: [],
+  p1a_builtIns: {
+    reachedVia: '',
+    headerCount: '',
+    seen: [],
+    missing: [],
+    cardExerciseCounts: {},
+    startCtas: [],
+    db: [],
+  },
+  p1b_fromBuiltIn: {
+    template: 'אימון כללי',
+    landedOn: '',
+    liveReached: false,
+    currentExercise: '',
+    setProgressAria: '',
+    repsAria: '',
+    drawerOrder: [],
+    expectedOrder: FULL_BODY.map((e) => e.name),
+    orderMatches: null,
+    left: '',
+  },
+  p1cd_myTemplate: {
+    createLandedOn: '',
+    toast: '',
+    cardAfterCreate: '',
+    addedChips: [],
+    countAfterEdit: '',
+    countAfterReturn: '',
+    dbAfterReturn: [],
+  },
+  p1e_workoutFromMine: { landedOn: '', exercisesSeen: [], left: '' },
+  p2f_progress: { tabs: [], exitViaBottomNav: '', exitViaBrowserBack: '' },
+  p2g_exits: [],
+  screens: {},
+};
+
+function flush108() {
+  fs.mkdirSync(OUT, { recursive: true });
+  fs.writeFileSync(LOG108, JSON.stringify(log108, null, 2), 'utf8');
+}
+function note108(s: string) {
+  log108.notes.push(s);
+  flush108();
+}
+function mark108(s: string) {
+  log108.timeline.push(`${new Date().toISOString().slice(11, 19)} ${s}`);
+  flush108();
+}
+function find108(
+  sev: 'HIGH' | 'MEDIUM',
+  step: string,
+  expected: string,
+  actual: string,
+  frame?: string
+) {
+  log108.findings.push({ sev, step, expected, actual, frame });
+  flush108();
+}
+function unreached108(what: string, why: string) {
+  log108.notReached.push(`${what} — ${why}`);
+  flush108();
+}
+async function shoot108(page: Page, name: string): Promise<string> {
+  const p = path.join(OUT, `t108-${name}.png`);
+  await page.screenshot({ path: p, timeout: 15_000 }).catch(() => {});
+  return p;
+}
+function urlOf(page: Page): string {
+  return page.url().replace(/^https?:\/\/[^/]+/, '');
+}
+
+async function probe108(page: Page, step: string): Promise<Probe> {
+  const info = await page
+    .evaluate(() => {
+      const visible = (el: Element) => {
+        const r = el.getBoundingClientRect();
+        const s = getComputedStyle(el);
+        return r.width > 1 && r.height > 1 && s.visibility !== 'hidden' && s.opacity !== '0';
+      };
+      const nodes = Array.from(
+        document.querySelectorAll(
+          'button,a[href],[role="button"],input,select,textarea,[role="tab"]'
+        )
+      ).filter(visible);
+      const controls = nodes.slice(0, 90).map((el) => {
+        const r = el.getBoundingClientRect();
+        const raw =
+          el.getAttribute('aria-label') ||
+          (el as HTMLElement).innerText ||
+          (el as HTMLInputElement).placeholder ||
+          el.getAttribute('title') ||
+          '';
+        return {
+          tag: el.tagName.toLowerCase(),
+          name: raw.replace(/\s+/g, ' ').trim().slice(0, 90),
+          disabled: (el as HTMLButtonElement).disabled === true,
+          h: Math.round(r.height),
+          w: Math.round(r.width),
+        };
+      });
+      return {
+        url: location.pathname + location.search,
+        text: (document.body.innerText || '').replace(/\n{2,}/g, '\n').trim().slice(0, 2600),
+        controls,
+        scrollWidth: document.documentElement.scrollWidth,
+        innerWidth: window.innerWidth,
+      };
+    })
+    .catch(() => ({
+      url: '<eval failed>',
+      text: '',
+      controls: [] as Control[],
+      scrollWidth: 0,
+      innerWidth: 0,
+    }));
+  const exits = info.controls.filter((c) => EXIT_RE.test(c.name)).map((c) => c.name);
+  log108.screens[step] = {
+    url: info.url,
+    controls: info.controls.map((c) => c.name).filter(Boolean),
+    text: info.text.slice(0, 900),
+    exits,
+  };
+  log108.steps.push({ step, url: info.url });
+  flush108();
+  return { step, ...info, exits };
+}
+
+async function tap108(page: Page, sel: string, label: string, timeout = 4000): Promise<boolean> {
+  const loc = page.locator(sel).first();
+  try {
+    await loc.waitFor({ state: 'visible', timeout });
+  } catch {
+    note108(`tap MISS: ${label} (${sel})`);
+    return false;
+  }
+  if (await loc.isDisabled().catch(() => false)) {
+    note108(`tap DISABLED: ${label}`);
+    return false;
+  }
+  try {
+    await loc.click({ timeout: 5000 });
+  } catch {
+    try {
+      await loc.click({ force: true, timeout: 3000 });
+      note108(`tap needed force: ${label}`);
+    } catch (e) {
+      find108(
+        'HIGH',
+        label,
+        'the control responds to a tap',
+        `present but not clickable: ${String(e).slice(0, 160)}`
+      );
+      return false;
+    }
+  }
+  log108.taps += 1;
+  mark108(`tap ${label}`);
+  await page.waitForTimeout(450);
+  return true;
+}
+
+async function gates108(page: Page) {
+  for (const label of ['אישור הכל', 'רק הכרחי', 'הבנתי']) {
+    const b = page.getByRole('button', { name: label, exact: true }).first();
+    if (await b.isVisible().catch(() => false)) {
+      await b.click({ timeout: 3000 }).catch(() => {});
+      log108.taps += 1;
+      mark108(`gate ${label}`);
+      await page.waitForTimeout(350);
+    }
+  }
+}
+async function coach108(page: Page) {
+  for (let i = 0; i < 3; i++) {
+    const skip = page.getByRole('button', { name: 'דילוג', exact: true }).first();
+    if (!(await skip.isVisible().catch(() => false))) return;
+    await skip.click({ timeout: 3000 }).catch(() => {});
+    log108.taps += 1;
+    mark108('dismiss guidance coach (דילוג)');
+    await page.waitForTimeout(650);
+  }
+}
+async function phase108(name: string, fn: () => Promise<void>) {
+  mark108(`===== ${name} =====`);
+  try {
+    await fn();
+  } catch (e) {
+    find108('HIGH', name, 'the step completes', `the walk threw here: ${String(e).slice(0, 300)}`);
+  }
+  flush108();
+}
+
+/** The app's own stored truth, read straight out of IndexedDB. */
+async function templatesFromDb(page: Page): Promise<Db108Template[]> {
+  return page
+    .evaluate(
+      () =>
+        new Promise<Db108Template[]>((resolve) => {
+          const req = indexedDB.open('sparkos-fitness-db');
+          req.onerror = () => resolve([]);
+          req.onsuccess = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains('workout_templates')) {
+              db.close();
+              return resolve([]);
+            }
+            const all = db
+              .transaction('workout_templates', 'readonly')
+              .objectStore('workout_templates')
+              .getAll();
+            all.onerror = () => {
+              db.close();
+              resolve([]);
+            };
+            all.onsuccess = () => {
+              // biome-ignore lint/suspicious/noExplicitAny: raw IDB records
+              const rows = (all.result || []) as any[];
+              const out = rows.map((t) => ({
+                name: String(t?.name ?? ''),
+                // biome-ignore lint/suspicious/noExplicitAny: raw IDB records
+                exercises: ((t?.exercises ?? []) as any[]).map((e) => ({
+                  name: String(e?.exerciseName ?? e?.name ?? ''),
+                  sets: Number(e?.targetSets ?? 0),
+                  reps: Number(e?.targetReps ?? 0),
+                })),
+              }));
+              db.close();
+              resolve(out);
+            };
+          };
+        })
+    )
+    .catch(() => [] as Db108Template[]);
+}
+
+/** Bottom nav → templates: "עוד" sheet then תבניות, the real user route. */
+async function gotoTemplates(page: Page, why: string): Promise<string> {
+  await coach108(page);
+  if (await tap108(page, 'nav button[aria-label="עוד"]', `${why}: nav → עוד`, 3000)) {
+    await page.waitForTimeout(700);
+    if (await tap108(page, 'a[href="/templates"]', `${why}: עוד → תבניות`, 2500)) {
+      await page.waitForTimeout(2200);
+      return 'bottom nav → עוד → תבניות';
+    }
+    await page.keyboard.press('Escape').catch(() => {});
+    await page.waitForTimeout(400);
+  }
+  find108(
+    'MEDIUM',
+    why,
+    'the templates screen is reachable from the bottom nav',
+    'neither the nav nor its "עוד" sheet got there — deep-linked to /templates instead'
+  );
+  await page.goto('/templates', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(2200);
+  return 'deep link /templates';
+}
+
+/** Wait out the templates screen's loading skeleton. */
+async function settleTemplates(page: Page): Promise<Probe> {
+  for (let i = 0; i < 8; i++) {
+    const p = await probe108(page, `templates-settle-${i}`);
+    if (/תבניות אימון/.test(p.text) || /אין תבניות עדיין/.test(p.text)) return p;
+    await page.waitForTimeout(1200);
+  }
+  return probe108(page, 'templates-settle-final');
+}
+
+/** How many exercises the card for `name` claims, read from the card's stats line. */
+function cardExerciseCount(text: string, name: string): string {
+  const at = text.indexOf(name);
+  if (at < 0) return '<card not on screen>';
+  const after = text.slice(at, at + 220);
+  const m = after.match(/(\d+)\s*תרגילים/);
+  return m ? m[1] : '<no count on card>';
+}
+
+/** Leave an active workout through the header menu → בטל אימון → confirm. */
+async function discardWorkout(page: Page, why: string): Promise<string> {
+  if (await tap108(page, 'button[aria-label="עוד פעולות"]', `${why}: open workout menu`, 3000)) {
+    await page.waitForTimeout(600);
+    if (await tap108(page, 'button:has-text("בטל אימון")', `${why}: בטל אימון`, 2500)) {
+      await page.waitForTimeout(900);
+      const confirm = page.getByRole('button', { name: 'בטל אימון', exact: true }).last();
+      if (await confirm.isVisible().catch(() => false)) {
+        await confirm.click({ timeout: 5000 }).catch(() => {});
+        log108.taps += 1;
+        mark108(`${why}: confirm בטל אימון`);
+      }
+      await page.waitForTimeout(2500);
+    }
+  }
+  await page.keyboard.press('Escape').catch(() => {});
+  await page.waitForTimeout(500);
+  return urlOf(page);
+}
+
+/** Push forward from whatever /workout/:id renders until the live set UI is up. */
+async function reachLive(page: Page, why: string): Promise<boolean> {
+  for (let hop = 0; hop < 4; hop++) {
+    if (
+      await page
+        .locator('button[aria-label^="החליקו לסיום"]')
+        .first()
+        .isVisible()
+        .catch(() => false)
+    ) {
+      return true;
+    }
+    const p = await probe108(page, `${why}-hop-${hop}`);
+    if (/להמשיך או להתחיל מחדש/.test(p.text)) {
+      await tap108(page, 'button:has-text("התחל חדש")', `${why}: התחל חדש`, 2500);
+      await page.waitForTimeout(2500);
+      continue;
+    }
+    const forwards = [
+      'button[aria-label^="התחל תבנית"]',
+      'button[aria-label^="התחל אימון:"]',
+      'button[aria-label="התחל אימון לפי התוכנית"]',
+      'button:has-text("התחל אימון")',
+    ];
+    let moved = false;
+    for (const sel of forwards) {
+      if (await tap108(page, sel, `${why}: forward ${sel}`, 1200)) {
+        moved = true;
+        break;
+      }
+    }
+    if (!moved) break;
+    await page.waitForTimeout(2000);
+  }
+  return page
+    .locator('button[aria-label^="החליקו לסיום"]')
+    .first()
+    .isVisible()
+    .catch(() => false);
+}
+
+test('T-108 templates: see them, run them, build one, and get back out', async ({ page }) => {
+  test.setTimeout(600_000);
+  fs.mkdirSync(OUT, { recursive: true });
+
+  page.on('console', (m) => {
+    if (m.type() === 'error') {
+      log108.consoleErrors.push(`@${log108.timeline.length}| ${m.text().slice(0, 300)}`);
+    }
+  });
+  page.on('pageerror', (e) => {
+    log108.pageErrors.push(`@${log108.timeline.length}| ${e.message.slice(0, 300)}`);
+  });
+  page.on('response', (r) => {
+    if (r.status() >= 400) {
+      const line = `@${log108.timeline.length}| ${r.status()} ${r.request().method()} ${r.url().slice(0, 150)}`;
+      if (!log108.notes.includes(line)) log108.notes.push(line);
+    }
+  });
+
+  // ─────────────────────────────── A. COLD LAUNCH (genuinely first run)
+  await phase108('A-cold-launch', async () => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.evaluate(async () => {
+      localStorage.clear();
+      sessionStorage.clear();
+      // biome-ignore lint/suspicious/noExplicitAny: feature-detect databases()
+      const idb = indexedDB as any;
+      if (typeof idb.databases === 'function') {
+        const dbs = await idb.databases();
+        await Promise.all(
+          dbs.map(
+            (d: { name?: string }) =>
+              new Promise((res) => {
+                if (!d.name) return res(null);
+                const r = indexedDB.deleteDatabase(d.name);
+                r.onsuccess = () => res(null);
+                r.onerror = () => res(null);
+                r.onblocked = () => res(null);
+              })
+          )
+        );
+      }
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2500);
+    await probe108(page, 'A-launch');
+    await gates108(page);
+    if (!(await tap108(page, 'button:has-text("המשיכו כאורח")', 'continue as guest'))) {
+      find108('HIGH', 'A-cold-launch', 'a guest entry point', 'no "המשיכו כאורח" button');
+    }
+    await page.waitForTimeout(1600);
+    await gates108(page);
+  });
+
+  // ─────────────────────────────── B. ONBOARDING → HOME
+  await phase108('B-onboarding', async () => {
+    for (let i = 0; i < 8; i++) {
+      const p = await probe108(page, `B-onboarding-${i}`);
+      const stillWizard =
+        /דלגו/.test(p.text) || p.controls.some((c) => /חזרה לשלב הקודם|בואו נתחיל/.test(c.name));
+      if (!stillWizard) {
+        note108(`onboarding done after ${i} screens`);
+        break;
+      }
+      const inputs = page.locator('input:visible');
+      const n = await inputs.count().catch(() => 0);
+      for (let k = 0; k < n; k++) {
+        const inp = inputs.nth(k);
+        const type = (await inp.getAttribute('type').catch(() => '')) || 'text';
+        if (await inp.inputValue().catch(() => '')) continue;
+        if (type === 'number') await inp.fill('76').catch(() => {});
+        else if (type === 'text') await inp.fill('אמית').catch(() => {});
+      }
+      let moved = false;
+      for (const sel of [
+        'button:has-text("בואו נתחיל")',
+        'button:has-text("הבא")',
+        'button:has-text("המשך")',
+        'button:has-text("סיום")',
+      ]) {
+        const b = page.locator(sel).first();
+        if (!(await b.isVisible().catch(() => false))) continue;
+        if (await b.isDisabled().catch(() => false)) continue;
+        await b.click({ timeout: 4000 }).catch(() => {});
+        log108.taps += 1;
+        mark108(`onboarding forward ${sel}`);
+        moved = true;
+        break;
+      }
+      if (!moved) {
+        const card = page.getByRole('button', { name: /בניית שריר/ }).first();
+        if (await card.isVisible().catch(() => false)) {
+          await card.click({ timeout: 4000 }).catch(() => {});
+          log108.taps += 1;
+          moved = true;
+        }
+      }
+      if (!moved) {
+        const f = await shoot108(page, `B-onboarding-stuck-${i}`);
+        find108('HIGH', `B-onboarding-${i}`, 'a way forward', 'nothing advanced', f);
+        break;
+      }
+      await page.waitForTimeout(1100);
+    }
+    await gates108(page);
+    await page.waitForTimeout(1200);
+    await coach108(page);
+    note108(`taps spent reaching home: ${log108.taps}`);
+  });
+
+  // ─────────────────────────────── P1a. ARE THE 5 BUILT-INS THERE?
+  let templatesReached = false;
+  await phase108('P1a-builtin-templates', async () => {
+    log108.p1a_builtIns.reachedVia = await gotoTemplates(page, 'P1a');
+    const t = await settleTemplates(page);
+    templatesReached = /תבניות/.test(t.text);
+    const frame = await shoot108(page, 'P1a-templates-screen');
+
+    log108.p1a_builtIns.headerCount = (t.text.match(/(\d+)\s*תבניות אימון/) ?? [])[1] ?? '<none>';
+    const startCtas = t.controls
+      .map((c) => c.name)
+      .filter((n) => /^התחל אימון:/.test(n) || /^הוסף תרגילים לתבנית:/.test(n));
+    log108.p1a_builtIns.startCtas = startCtas;
+
+    for (const b of BUILT_INS) {
+      const onScreen = t.text.includes(b.name) || startCtas.some((c) => c.includes(b.name));
+      if (onScreen) log108.p1a_builtIns.seen.push(b.name);
+      else log108.p1a_builtIns.missing.push(b.name);
+      log108.p1a_builtIns.cardExerciseCounts[b.name] = cardExerciseCount(t.text, b.name);
+    }
+    log108.p1a_builtIns.db = await templatesFromDb(page);
+    flush108();
+    note108(
+      `templates screen: header says ${log108.p1a_builtIns.headerCount}; DB holds ${log108.p1a_builtIns.db.length}; seen=${JSON.stringify(log108.p1a_builtIns.seen)}`
+    );
+
+    const emptyState = /אין תבניות עדיין/.test(t.text);
+    if (emptyState || log108.p1a_builtIns.seen.length === 0) {
+      find108(
+        'HIGH',
+        'P1a-builtin-templates',
+        'a new user opening the templates screen sees the 5 built-in ready-made templates',
+        emptyState
+          ? `the screen shows the empty state "אין תבניות עדיין" (DB holds ${log108.p1a_builtIns.db.length} templates)`
+          : `none of the 5 built-in names is on screen. Screen reads: ${t.text.slice(0, 220)}`,
+        frame
+      );
+      return;
+    }
+    if (log108.p1a_builtIns.missing.length > 0) {
+      find108(
+        'HIGH',
+        'P1a-builtin-templates',
+        `all 5 built-in templates are listed (${BUILT_INS.map((b) => b.name).join(', ')})`,
+        `${log108.p1a_builtIns.missing.length} missing: ${log108.p1a_builtIns.missing.join(', ')} — screen lists ${log108.p1a_builtIns.seen.join(', ')}`,
+        frame
+      );
+    }
+    // Each built-in is supposed to arrive already holding 6–7 exercises.
+    for (const b of BUILT_INS) {
+      const shown = log108.p1a_builtIns.cardExerciseCounts[b.name];
+      if (!log108.p1a_builtIns.seen.includes(b.name)) continue;
+      if (shown === String(b.exercises)) continue;
+      if (shown === '0') {
+        find108(
+          'HIGH',
+          'P1a-builtin-templates',
+          `"${b.name}" arrives holding ${b.exercises} exercises`,
+          `its card says 0 תרגילים — the ready-made template is empty`,
+          frame
+        );
+      } else {
+        find108(
+          'MEDIUM',
+          'P1a-builtin-templates',
+          `"${b.name}" holds ${b.exercises} exercises`,
+          `its card says "${shown}"`,
+          frame
+        );
+      }
+    }
+  });
+
+  // ─────────────────────────────── P1b. TRAIN FROM A BUILT-IN TEMPLATE
+  await phase108('P1b-workout-from-builtin', async () => {
+    if (!templatesReached || !log108.p1a_builtIns.seen.includes('אימון כללי')) {
+      unreached108('P1b workout from a built-in template', 'אימון כללי was not on the screen');
+      return;
+    }
+    const started = await tap108(
+      page,
+      'button[aria-label="התחל אימון: אימון כללי"]',
+      'P1b: start אימון כללי',
+      4000
+    );
+    if (!started) {
+      const f = await shoot108(page, 'P1b-no-start-cta');
+      find108(
+        'HIGH',
+        'P1b-workout-from-builtin',
+        'the built-in template card has a working start-workout control',
+        'no "התחל אימון: אימון כללי" control responded',
+        f
+      );
+      return;
+    }
+    await page.waitForTimeout(3000);
+    await gates108(page);
+    log108.p1b_fromBuiltIn.landedOn = urlOf(page);
+    const live = await reachLive(page, 'P1b');
+    log108.p1b_fromBuiltIn.liveReached = live;
+    const w = await probe108(page, 'P1b-workout');
+    flush108();
+
+    if (!live) {
+      const f = await shoot108(page, 'P1b-not-live');
+      find108(
+        'HIGH',
+        'P1b-workout-from-builtin',
+        'starting אימון כללי opens its live workout',
+        `landed on ${urlOf(page)} with no set UI: ${w.text.slice(0, 220)}`,
+        f
+      );
+    }
+
+    // The exercise the app opened on, and what it thinks the set target is.
+    log108.p1b_fromBuiltIn.currentExercise =
+      (w.text.match(/סקוואט[^\n]*|לחיצת חזה[^\n]*|מתח[^\n]*/) ?? ['<none found>'])[0];
+    log108.p1b_fromBuiltIn.setProgressAria =
+      (await page
+        .locator('[aria-label^="התקדמות סטים"]')
+        .first()
+        .getAttribute('aria-label')
+        .catch(() => '')) || '<no set-progress control>';
+    log108.p1b_fromBuiltIn.repsAria =
+      (await page
+        .locator('button[aria-label^="חזרות:"]')
+        .first()
+        .getAttribute('aria-label')
+        .catch(() => '')) || '<no reps field>';
+    flush108();
+
+    // Its full exercise list, in order, from the drawer the nav opens.
+    if (await tap108(page, 'button[aria-label="רשימת תרגילים"]', 'P1b: open exercise list', 3000)) {
+      await page.waitForTimeout(1200);
+      const d = await probe108(page, 'P1b-exercise-drawer');
+      const positions = FULL_BODY.map((e) => ({ name: e.name, at: d.text.indexOf(e.name) }));
+      log108.p1b_fromBuiltIn.drawerOrder = positions
+        .filter((p) => p.at >= 0)
+        .sort((a, b) => a.at - b.at)
+        .map((p) => p.name);
+      const present = positions.filter((p) => p.at >= 0);
+      const missing = positions.filter((p) => p.at < 0).map((p) => p.name);
+      log108.p1b_fromBuiltIn.orderMatches =
+        present.length === FULL_BODY.length &&
+        log108.p1b_fromBuiltIn.drawerOrder.join('|') ===
+          FULL_BODY.map((e) => e.name).join('|');
+      flush108();
+      if (missing.length === FULL_BODY.length) {
+        const f = await shoot108(page, 'P1b-drawer-empty');
+        find108(
+          'HIGH',
+          'P1b-workout-from-builtin',
+          'the workout started from אימון כללי contains that template\'s 7 exercises',
+          `the exercise list names none of them: ${d.text.slice(0, 240)}`,
+          f
+        );
+      } else if (missing.length > 0) {
+        const f = await shoot108(page, 'P1b-drawer-partial');
+        find108(
+          'HIGH',
+          'P1b-workout-from-builtin',
+          `all 7 exercises of אימון כללי are in the workout (${FULL_BODY.map((e) => e.name).join(', ')})`,
+          `${missing.length} missing: ${missing.join(', ')}`,
+          f
+        );
+      } else if (log108.p1b_fromBuiltIn.orderMatches === false) {
+        const f = await shoot108(page, 'P1b-drawer-order');
+        find108(
+          'MEDIUM',
+          'P1b-workout-from-builtin',
+          `the exercises appear in template order: ${FULL_BODY.map((e) => e.name).join(' → ')}`,
+          `the list reads: ${log108.p1b_fromBuiltIn.drawerOrder.join(' → ')}`,
+          f
+        );
+      }
+      await page.keyboard.press('Escape').catch(() => {});
+      await page.waitForTimeout(800);
+      const closed = !/רשימת תרגילים/.test((await probe108(page, 'P1b-after-drawer-close')).text);
+      log108.p2g_exits.push({
+        screen: 'live workout → exercise-list drawer',
+        uiExits: d.exits,
+        navHome: false,
+        escaped: closed ? 'Escape closed it' : 'Escape did not close it',
+      });
+      flush108();
+    } else {
+      note108('no "רשימת תרגילים" control — reading the exercise list from the screen text only');
+      const seen = FULL_BODY.filter((e) => w.text.includes(e.name)).map((e) => e.name);
+      log108.p1b_fromBuiltIn.drawerOrder = seen;
+      if (seen.length === 0) {
+        const f = await shoot108(page, 'P1b-no-template-exercises');
+        find108(
+          'HIGH',
+          'P1b-workout-from-builtin',
+          'the workout contains the exercises of אימון כללי',
+          `none of them is on the workout screen: ${w.text.slice(0, 240)}`,
+          f
+        );
+      }
+    }
+
+    // The first exercise is 4×8 in the template. Does the live screen agree?
+    const totalSets = (log108.p1b_fromBuiltIn.setProgressAria.match(/מתוך\s*(\d+)/) ?? [])[1] ?? '';
+    const firstIsSquat = /סקוואט/.test(log108.p1b_fromBuiltIn.currentExercise);
+    if (live && firstIsSquat && totalSets && totalSets !== String(FULL_BODY[0].sets)) {
+      const f = await shoot108(page, 'P1b-set-count-mismatch');
+      find108(
+        'HIGH',
+        'P1b-workout-from-builtin',
+        `the first exercise carries the template's ${FULL_BODY[0].sets} sets`,
+        `the live screen says "${log108.p1b_fromBuiltIn.setProgressAria}"`,
+        f
+      );
+    }
+    note108(
+      `P1b live: current="${log108.p1b_fromBuiltIn.currentExercise}" sets="${log108.p1b_fromBuiltIn.setProgressAria}" reps="${log108.p1b_fromBuiltIn.repsAria}"`
+    );
+
+    // P2g — can we get out of the live workout without saving?
+    const before = urlOf(page);
+    const wx = await probe108(page, 'P1b-exit-audit');
+    const left = await discardWorkout(page, 'P1b');
+    log108.p1b_fromBuiltIn.left = left;
+    log108.p2g_exits.push({
+      screen: `live workout from built-in (${before})`,
+      uiExits: wx.exits,
+      navHome: wx.controls.some((c) => c.name === 'בית'),
+      escaped: left,
+    });
+    flush108();
+    if (left.startsWith('/workout')) {
+      const f = await shoot108(page, 'P1b-cannot-leave-workout');
+      find108(
+        'HIGH',
+        'P1b-workout-from-builtin',
+        'a workout started from a template can be abandoned (בטל אימון) and left',
+        `still on ${left} after the cancel flow`,
+        f
+      );
+    }
+  });
+
+  // ─────────────────────────────── P1c. CREATE A NEW TEMPLATE
+  let myTemplateExists = false;
+  await phase108('P1c-create-template', async () => {
+    if (!urlOf(page).startsWith('/templates')) await gotoTemplates(page, 'P1c');
+    await settleTemplates(page);
+    const opened =
+      (await tap108(page, 'button[aria-label="צור תבנית חדשה"]', 'P1c: create template', 3000)) ||
+      (await tap108(page, 'button:has-text("צור תבנית ראשונה")', 'P1c: first template', 2000));
+    if (!opened) {
+      const f = await shoot108(page, 'P1c-no-create-control');
+      find108('HIGH', 'P1c-create-template', 'a create-template control', 'none on the screen', f);
+      unreached108('P1c/P1d/P1e', 'no create-template control');
+      return;
+    }
+    await page.waitForTimeout(1000);
+    const sheet = await probe108(page, 'P1c-create-sheet');
+    log108.p2g_exits.push({
+      screen: 'create-template sheet',
+      uiExits: sheet.exits,
+      navHome: false,
+      escaped: '<tested after save>',
+    });
+    const nameInput = page.locator('input[data-template-name-input]').first();
+    if (!(await nameInput.isVisible().catch(() => false))) {
+      const f = await shoot108(page, 'P1c-no-name-field');
+      find108('HIGH', 'P1c-create-template', 'a name field in the sheet', 'no [data-template-name-input]', f);
+      return;
+    }
+    await nameInput.fill(MY_TEMPLATE).catch(() => {});
+    mark108(`typed template name "${MY_TEMPLATE}"`);
+
+    const submitted =
+      (await tap108(page, 'form button[type="submit"]', 'P1c: submit new template', 3000)) ||
+      (await tap108(page, 'button:has-text("צור תבנית")', 'P1c: submit (text)', 1500));
+    if (!submitted) {
+      const f = await shoot108(page, 'P1c-no-submit');
+      find108('HIGH', 'P1c-create-template', 'a submit button on the sheet', 'none found', f);
+      return;
+    }
+    await page.waitForTimeout(2600);
+    const after = await probe108(page, 'P1c-after-create');
+    log108.p1cd_myTemplate.createLandedOn = after.url;
+    log108.p1cd_myTemplate.toast = /התבנית נשמרה/.test(after.text) ? 'התבנית נשמרה' : '<no toast seen>';
+    log108.p1cd_myTemplate.cardAfterCreate = cardExerciseCount(after.text, MY_TEMPLATE);
+    myTemplateExists = after.text.includes(MY_TEMPLATE);
+    flush108();
+    note108(
+      `after save: url=${after.url} listed=${myTemplateExists} count="${log108.p1cd_myTemplate.cardAfterCreate}" toast=${log108.p1cd_myTemplate.toast}`
+    );
+
+    if (!after.url.startsWith('/templates')) {
+      const f = await shoot108(page, 'P1c-thrown-off-screen');
+      find108(
+        'HIGH',
+        'P1c-create-template',
+        'saving a template leaves the user on the templates screen',
+        `it navigated to ${after.url} instead`,
+        f
+      );
+    }
+    if (!myTemplateExists) {
+      const f = await shoot108(page, 'P1c-template-not-listed');
+      find108(
+        'HIGH',
+        'P1c-create-template',
+        `the template just created ("${MY_TEMPLATE}") is listed`,
+        `it is not on the screen: ${after.text.slice(0, 240)}`,
+        f
+      );
+      if (/לא הצלחנו|נסה שוב|מגבלת/.test(after.text)) {
+        find108(
+          'HIGH',
+          'P1c-create-template',
+          'a guest can save a template they just built',
+          `the app refused: ${(after.text.match(/[^\n]*(?:לא הצלחנו|נסה שוב|מגבלת)[^\n]*/) ?? [''])[0]}`
+        );
+      }
+    }
+  });
+
+  // ─────────────────────────────── P1d. FILL IT, LEAVE, COME BACK
+  await phase108('P1d-add-exercises-and-persist', async () => {
+    if (!myTemplateExists) {
+      unreached108('P1d add exercises to my template', 'the template was never listed');
+      return;
+    }
+    const opened =
+      (await tap108(
+        page,
+        `button[aria-label="הוסף תרגילים לתבנית: ${MY_TEMPLATE}"]`,
+        'P1d: open my empty template',
+        3000
+      )) ||
+      (await tap108(page, `button[aria-label="ערוך תבנית: ${MY_TEMPLATE}"]`, 'P1d: edit my template', 2000));
+    if (!opened) {
+      const f = await shoot108(page, 'P1d-no-way-in');
+      find108(
+        'HIGH',
+        'P1d-add-exercises-and-persist',
+        'an empty template can be opened to add exercises to it',
+        'its card offers no way in',
+        f
+      );
+      return;
+    }
+    await page.waitForTimeout(1200);
+    const editor = await probe108(page, 'P1d-editor');
+    note108(`editor title present: ${/עריכת תבנית/.test(editor.text)}; exits=${JSON.stringify(editor.exits)}`);
+    if (!/עריכת תבנית/.test(editor.text)) {
+      const f = await shoot108(page, 'P1d-not-editing');
+      find108(
+        'MEDIUM',
+        'P1d-add-exercises-and-persist',
+        'tapping "הוסף תרגילים" opens that template for editing (title "עריכת תבנית")',
+        `the sheet reads: ${editor.text.slice(0, 200)}`,
+        f
+      );
+    }
+
+    let added = 0;
+    for (const wanted of MY_EXERCISES) {
+      const addLabel = added === 0 ? 'הוסף תרגיל ראשון' : 'הוסף תרגיל';
+      const addBtn = page.getByRole('button', { name: addLabel, exact: true }).first();
+      if (!(await addBtn.isVisible().catch(() => false))) {
+        const f = await shoot108(page, `P1d-no-add-${added}`);
+        find108(
+          'HIGH',
+          'P1d-add-exercises-and-persist',
+          `a way to add exercise #${added + 1} (expected "${addLabel}")`,
+          'the control is not on screen',
+          f
+        );
+        break;
+      }
+      await addBtn.click({ timeout: 4000 }).catch(() => {});
+      log108.taps += 1;
+      mark108(`P1d: open picker (${addLabel})`);
+      await page.waitForTimeout(900);
+
+      const search = page.locator('input[aria-label="חפש תרגיל"]').first();
+      if (await search.isVisible().catch(() => false)) {
+        await search.fill(wanted).catch(() => {});
+        await page.waitForTimeout(1100);
+      } else {
+        find108(
+          'MEDIUM',
+          'P1d-add-exercises-and-persist',
+          'a search field in the template exercise picker',
+          'no [aria-label="חפש תרגיל"] — picking from the unfiltered list'
+        );
+      }
+      const picker = await probe108(page, `P1d-picker-${added}`);
+      if (/אין תרגיל בשם הזה/.test(picker.text)) {
+        note108(`picker found nothing for "${wanted}" — clearing the search and taking the first row`);
+        await search.fill('').catch(() => {});
+        await page.waitForTimeout(900);
+      }
+      const results = page.locator('button:visible');
+      const rc = await results.count().catch(() => 0);
+      let picked = '';
+      for (let k = 0; k < rc; k++) {
+        const b = results.nth(k);
+        const aria = (await b.getAttribute('aria-label').catch(() => '')) ?? '';
+        if (/סגור|סגירה|הסר|צור תבנית|שמור תבנית|הוסף תרגיל/.test(aria)) continue;
+        const txt = ((await b.innerText().catch(() => '')) || '').replace(/\s+/g, ' ').trim();
+        if (!txt || txt.length > 60) continue;
+        if (/הוסף תרגיל|צור תבנית|שמור תבנית|בחר תרגיל|סגור|בית|אימון$|התקדמות|עוד|תזונה/.test(txt))
+          continue;
+        await b.click({ timeout: 3000 }).catch(() => {});
+        log108.taps += 1;
+        picked = txt;
+        mark108(`P1d: picked "${txt.slice(0, 40)}"`);
+        break;
+      }
+      await page.waitForTimeout(900);
+      if (!picked) {
+        const f = await shoot108(page, `P1d-picker-empty-${added}`);
+        find108(
+          'HIGH',
+          'P1d-add-exercises-and-persist',
+          'the template exercise picker lists something selectable',
+          `nothing selectable for "${wanted}": ${picker.text.slice(0, 220)}`,
+          f
+        );
+        break;
+      }
+      const chipCheck = await probe108(page, `P1d-after-add-${added}`);
+      if (!chipCheck.text.includes(picked.split(' | ')[0].slice(0, 12))) {
+        const f = await shoot108(page, `P1d-chip-missing-${added}`);
+        find108(
+          'HIGH',
+          'P1d-add-exercises-and-persist',
+          `the picked exercise "${picked.slice(0, 30)}" lands in the template being built`,
+          `it is not in the sheet: ${chipCheck.text.slice(0, 220)}`,
+          f
+        );
+      } else {
+        added += 1;
+        log108.p1cd_myTemplate.addedChips.push(picked.slice(0, 50));
+        flush108();
+      }
+    }
+
+    if (added === 0) {
+      unreached108('P1d persistence check', 'no exercise could be added to the template');
+      return;
+    }
+    const saved =
+      (await tap108(page, 'form button[type="submit"]', 'P1d: save template', 3000)) ||
+      (await tap108(page, 'button:has-text("שמור תבנית")', 'P1d: save (text)', 1500));
+    if (!saved) {
+      const f = await shoot108(page, 'P1d-no-save');
+      find108('HIGH', 'P1d-add-exercises-and-persist', 'a save button on the editor', 'none found', f);
+      return;
+    }
+    await page.waitForTimeout(2600);
+    const afterSave = await probe108(page, 'P1d-after-save');
+    log108.p1cd_myTemplate.countAfterEdit = cardExerciseCount(afterSave.text, MY_TEMPLATE);
+    flush108();
+    note108(`after adding ${added}: card says "${log108.p1cd_myTemplate.countAfterEdit}"`);
+    if (log108.p1cd_myTemplate.countAfterEdit !== String(added)) {
+      const f = await shoot108(page, 'P1d-count-wrong-after-save');
+      find108(
+        'HIGH',
+        'P1d-add-exercises-and-persist',
+        `the card counts the ${added} exercise(s) just added`,
+        `it says "${log108.p1cd_myTemplate.countAfterEdit}"`,
+        f
+      );
+    }
+
+    // LEAVE the screen entirely, then come back the way a user would.
+    await tap108(page, 'nav a[href="/"]', 'P1d: bottom nav → בית', 3000);
+    await page.waitForTimeout(2000);
+    await coach108(page);
+    const home = urlOf(page);
+    note108(`left templates → ${home}`);
+    await gotoTemplates(page, 'P1d-return');
+    const back = await settleTemplates(page);
+    log108.p1cd_myTemplate.countAfterReturn = cardExerciseCount(back.text, MY_TEMPLATE);
+    const db = await templatesFromDb(page);
+    const mine = db.find((t) => t.name === MY_TEMPLATE);
+    log108.p1cd_myTemplate.dbAfterReturn = mine ? mine.exercises.map((e) => `${e.name} ${e.sets}×${e.reps}`) : [];
+    flush108();
+    note108(
+      `after leaving and returning: card="${log108.p1cd_myTemplate.countAfterReturn}" db=${JSON.stringify(log108.p1cd_myTemplate.dbAfterReturn)}`
+    );
+    if (!back.text.includes(MY_TEMPLATE)) {
+      const f = await shoot108(page, 'P1d-template-vanished');
+      find108(
+        'HIGH',
+        'P1d-add-exercises-and-persist',
+        `"${MY_TEMPLATE}" is still listed after leaving the screen and coming back`,
+        `it is gone: ${back.text.slice(0, 240)}`,
+        f
+      );
+    } else if (log108.p1cd_myTemplate.countAfterReturn !== String(added)) {
+      const f = await shoot108(page, 'P1d-exercises-vanished');
+      find108(
+        'HIGH',
+        'P1d-add-exercises-and-persist',
+        `the ${added} exercise(s) added are still on the template after leaving and returning`,
+        `the card now says "${log108.p1cd_myTemplate.countAfterReturn}" (IndexedDB holds ${log108.p1cd_myTemplate.dbAfterReturn.length})`,
+        f
+      );
+    }
+  });
+
+  // ─────────────────────────────── P1e. TRAIN FROM MY OWN TEMPLATE
+  await phase108('P1e-workout-from-my-template', async () => {
+    if (log108.p1cd_myTemplate.countAfterReturn === '' ) {
+      unreached108('P1e workout from my template', 'the template never reached a usable state');
+      return;
+    }
+    const started = await tap108(
+      page,
+      `button[aria-label="התחל אימון: ${MY_TEMPLATE}"]`,
+      'P1e: start my template',
+      4000
+    );
+    if (!started) {
+      const f = await shoot108(page, 'P1e-no-start');
+      find108(
+        'HIGH',
+        'P1e-workout-from-my-template',
+        'the card for a template with exercises offers "התחל אימון"',
+        'no start control responded on my template',
+        f
+      );
+      return;
+    }
+    await page.waitForTimeout(3000);
+    await gates108(page);
+    const live = await reachLive(page, 'P1e');
+    const w = await probe108(page, 'P1e-workout');
+    log108.p1e_workoutFromMine.landedOn = urlOf(page);
+    const chipNames = log108.p1cd_myTemplate.addedChips.map((c) => c.split(' | ')[0].slice(0, 12));
+    log108.p1e_workoutFromMine.exercisesSeen = chipNames.filter((n) => n && w.text.includes(n));
+    flush108();
+    if (!live) {
+      const f = await shoot108(page, 'P1e-not-live');
+      find108(
+        'HIGH',
+        'P1e-workout-from-my-template',
+        'starting my own template opens its live workout',
+        `landed on ${urlOf(page)}: ${w.text.slice(0, 220)}`,
+        f
+      );
+    } else if (log108.p1e_workoutFromMine.exercisesSeen.length === 0) {
+      const f = await shoot108(page, 'P1e-exercises-missing');
+      find108(
+        'HIGH',
+        'P1e-workout-from-my-template',
+        `the workout contains the exercises put in "${MY_TEMPLATE}" (${chipNames.join(', ')})`,
+        `none of them is on the workout screen: ${w.text.slice(0, 240)}`,
+        f
+      );
+    }
+    const ex = await probe108(page, 'P1e-exit-audit');
+    const left = await discardWorkout(page, 'P1e');
+    log108.p1e_workoutFromMine.left = left;
+    log108.p2g_exits.push({
+      screen: 'live workout from my template',
+      uiExits: ex.exits,
+      navHome: ex.controls.some((c) => c.name === 'בית'),
+      escaped: left,
+    });
+    flush108();
+  });
+
+  // ─────────────────────────────── P2f. EVERY PROGRESS TAB, THEN OUT
+  await phase108('P2f-progress-tabs-and-exit', async () => {
+    const viaNav = await tap108(page, 'nav a[href="/progress"]', 'P2f: nav → התקדמות', 4000);
+    if (!viaNav) {
+      find108(
+        'MEDIUM',
+        'P2f-progress-tabs-and-exit',
+        'Progress is reachable from the bottom nav',
+        'no nav entry responded — deep-linked instead'
+      );
+      await page.goto('/progress', { waitUntil: 'domcontentloaded' });
+    }
+    await page.waitForTimeout(3000);
+    await gates108(page);
+    await coach108(page);
+    const p = await probe108(page, 'P2f-progress');
+    note108(`progress @${p.url}`);
+
+    const TABS108 = [
+      { key: 'overview', label: 'סקירה' },
+      { key: 'workouts', label: 'אימונים' },
+      { key: 'body', label: 'גוף' },
+      { key: 'recovery', label: 'התאוששות' },
+    ];
+    for (const t of TABS108) {
+      const btn = page.locator(`#progress-tab-${t.key}`).first();
+      if (!(await btn.isVisible().catch(() => false))) {
+        const f = await shoot108(page, `P2f-tab-missing-${t.key}`);
+        find108(
+          'HIGH',
+          'P2f-progress-tabs-and-exit',
+          `the "${t.label}" tab is on the Progress screen`,
+          'the tab is not there',
+          f
+        );
+        continue;
+      }
+      await btn.click({ timeout: 5000 }).catch(() => {});
+      log108.taps += 1;
+      mark108(`P2f: tab ${t.label}`);
+      await page.waitForTimeout(1800);
+      const selected = (await btn.getAttribute('aria-selected').catch(() => '')) ?? '';
+      const panel = await page
+        .locator('[role="tabpanel"]')
+        .first()
+        .innerText()
+        .catch(() => '');
+      const body = (panel || '').replace(/\s+/g, ' ').trim();
+      log108.p2f_progress.tabs.push({
+        tab: t.label,
+        selected,
+        heading: body.slice(0, 80),
+        body: body.slice(0, 500),
+      });
+      flush108();
+      if (selected !== 'true') {
+        const f = await shoot108(page, `P2f-tab-dead-${t.key}`);
+        find108(
+          'HIGH',
+          'P2f-progress-tabs-and-exit',
+          `tapping "${t.label}" selects that tab`,
+          `after the tap aria-selected is "${selected || '<absent>'}" — the tab did not take`,
+          f
+        );
+      }
+      if (!body) {
+        const f = await shoot108(page, `P2f-tab-blank-${t.key}`);
+        find108(
+          'HIGH',
+          'P2f-progress-tabs-and-exit',
+          `the "${t.label}" tab renders content`,
+          'its panel is empty',
+          f
+        );
+      }
+    }
+
+    // Out via the bottom nav.
+    const px = await probe108(page, 'P2f-progress-exit-audit');
+    const wentHome = await tap108(page, 'nav a[href="/"]', 'P2f: nav → בית', 4000);
+    await page.waitForTimeout(2200);
+    log108.p2f_progress.exitViaBottomNav = `${wentHome ? 'tapped' : 'no nav home control'} → ${urlOf(page)}`;
+    flush108();
+    if (urlOf(page).split('?')[0] !== '/') {
+      const f = await shoot108(page, 'P2f-nav-home-failed');
+      find108(
+        'HIGH',
+        'P2f-progress-tabs-and-exit',
+        'the bottom-nav בית tab leaves Progress and lands on the home screen',
+        `it landed on ${urlOf(page)}`,
+        f
+      );
+    }
+    // Out via browser back.
+    await tap108(page, 'nav a[href="/progress"]', 'P2f: back into progress', 3000);
+    await page.waitForTimeout(2200);
+    const inAgain = urlOf(page);
+    await page.goBack({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    await page.waitForTimeout(2000);
+    log108.p2f_progress.exitViaBrowserBack = `${inAgain} → ${urlOf(page)}`;
+    log108.p2g_exits.push({
+      screen: '/progress',
+      uiExits: px.exits,
+      navHome: px.controls.some((c) => c.name === 'בית'),
+      escaped: log108.p2f_progress.exitViaBrowserBack,
+    });
+    flush108();
+    if (urlOf(page).split('?')[0].startsWith('/progress')) {
+      const f = await shoot108(page, 'P2f-back-trapped');
+      find108(
+        'HIGH',
+        'P2f-progress-tabs-and-exit',
+        'browser back leaves the Progress screen',
+        `back was swallowed: still on ${urlOf(page)}`,
+        f
+      );
+    }
+  });
+
+  // ─────────────────────────────── P2g. CAN YOU GET OUT OF WHAT YOU OPENED?
+  await phase108('P2g-exit-audit', async () => {
+    // /templates itself: an in-page exit, the bottom nav, and browser back.
+    await gotoTemplates(page, 'P2g');
+    const t = await settleTemplates(page);
+    await page.goBack({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    await page.waitForTimeout(2000);
+    const landed = urlOf(page).split('?')[0];
+    log108.p2g_exits.push({
+      screen: '/templates',
+      uiExits: t.exits,
+      navHome: t.controls.some((c) => c.name === 'בית'),
+      escaped: `browser back → ${landed}`,
+    });
+    flush108();
+    if (landed.startsWith('/templates')) {
+      const f = await shoot108(page, 'P2g-templates-back-trapped');
+      find108(
+        'HIGH',
+        'P2g-exit-audit',
+        'browser back leaves the templates screen',
+        `still on ${landed}`,
+        f
+      );
+    }
+
+    // The create sheet: Escape must close it, and the picker inside it must
+    // close before the sheet (one Escape each).
+    await gotoTemplates(page, 'P2g-sheet');
+    await settleTemplates(page);
+    if (await tap108(page, 'button[aria-label="צור תבנית חדשה"]', 'P2g: open create sheet', 3000)) {
+      await page.waitForTimeout(1000);
+      const openPicker = page.getByRole('button', { name: 'הוסף תרגיל ראשון', exact: true }).first();
+      if (await openPicker.isVisible().catch(() => false)) {
+        await openPicker.click({ timeout: 3000 }).catch(() => {});
+        log108.taps += 1;
+        await page.waitForTimeout(900);
+        await page.keyboard.press('Escape').catch(() => {});
+        await page.waitForTimeout(800);
+        const afterFirst = await probe108(page, 'P2g-after-escape-1');
+        const sheetStillOpen = await page
+          .locator('input[data-template-name-input]')
+          .first()
+          .isVisible()
+          .catch(() => false);
+        const pickerClosed = !(await page
+          .locator('input[aria-label="חפש תרגיל"]')
+          .first()
+          .isVisible()
+          .catch(() => false));
+        note108(`Escape #1: picker closed=${pickerClosed} sheet still open=${sheetStillOpen}`);
+        if (!pickerClosed) {
+          const f = await shoot108(page, 'P2g-picker-wont-close');
+          find108(
+            'MEDIUM',
+            'P2g-exit-audit',
+            'Escape closes the exercise picker inside the template sheet',
+            'the picker stayed open',
+            f
+          );
+        }
+      }
+      await page.keyboard.press('Escape').catch(() => {});
+      await page.waitForTimeout(1000);
+      const afterSecond = await probe108(page, 'P2g-after-escape-2');
+      // Structural, NOT text: the templates screen carries its own "תבנית חדשה"
+      // button, so a text match on the sheet title reports "still open" forever
+      // (it did, in the first T-108 run — a harness bug, filed and retracted).
+      // The name field only exists while the sheet is mounted.
+      const closed = !(await page
+        .locator('input[data-template-name-input]')
+        .first()
+        .isVisible()
+        .catch(() => false));
+      log108.p2g_exits.push({
+        screen: 'create-template sheet (escape test)',
+        uiExits: afterSecond.exits,
+        navHome: false,
+        escaped: closed ? 'Escape closed the sheet' : 'sheet stayed open after Escape',
+      });
+      flush108();
+      if (!closed) {
+        const sheetProbe = await probe108(page, 'P2g-sheet-stuck');
+        let byButton = false;
+        if (await tap108(page, 'button[aria-label="סגירה"]', 'P2g: sheet close button', 2000)) {
+          await page.waitForTimeout(900);
+          byButton = !(await page
+            .locator('input[data-template-name-input]')
+            .first()
+            .isVisible()
+            .catch(() => false));
+        }
+        const f = await shoot108(page, 'P2g-sheet-no-escape');
+        find108(
+          byButton ? 'MEDIUM' : 'HIGH',
+          'P2g-exit-audit',
+          'the template sheet can be dismissed without saving',
+          `${byButton ? 'Escape did nothing; only the "סגירה" button closes it' : 'neither Escape nor a close control dismissed it'}. Controls: ${sheetProbe.controls.map((c) => c.name).filter(Boolean).join(' | ').slice(0, 200)}`,
+          f
+        );
+      }
+    }
+  });
+
+  // ─────────────────────────────── CONSOLE HEALTH
+  await phase108('Z-console', async () => {
+    const noise = /favicon|manifest|sw\.js|service worker|net::ERR|Failed to load resource|supabase|401|403|ERR_INTERNET/i;
+    const real = log108.consoleErrors.filter((e) => !noise.test(e));
+    note108(
+      `console errors: ${log108.consoleErrors.length} (${real.length} not obvious network/PWA noise); uncaught page errors: ${log108.pageErrors.length}`
+    );
+    if (log108.pageErrors.length > 0) {
+      find108(
+        'HIGH',
+        'Z-console',
+        'no uncaught JavaScript error during a normal templates walk',
+        `${log108.pageErrors.length} uncaught: ${log108.pageErrors.slice(0, 3).join(' || ')}`
+      );
+    }
+    if (real.length > 0) {
+      find108(
+        'HIGH',
+        'Z-console',
+        'no console errors during a normal templates walk',
+        `${real.length}: ${real.slice(0, 4).join(' || ')}`
+      );
+    }
+  });
+
+  log108.notes.push(
+    `FINAL taps=${log108.taps} findings=${log108.findings.length} builtInsSeen=${log108.p1a_builtIns.seen.length}/5`
+  );
+  flush108();
+});

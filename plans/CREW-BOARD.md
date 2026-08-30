@@ -7296,3 +7296,184 @@ All three terminal; newest `src/` mtime 4 minutes cold before any gate ran. Suit
 | arithmetic | 193+1=194 files; 1630+14=1644. **Nothing deleted, skipped or weakened** — the two edited test files gained assertions, they did not lose any. |
 | `npx playwright test --list` | **124 tests / 16 files**, exit 0 (unchanged) |
 | debris | 6 of our own `visual-qa/*.log` swept. **4 left alone on purpose** — `.codegraph/daemon.log` is LIVE (written this minute), and `.codegraph/errors.log`, `.cursor/`, `.gstack/` belong to other tools. Not ours to delete. None of the ten was ever visible to git. |
+
+
+---
+
+# Batch 39 — dispatched 2026-08-30 17:3x. Amit: "scan the app, decide what would most improve UX, dispatch it."
+
+State: `master` = `b13056a` = `origin/master`, 0 ahead, tree clean, `dist/` freshly built. Amit is
+trying the app himself right now.
+
+### ⚠️⚠️ MY SCAN NEARLY PRODUCED A FALSE BLOCKER — SEVENTH INSTANCE OF THE SAME ERROR
+I grepped `getBuiltInWorkoutTemplates|convertBuiltInToWorkoutTemplate|isBuiltin` and every hit outside
+the data file was `isBuiltin` — the TYPE FIELD, a different symbol. I was one step from reporting that
+**5 complete ready-made workouts are unreachable**, which would have been a serious false alarm.
+**Grepping the FILE NAME instead found the real consumers: `src/pages/templates/hooks/useTemplates.ts:5`
+imports it and `:40` uses it.** The built-ins ARE wired and a new user does NOT face a blank template
+list. **Family, not symbol — and this time the symbol I chose was shadowed by a similarly-named field.**
+New rule: when a symbol grep returns only hits in unrelated layers (services, mappers, types), grep the
+MODULE PATH before concluding anything.
+
+### What the scan did establish (facts, not guesses)
+- **5 built-in templates exist and are reachable** — `אימון כללי`, chest+shoulders and three more, each
+  6-7 exercises with sets/reps/rest already set. So the first-run guidance's promise
+  ("התבנית כבר כוללת את התרגילים") is TRUE.
+- **`EmptyState` has 21 consumers and NOT ONE is Home, Templates or Progress.** Those three carry their
+  own zero-data guards (`OverviewTab.tsx:101`, `WorkoutsTab.tsx:118`, `BodyTab.tsx` ×5,
+  `StrengthSection.tsx:161`, `BigThreeCard.tsx:90`). Not a defect — but there is no single empty-state
+  idiom on the three screens a brand-new trainee actually sees.
+- `FirstRunHero` has **no component file** — it is inline in `Dashboard.tsx` (811 lines).
+- `Templates.tsx` is **143 lines**, a thin orchestrator over `pages/templates/**`.
+
+### ⭐ THE DECISION, and the reasoning is the point
+**On this app, reading code finds FEWER real UX problems than using it.** That is not a preference, it
+is the record:
+- Every vague owner complaint turned out to be a FUNCTIONAL defect, not a design one — the ring arcs
+  were pinned at 100% by construction, readiness was two-valued, saved templates had **no way at all**
+  to add exercises, and an effect reopened the picker 4ms after every close.
+- **The walkthrough found a blocker that made the app unreachable for every new user, which 1606 unit
+  tests missed.**
+- Eight batches of colour polish landed on screens no new user could reach.
+**So batch 39 does NOT dispatch another polish guess.** Two tasks, not three — filler costs credits
+(Amit is at 64% of the monthly limit) and produces noise.
+
+### Ownership map — disjoint, one browser
+- **T-108** → WRITES `visual-qa/**` + `e2e/journey-t099.spec.ts` only. Read-only in `src/`.
+  **HOLDS PLAYWRIGHT AND THE BUILD — sole owner.**
+- **T-109** → WRITES ONLY `plans/FAILURE-PATHS.md`. Read-only everywhere. **No browser, no build, no gates** —
+  that constraint is what keeps T-108's build trustworthy and is why the browser-free shape has finished
+  first-try seven times running.
+- **NOBODY WRITES `src/` THIS BATCH.**
+
+## [T-108] Walk the half of the app nobody has ever used
+- status: dispatched (batch 39)
+- owner: fitness-qa
+- goal: templates end to end and getting back out of Progress — the only substantial parts of the
+  product never exercised by anyone. The last walk of the OTHER half produced five real defects
+  including a shipping blocker.
+- done when: templates walked (create → add exercises → start from template → does the live workout
+  hold the template's exercises), the 5 built-in templates confirmed visible and startable, Progress
+  tabs all visited and EXITED, and every break reported with the step that caused it and the frame
+- notes: **the harness is DEBUGGED and TRACKED** — `e2e/journey-t099.spec.ts`, proven green at 2 passed
+  / 3.5 min. Do not rebuild it. **P1 templates, P2 Progress exits.** ONE playwright invocation, build
+  FIRST, forbidden from counting its own output, write a finding record PER STEP as you go, and **no
+  gates** — this is a usage task, not a verification task.
+
+## [T-109] What does the app do when something fails?
+- status: dispatched (batch 39)
+- owner: fitness-qa
+- goal: nobody has ever examined the failure paths of an offline-first app that syncs to a cloud. A
+  silent failure is the most damaging thing in UX because the user blames themselves.
+- done when: `plans/FAILURE-PATHS.md` answers, per path with file:line — what the USER sees when a save
+  fails, when the network is gone mid-workout, when a sync push is rejected, and when a read 401s;
+  which failures are silent; and whether a logged workout can ever be lost
+- notes: read-only, ONE new plan file, no browser, no build, no gates. **Live clue: two
+  `401 GET /rest/v1/assignments` fire on every workout for a guest who cannot have assignments** — that
+  is a real failure already happening in silence. Classify honestly: a failure that degrades to
+  local-only is CORRECT for this app, not a defect. **The defect is a failure the user cannot perceive
+  and cannot act on.** Say which is which.
+
+
+## Batch 39 — BOTH ACCEPTED 2026-08-30 17:58. **The templates half WORKS. One real HIGH.**
+
+### [T-108] The never-walked half — ACCEPTED. 6 of 7 checks PASS, zero dead ends.
+- 43 taps, 390×844, ONE Playwright run, 1.7 min. `visual-qa/t108-templates.json` (77KB) written PER STEP.
+  `src/` and `supabase/` verified CLEAN by me. Spec parses: 126 tests / 16 files, exit 0.
+- **⭐ MY EARLIER SCARE IS DEFINITIVELY DEAD: all 5 built-in templates are visible with correct counts** —
+  `אימון כללי` 7 · `חזה + כתפיים` 6 · `גב + זרועות` 7 · `רגליים` 7 · `בטן + ליבה` 6. Header reads 5,
+  IndexedDB holds 5. Three independent confirmations.
+- **PASS:** create a template (saves, toast, lands back on `/templates`) · add exercises and they persist
+  across leaving and returning (IndexedDB corroborated) · workout from your OWN template carries its
+  exercises · all 4 Progress tabs render and exit · **NO DEAD END ANYWHERE** — the live workout leaves
+  via `עוד פעולות → בטל אימון`, the drawer and the sheet both close on Escape (picker first, then sheet
+  — correct order).
+
+### ⚠️ THE ONE HIGH FINDING — and I VERIFIED THE LINE MYSELF
+**Starting a workout from a template throws away its sets and reps.**
+`אימון כללי` stores `סקוואט` at **4 sets × 8 reps**. The live workout opens at **`סט 1 מתוך 1`, reps 0,
+weight 0.** Every exercise arrives as ONE BLANK SET — the lifter taps `הוסף סט` three times and retypes
+the reps, **for all seven exercises.**
+
+I read `src/components/workout/active/useWorkoutEffects.ts` myself rather than take it on report:
+```
+L114: const isProgram = !!ex.programExtras;
+L115: const setCount = isProgram ? Math.max(1, ex.targetSets ?? ex.sets?.length ?? 1) : 1;
+L116: const reps     = isProgram ? (ex.targetReps ?? 0) : 0;
+```
+**Confirmed exactly.** A regular template exercise has no `programExtras`, so its `targetSets` /
+`targetReps` are read ONLY for structured programs and discarded for every ordinary template. The
+comment there calls the single blank set deliberate — **but the built-ins ship a 4×8 / 3×12
+prescription no user can ever see, the template editor DISPLAYS those numbers as chips, and it computes
+`זמן משוער` from them.** So the app shows the prescription and then throws it away.
+Frame: `visual-qa/t108-P1b-set-count-mismatch.png`. Three app surfaces agree and IndexedDB holds 4×8,
+so it is the app, not the selector.
+
+### ⚠️ IT RETRACTED ITS OWN HIGH FINDING — the fourth self-retraction on this project
+`visual-qa/t108-P2g-sheet-no-escape.png` is a **RETRACTED probe, NOT a defect. Do not cite it.**
+Its detector tested page text for `תבנית חדשה` — **which is also the label of the permanent create
+button on the templates screen**, so it read "sheet still open" after the sheet had closed. It replaced
+the detector with a structural check and **annotated the record rather than deleting it.**
+
+### Honest gaps it stated
+Dark mode and desktop width not covered (brief scoped P1 to 390px) · the set/rep loss on the user's OWN
+template is **INFERRED** from the shared code path, not measured · favourite/duplicate/delete on cards,
+and the sub-controls inside `גוף` and `התאוששות`, untouched · **it ran NO gates as instructed, so its
+~1100 spec lines were never typechecked — my `verify` was the first tsc/biome pass over them, and it
+came back clean.**
+
+### [T-109] Failure paths — ACCEPTED. `plans/FAILURE-PATHS.md`, 454 lines. **A workout CAN be lost.**
+- Read-only confirmed. No build, no browser, no gate, no git, no `.env` read.
+- **HEADLINE, unhedged: yes — a logged workout can be actually lost, not merely delayed. Three ways.
+  NONE of them is in the sync layer** — that is the best-defended code in the repo and it found no
+  defect in it. **All three are local durability.** I verified all three by reading the files.
+  1. **`WorkoutProvider.tsx:38,158`** — `MAX_DRAFT_AGE_MS = 12h`; on load a stale draft is `removeItem`'d
+     and `null` returned. **No toast, no log, no dialog.** An evening session you meant to finish next
+     morning is inside that window.
+  2. **`WorkoutProvider.tsx:64,101`** — `persistState` returns `false` when localStorage is unwritable
+     and **all five call sites ignore the return value** (`:249,263,275,284,305`). You keep logging sets
+     into RAM with no signal.
+  3. **`sessionDb.ts:29-38`** — the offline-queue enqueue sits **INSIDE `if (user)`**. When
+     `getCurrentUser()` returns null for a real account holder (a 401 during token refresh — a path the
+     code models itself at `supabaseAuth.ts:101-148`) the session writes locally and **nothing is
+     enqueued.** Sign-in only pulls (`AuthContext.tsx:126`), so nothing ever pushes it. The sign-out
+     warning counts queue + dead-letter only (`Settings.tsx:135`) — both zero — **so the wipe proceeds
+     silently.**
+- **⭐ THE SHARPEST OBSERVATION IN THE BATCH:** the dead-letter store, owner stamping, the
+  expired-session rewrite and the sign-out guard are **elaborate defences built to stop exactly this,
+  and they ALL key off the queue. A write that never entered the queue is outside every one of them.**
+  And `OfflineIndicator` shares the blind spot — it reports queue depth, so **it shows a reassuring
+  nothing precisely when data is at risk.**
+- **Clean results, stated as results:** Q1 save failure is handled WELL (error in the still-mounted
+  overlay, 8s toast, working `נסה שוב` retry via ref) · Q3 has **no poison-message path** — per-entry
+  `continue` and per-entry backoff make head-of-line blocking structurally impossible, payloads
+  preserved, bulk push refuses to report partial success · Q4 is exactly the NOISE I suspected:
+  `assignmentService.ts:241` `listMyAssignments` **has no auth guard at all** while its sibling
+  `listCoachAssignments` does. Call sites `ActiveWorkoutNew.tsx:150` and `useNutritionData.ts:347`.
+  **Fix = delete the calls for guests, do NOT add error handling.**
+- **Two limits it disclosed rather than smoothed over:** defect 3's offline-expired-token trigger is
+  INFERRED (it could not execute supabase-js) though **the 401 trigger is VERIFIED and sufficient on its
+  own**; and **its exhaustive `catch` sweep FAILED** — the shell mangled the quoting and returned a
+  false `0` at exit 0 — **so nutrition, water and body-stats writes are UNEXAMINED.** If they repeat the
+  `if (user)` shape, the same loss applies there. That is the shell-truncation trap biting a worker, and
+  it said so.
+
+### ⭐ THE PATTERN THAT CONNECTS EVERYTHING FOUND TODAY — seven instances of one defect shape
+**The app makes a claim it does not keep, and nothing fails while it happens.** The duration froze while
+three surfaces disagreed · the resume dialog discarded logged sets without saying so · guidance named a
+button first-run users cannot see · the config check tested non-emptiness and called it validation · an
+assertion gate never opened and passed green · a 12-hour-old draft is deleted in silence · a template
+prescribes 4×8, the editor displays 4×8, the estimated duration is computed from 4×8, and the workout
+hands you one blank set.
+**None of these FAILED. Every one passed while being wrong.** That is what this project needs checking
+for, and it is why using the app finds more than reading it.
+
+### Verified baseline — 2026-08-30 17:58, MINE, on a confirmed-static tree
+Both workers terminal; newest `e2e` mtime 3 minutes cold. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **733** files — **the 1100 new spec lines typecheck and lint clean** |
+| `npm run test:run` | **194 files / 1644 tests**, exit 0 both runs — floor held exactly (zero `src/` edits, correct) |
+| `npx playwright test --list` | **126 tests / 16 files**, exit 0 |
+| tree | `e2e/journey-t099.spec.ts` +1100 · `plans/FAILURE-PATHS.md` new · board. **`src/` + `supabase/` CLEAN** |
