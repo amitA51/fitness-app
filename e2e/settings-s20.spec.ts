@@ -2089,3 +2089,739 @@ for (const vp of VIEWPORTS) {
 test.afterAll(async () => {
   await flushS26();
 });
+
+// ===========================================================================
+// T-092 — CAPTURE ONLY.
+//
+// Two batches of contrast + layout work shipped with zero photographs: every
+// figure in them is arithmetic. This section photographs them. It asserts
+// NOTHING about appearance and computes no verdict — a separate browser-free
+// worker reads the PNGs and the one measurement JSON next batch.
+//
+// Frames are ONE element screenshot or ONE viewport clip each. This app
+// scrolls the inner `#main-content`, so `fullPage: true` lies; scroll-and-
+// stitch is banned outright (it burned a previous round at the time wall).
+//
+// Priority order is binding and enforced by `mode: 'serial'`: g1 lands whole
+// before g2 starts. Each test swallows its own failures so a dead route
+// cannot skip the groups behind it.
+//
+// Run: npx playwright test e2e/settings-s20.spec.ts --project="Desktop Chrome" -g "T-092"
+// ===========================================================================
+
+const T092: Record<string, unknown>[] = [];
+
+/** Rewritten after EVERY frame, not in a final pass: the epilogue is the part
+ *  that keeps dying, and a JSON that only lands at the end leaves the PNGs
+ *  unbacked by data. */
+let t092Chain: Promise<void> = Promise.resolve();
+
+/** Serialised so concurrent records cannot interleave into a truncated file. */
+async function t092Flush(): Promise<void> {
+  t092Chain = t092Chain
+    .then(async () => {
+      const fs = await import('node:fs');
+      fs.mkdirSync(OUT, { recursive: true });
+      fs.writeFileSync(`${OUT}/t092-capture.json`, JSON.stringify(T092, null, 2), 'utf8');
+    })
+    .catch(() => {
+      /* a failed flush must never take a capture down */
+    });
+  return t092Chain;
+}
+
+function t092Record(rec: Record<string, unknown>): void {
+  T092.push(rec);
+  void t092Flush();
+}
+
+const r1 = (n: number | undefined | null): number | null =>
+  typeof n === 'number' ? Math.round(n * 10) / 10 : null;
+
+/** Layout facts that make a "centred ~480px column, full-bleed background"
+ *  claim checkable from the JSON alone rather than from the eye. */
+async function t092Layout(page: Page) {
+  return page.evaluate(() => {
+    const round = (n: number) => Math.round(n * 10) / 10;
+    const box = (el: Element | null) => {
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return {
+        x: round(r.x),
+        y: round(r.y),
+        width: round(r.width),
+        height: round(r.height),
+        right: round(r.right),
+      };
+    };
+    const main = document.querySelector('#main-content');
+    const shell = document.querySelector('.page-shell');
+    const h1 = document.querySelector('#main-content h1, #main-content h2');
+    let overflowX = 0;
+    if (main) {
+      for (const el of Array.from(main.querySelectorAll('*'))) {
+        const r = el.getBoundingClientRect();
+        if (r.width === 0) continue;
+        if (r.right > window.innerWidth + 1 || r.left < -1) overflowX += 1;
+      }
+    }
+    const shellCs = shell ? getComputedStyle(shell) : null;
+    return {
+      innerWidth: window.innerWidth,
+      innerHeight: window.innerHeight,
+      docScrollWidth: document.documentElement.scrollWidth,
+      mainBox: box(main),
+      mainScrollHeight: main ? (main as HTMLElement).scrollHeight : null,
+      pageShellBox: box(shell),
+      pageShellCount: document.querySelectorAll('.page-shell').length,
+      pageShellMaxWidth: shellCs?.maxWidth ?? null,
+      pageShellMarginInline: shellCs ? `${shellCs.marginLeft}/${shellCs.marginRight}` : null,
+      // The cap is only correct if the BACKGROUND stayed full-bleed behind it.
+      mainBackground: main ? getComputedStyle(main).backgroundColor : null,
+      shellBackground: shellCs?.backgroundColor ?? null,
+      headingText: (h1?.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 80),
+      overflowingElements: overflowX,
+    };
+  });
+}
+
+/** ONE element screenshot of the scroll container (or any element), recorded. */
+async function t092ShootEl(
+  page: Page,
+  locator: Locator,
+  name: string,
+  meta: Record<string, unknown>
+): Promise<void> {
+  try {
+    const el = locator.first();
+    await el.waitFor({ state: 'visible', timeout: 8000 });
+    const box = await el.boundingBox();
+    const buf = await el.screenshot({ path: `${OUT}/${name}.png`, animations: 'disabled' });
+    const p = await palette(buf);
+    t092Record({
+      png: `${name}.png`,
+      ...meta,
+      elementBox: box
+        ? { x: r1(box.x), y: r1(box.y), width: r1(box.width), height: r1(box.height) }
+        : null,
+      pngWidth: p.width,
+      pngHeight: p.height,
+      sampledFill: toHex(p.fill),
+      sampledInk: toHex(p.ink),
+      inkOnFill: p.inkOnFill,
+      inkShare: p.inkShare,
+    });
+  } catch (e) {
+    t092Record({ png: null, ...meta, error: String(e).replace(/\s+/g, ' ').slice(0, 220) });
+  }
+}
+
+/** ONE viewport clip. Used for the tight grabber crops and the sheet top edge,
+ *  which are portalled outside `#main-content`. */
+async function t092ShootClip(
+  page: Page,
+  rect: Rect,
+  pad: number,
+  name: string,
+  meta: Record<string, unknown>
+): Promise<void> {
+  try {
+    const vp = page.viewportSize() ?? { width: 390, height: 1500 };
+    const clip = {
+      x: Math.max(0, Math.round(rect.x - pad)),
+      y: Math.max(0, Math.round(rect.y - pad)),
+      width: Math.max(1, Math.min(vp.width, Math.round(rect.width + pad * 2))),
+      height: Math.max(1, Math.min(vp.height, Math.round(rect.height + pad * 2))),
+    };
+    const buf = await page.screenshot({ clip, animations: 'disabled' });
+    const fs = await import('node:fs');
+    fs.mkdirSync(OUT, { recursive: true });
+    fs.writeFileSync(`${OUT}/${name}.png`, buf);
+    const p = await palette(buf);
+    t092Record({
+      png: `${name}.png`,
+      ...meta,
+      clip,
+      pngWidth: p.width,
+      pngHeight: p.height,
+      sampledFill: toHex(p.fill),
+      sampledInk: toHex(p.ink),
+      inkOnFill: p.inkOnFill,
+      inkShare: p.inkShare,
+    });
+  } catch (e) {
+    t092Record({ png: null, ...meta, error: String(e).replace(/\s+/g, ' ').slice(0, 220) });
+  }
+}
+
+/** The topmost VISIBLE dialog that owns the given pill, plus that pill's live
+ *  rect and resolved CSS. Two sheets can be mounted at once (a closed
+ *  WorkoutToolsSheet stays in the DOM behind the open SetEditBottomSheet), so
+ *  picking "the first pill in document order" photographs the wrong control
+ *  under the right filename — the exact failure that voided 24 crops before.
+ *  Everything here is read back from the DOM so the record PROVES the target. */
+async function t092ActivePanel(page: Page, pillSelector: string) {
+  return page.evaluate((sel) => {
+    const visible = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      const cs = getComputedStyle(el);
+      return (
+        r.width > 8 &&
+        r.height > 2 &&
+        cs.visibility !== 'hidden' &&
+        cs.display !== 'none' &&
+        Number(cs.opacity || '1') > 0.05
+      );
+    };
+    const rectOf = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.x, y: r.y, width: r.width, height: r.height };
+    };
+    const dialogs = Array.from(document.querySelectorAll('[role="dialog"]')).filter(
+      (d) => visible(d) && d.querySelector(sel) !== null
+    );
+    const dlg = dialogs[dialogs.length - 1] as HTMLElement | undefined;
+    const scope: ParentNode = dlg ?? document;
+    const pills = Array.from(scope.querySelectorAll(sel)).filter(visible);
+    const pillEl = pills[pills.length - 1] as HTMLElement | undefined;
+    const title = dlg?.querySelector('h1,h2,h3');
+    const pillCs = pillEl ? getComputedStyle(pillEl) : null;
+    return {
+      dialogsInDom: document.querySelectorAll('[role="dialog"]').length,
+      visibleDialogsWithPill: dialogs.length,
+      dialog: dlg
+        ? {
+            rect: rectOf(dlg),
+            ariaLabel: dlg.getAttribute('aria-label'),
+            titleText: (title?.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 80),
+          }
+        : null,
+      pill:
+        pillEl && pillCs
+          ? {
+              rect: rectOf(pillEl),
+              cssWidth: pillCs.width,
+              cssHeight: pillCs.height,
+              background: pillCs.backgroundColor,
+              backgroundImage: pillCs.backgroundImage === 'none' ? null : pillCs.backgroundImage,
+              borderRadius: pillCs.borderRadius,
+              opacity: pillCs.opacity,
+              ariaHidden: pillEl.getAttribute('aria-hidden'),
+            }
+          : null,
+    };
+  }, pillSelector);
+}
+
+/** The 36x4 pill inside the shared Sheet's drag-handle region (ui/Sheet.tsx). */
+const T092_SHEET_PILL = '[data-sheet-drag-handle] > div';
+const T092_NUMPAD_PILL = '[data-numpad-grabber]';
+
+/** Reach the live workout screen from a clean guest state. */
+async function t092StartWorkout(page: Page): Promise<{ ok: boolean; note: string }> {
+  await page.goto('/workout');
+  await page.waitForTimeout(2400);
+  let started = false;
+  for (const pattern of [/התחילו בלי תבנית/, /התחילו אימון ריק/, /אימון ריק/]) {
+    const cta = page.getByRole('button', { name: pattern }).first();
+    if (await cta.isVisible().catch(() => false)) {
+      await cta.click({ force: true, timeout: 5000 }).catch(() => {});
+      started = true;
+      break;
+    }
+  }
+  if (!started) return { ok: false, note: 'no empty-workout CTA found on /workout' };
+
+  const card = page.locator('.exercise-card').first();
+  const gotPicker = await card
+    .waitFor({ state: 'visible', timeout: 20_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (!gotPicker) return { ok: false, note: 'exercise picker never opened' };
+  await card.click({ force: true }).catch(() => {});
+  await page.waitForTimeout(500);
+  const confirm = page.locator('[aria-label^="הוסיפו לאימון"]').first();
+  if (await confirm.isVisible().catch(() => false)) {
+    await confirm.click({ force: true }).catch(() => {});
+  }
+  await page.waitForTimeout(2800);
+
+  const weight = page.locator('button[aria-label^="משקל:"]').first();
+  const ok = await weight.isVisible().catch(() => false);
+  return { ok, note: ok ? 'active workout reached' : 'weight tap target not visible' };
+}
+
+/** Log one set through SlideToComplete's keyboard path (Enter/Space), so the
+ *  `עריכת סטים` tool — gated on completedSetsCount > 0 — becomes available. */
+async function t092CompleteOneSet(page: Page): Promise<string | null> {
+  const label = await page.evaluate(() => {
+    const btns = Array.from(document.querySelectorAll<HTMLElement>('button[aria-describedby]'));
+    const el = btns.find((b) => {
+      const r = b.getBoundingClientRect();
+      return r.width > 180 && r.height >= 40 && r.height <= 96;
+    });
+    if (!el) return null;
+    el.focus();
+    return el.getAttribute('aria-label');
+  });
+  if (!label) return null;
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(1600);
+  // A rest timer may take the screen; dismiss anything that offers a skip.
+  for (const pattern of [/דלג/, /דלגו/, /סיום מנוחה/]) {
+    const skip = page.getByRole('button', { name: pattern }).first();
+    if (await skip.isVisible().catch(() => false)) {
+      await skip.click({ force: true, timeout: 3000 }).catch(() => {});
+      await page.waitForTimeout(700);
+    }
+  }
+  return label;
+}
+
+test.describe('T-092 capture', () => {
+  test.describe.configure({ mode: 'serial', retries: 0 });
+
+  // -------------------------------------------------------------------------
+  // g1 (HIGHEST PRIORITY) — the five newly `.page-shell`-capped routes, at
+  // 1280 AND 390. Light lands for all five routes before dark starts, so a
+  // time-out leaves a complete pass rather than a half-built matrix.
+  // -------------------------------------------------------------------------
+  test('T-092 g1 — five newly capped routes, 1280 + 390', async ({ page }) => {
+    test.setTimeout(900_000);
+    const consoleErrors: string[] = [];
+    page.on('console', (m) => {
+      if (m.type() === 'error') consoleErrors.push(m.text().slice(0, 160));
+    });
+    page.on('pageerror', (e) => consoleErrors.push(`pageerror: ${e.message.slice(0, 160)}`));
+
+    const ROUTES = [
+      { id: 'legal-terms', path: '/legal/terms', what: 'legal document page' },
+      { id: 'accessibility', path: '/accessibility', what: 'accessibility statement' },
+      { id: 'public-profile', path: '/u/t092-qa-probe', what: 'public profile page' },
+      { id: 'progress', path: '/progress', what: 'progress page' },
+      { id: 'workout-detail', path: '/detail/t092-qa-probe', what: 'workout-detail page' },
+    ] as const;
+
+    try {
+      await seedGuest(page);
+
+      // Theme is the outer loop so the whole light pass is on disk first.
+      for (const combo of [COMBOS[0], COMBOS[2]]) {
+        for (const vp of [VIEWPORTS[1], VIEWPORTS[0]]) {
+          await page.setViewportSize({ width: vp.width, height: vp.height });
+          for (const route of ROUTES) {
+            const name = `t092-g1-${route.id}-${combo.id}-${vp.tag}`;
+            try {
+              await page.goto(route.path);
+              await applyCombo(page, combo);
+              await page.waitForTimeout(900);
+              const landed = new URL(page.url()).pathname;
+              const layout = await t092Layout(page);
+              const theme = await htmlState(page);
+              const target = (await page.locator('#main-content').count())
+                ? page.locator('#main-content')
+                : page.locator('body');
+              await t092ShootEl(page, target, name, {
+                group: 'g1',
+                what: route.what,
+                route: route.path,
+                landedPath: landed,
+                redirected: landed !== route.path,
+                viewport: vp.tag,
+                viewportPx: `${vp.width}x${vp.height}`,
+                theme: combo.id,
+                themeState: theme,
+                capturedElement: (await page.locator('#main-content').count())
+                  ? '#main-content'
+                  : 'body',
+                layout,
+                consoleErrorCount: consoleErrors.length,
+              });
+            } catch (e) {
+              t092Record({
+                png: null,
+                group: 'g1',
+                what: route.what,
+                route: route.path,
+                viewport: vp.tag,
+                theme: combo.id,
+                error: String(e).replace(/\s+/g, ' ').slice(0, 220),
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      t092Record({ group: 'g1', fatal: String(e).replace(/\s+/g, ' ').slice(0, 300) });
+    }
+    t092Record({ group: 'g1', consoleErrors: consoleErrors.slice(0, 25) });
+  });
+
+  // -------------------------------------------------------------------------
+  // g2 — Settings at 1280, the same cap shipped a batch earlier.
+  // -------------------------------------------------------------------------
+  test('T-092 g2 — settings at 1280', async ({ page }) => {
+    test.setTimeout(600_000);
+    const consoleErrors: string[] = [];
+    page.on('console', (m) => {
+      if (m.type() === 'error') consoleErrors.push(m.text().slice(0, 160));
+    });
+
+    try {
+      await seedGuest(page);
+      await page.setViewportSize({ width: 1280, height: 1500 });
+      for (const combo of COMBOS) {
+        const name = `t092-g2-settings-${combo.id}-1280`;
+        try {
+          await page.goto('/settings');
+          await applyCombo(page, combo);
+          await page.waitForTimeout(900);
+          const layout = await t092Layout(page);
+          const theme = await htmlState(page);
+          await t092ShootEl(page, page.locator('#main-content'), name, {
+            group: 'g2',
+            what: 'settings page',
+            route: '/settings',
+            landedPath: new URL(page.url()).pathname,
+            viewport: '1280',
+            viewportPx: '1280x1500',
+            theme: combo.id,
+            themeState: theme,
+            capturedElement: '#main-content',
+            layout,
+          });
+        } catch (e) {
+          t092Record({
+            png: null,
+            group: 'g2',
+            route: '/settings',
+            theme: combo.id,
+            error: String(e).replace(/\s+/g, ' ').slice(0, 220),
+          });
+        }
+      }
+    } catch (e) {
+      t092Record({ group: 'g2', fatal: String(e).replace(/\s+/g, ' ').slice(0, 300) });
+    }
+    t092Record({ group: 'g2', consoleErrors: consoleErrors.slice(0, 25) });
+  });
+
+  // -------------------------------------------------------------------------
+  // g3 (the single most important thing in the round) — the shared Sheet's
+  // 36x4 drag grabber in ALL FOUR theme states: whole sheet + a tight crop.
+  // Opened from the BottomNav `עוד` tab, which is one tap from the dashboard
+  // in every state.
+  // -------------------------------------------------------------------------
+  test('T-092 g3 — bottom sheet drag grabber, four theme states', async ({ page }) => {
+    test.setTimeout(600_000);
+    try {
+      await page.setViewportSize({ width: 390, height: 1500 });
+      for (const combo of COMBOS) {
+        const base = `t092-g3-sheet-${combo.id}`;
+        try {
+          // A persisted in-progress workout has hijacked a capture before, so
+          // localStorage AND every IndexedDB store go between combinations.
+          await seedGuest(page);
+          await page.goto('/');
+          await applyCombo(page, combo);
+          await page.waitForTimeout(1200);
+
+          const more = page.locator('button[aria-label^="עוד"]').first();
+          const opened = await more
+            .click({ force: true, timeout: 8000 })
+            .then(() => true)
+            .catch(() => false);
+          if (!opened) {
+            t092Record({
+              png: null,
+              group: 'g3',
+              theme: combo.id,
+              error: 'BottomNav עוד trigger not clickable',
+            });
+            continue;
+          }
+          await page.locator(T092_SHEET_PILL).first().waitFor({ timeout: 10_000 });
+          await page.waitForTimeout(900); // let the enter spring settle
+
+          const panel = await t092ActivePanel(page, T092_SHEET_PILL);
+          const pill = panel.pill;
+          const dialog = panel.dialog;
+          const theme = await htmlState(page);
+          const shared = {
+            group: 'g3',
+            what: 'shared Sheet drag grabber (ui/Sheet.tsx 36x4 pill)',
+            route: '/',
+            viewport: '390',
+            viewportPx: '390x1500',
+            theme: combo.id,
+            themeState: theme,
+            verifiedSheetTitle: dialog?.titleText ?? null,
+            verifiedSheetAriaLabel: dialog?.ariaLabel ?? null,
+            dialogsInDom: panel.dialogsInDom,
+            visibleDialogsWithPill: panel.visibleDialogsWithPill,
+            pillCss: pill
+              ? {
+                  width: pill.cssWidth,
+                  height: pill.cssHeight,
+                  background: pill.background,
+                  borderRadius: pill.borderRadius,
+                  ariaHidden: pill.ariaHidden,
+                }
+              : null,
+          };
+
+          // Whole sheet.
+          if (dialog) {
+            await t092ShootClip(page, dialog.rect, 0, `${base}-sheet`, {
+              ...shared,
+              frame: 'whole sheet',
+            });
+          } else {
+            t092Record({ png: null, ...shared, frame: 'whole sheet', error: 'no dialog ancestor' });
+          }
+
+          // Tight crop — padded enough to judge the pill against the sheet fill.
+          if (pill) {
+            await t092ShootClip(page, pill.rect, 22, `${base}-grabber`, {
+              ...shared,
+              frame: 'grabber tight crop',
+              pad: 22,
+            });
+          } else {
+            t092Record({ png: null, ...shared, frame: 'grabber tight crop', error: 'pill missing' });
+          }
+        } catch (e) {
+          t092Record({
+            png: null,
+            group: 'g3',
+            theme: combo.id,
+            error: String(e).replace(/\s+/g, ' ').slice(0, 220),
+          });
+        }
+      }
+    } catch (e) {
+      t092Record({ group: 'g3', fatal: String(e).replace(/\s+/g, ' ').slice(0, 300) });
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // g4 — the weight/reps numpad: its new grab cue and its top edge, light and
+  // dark. NumpadOverlay does not use the shared Sheet: its navy masthead IS
+  // the handle and the pill uses --color-ink-on-dark, so it is a separate
+  // surface from g3 and needs its own frames.
+  // -------------------------------------------------------------------------
+  test('T-092 g4 — numpad grab cue + top edge, light and dark', async ({ page }) => {
+    test.setTimeout(600_000);
+    try {
+      await page.setViewportSize({ width: 390, height: 1500 });
+      for (const combo of [COMBOS[0], COMBOS[2]]) {
+        const base = `t092-g4-numpad-${combo.id}`;
+        try {
+          await seedGuest(page);
+          await page.goto('/');
+          await applyCombo(page, combo);
+          const reached = await t092StartWorkout(page);
+          if (!reached.ok) {
+            t092Record({ png: null, group: 'g4', theme: combo.id, error: reached.note });
+            continue;
+          }
+
+          const weightBtn = page.locator('button[aria-label^="משקל:"]').first();
+          const verifiedTrigger = await weightBtn.getAttribute('aria-label');
+          await weightBtn.click({ force: true }).catch(() => {});
+          await page.locator(T092_NUMPAD_PILL).first().waitFor({ timeout: 12_000 });
+          await page.waitForTimeout(900);
+
+          const panel = await t092ActivePanel(page, T092_NUMPAD_PILL);
+          const pill = panel.pill;
+          const dialog = panel.dialog;
+          const theme = await htmlState(page);
+          const vp = page.viewportSize() ?? { width: 390, height: 1500 };
+          const shared = {
+            group: 'g4',
+            what: 'NumpadOverlay grab cue (masthead pill, --color-ink-on-dark)',
+            route: '/workout (active)',
+            viewport: '390',
+            viewportPx: '390x1500',
+            theme: combo.id,
+            themeState: theme,
+            verifiedTrigger,
+            verifiedNumpadTitle: dialog?.titleText ?? null,
+            verifiedNumpadAriaLabel: dialog?.ariaLabel ?? null,
+            dialogsInDom: panel.dialogsInDom,
+            pillCss: pill
+              ? {
+                  width: pill.cssWidth,
+                  height: pill.cssHeight,
+                  background: pill.background,
+                  borderRadius: pill.borderRadius,
+                  ariaHidden: pill.ariaHidden,
+                }
+              : null,
+          };
+
+          if (pill) {
+            await t092ShootClip(page, pill.rect, 20, `${base}-grabcue`, {
+              ...shared,
+              frame: 'grab cue tight crop',
+              pad: 20,
+            });
+            // Top edge — the masthead band the cue sits in, against the page
+            // behind it and the keypad body below.
+            const topY = Math.max(0, pill.rect.y - 64);
+            await t092ShootClip(
+              page,
+              { x: 0, y: topY, width: vp.width, height: 190 },
+              0,
+              `${base}-topedge`,
+              { ...shared, frame: 'numpad top edge' }
+            );
+          } else {
+            t092Record({ png: null, ...shared, frame: 'grab cue', error: 'numpad pill missing' });
+          }
+
+          if (dialog) {
+            await t092ShootClip(page, dialog.rect, 0, `${base}-full`, {
+              ...shared,
+              frame: 'whole numpad',
+            });
+          }
+        } catch (e) {
+          t092Record({
+            png: null,
+            group: 'g4',
+            theme: combo.id,
+            error: String(e).replace(/\s+/g, ' ').slice(0, 220),
+          });
+        }
+      }
+    } catch (e) {
+      t092Record({ group: 'g4', fatal: String(e).replace(/\s+/g, ' ').slice(0, 300) });
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // g5 — the set editor open on the live workout screen, light and dark. The
+  // `עריכת סטים` tool only exists once a set is logged, so one set is
+  // completed through SlideToComplete's keyboard path first.
+  // -------------------------------------------------------------------------
+  test('T-092 g5 — set editor on the live workout screen, light and dark', async ({ page }) => {
+    test.setTimeout(600_000);
+    try {
+      await page.setViewportSize({ width: 390, height: 1500 });
+      for (const combo of [COMBOS[0], COMBOS[2]]) {
+        const base = `t092-g5-seteditor-${combo.id}`;
+        try {
+          await seedGuest(page);
+          await page.goto('/');
+          await applyCombo(page, combo);
+          const reached = await t092StartWorkout(page);
+          if (!reached.ok) {
+            t092Record({ png: null, group: 'g5', theme: combo.id, error: reached.note });
+            continue;
+          }
+
+          const completedVia = await t092CompleteOneSet(page);
+          const tools = page.locator('button[aria-label="כלים נוספים לתרגיל"]').first();
+          const toolsOpened = await tools
+            .click({ force: true, timeout: 8000 })
+            .then(() => true)
+            .catch(() => false);
+          if (!toolsOpened) {
+            t092Record({
+              png: null,
+              group: 'g5',
+              theme: combo.id,
+              completedVia,
+              error: 'tools chip (כלים) not clickable',
+            });
+            continue;
+          }
+          await page.waitForTimeout(900);
+
+          const editSets = page.getByRole('button', { name: /עריכת סטים/ }).first();
+          const hasEditSets = await editSets.isVisible().catch(() => false);
+          if (!hasEditSets) {
+            // Photograph the tools sheet anyway — it is the surface that was
+            // reachable, and the reader needs to see why the editor was not.
+            const fb = await t092ActivePanel(page, T092_SHEET_PILL);
+            if (fb.dialog) {
+              await t092ShootClip(page, fb.dialog.rect, 0, `${base}-tools-sheet-fallback`, {
+                group: 'g5',
+                what: 'workout tools sheet (set editor NOT reachable)',
+                route: '/workout (active)',
+                viewport: '390',
+                theme: combo.id,
+                themeState: await htmlState(page),
+                completedVia,
+                verifiedSheetTitle: fb.dialog.titleText,
+                error: 'עריכת סטים tool absent — no completed set',
+              });
+            }
+            continue;
+          }
+          await editSets.click({ force: true }).catch(() => {});
+          await page.waitForTimeout(1100);
+
+          const panel = await t092ActivePanel(page, T092_SHEET_PILL);
+          const dialog = panel.dialog;
+          const pill = panel.pill;
+          const theme = await htmlState(page);
+          const shared = {
+            group: 'g5',
+            what: 'SetEditBottomSheet open over the live workout',
+            route: '/workout (active)',
+            viewport: '390',
+            viewportPx: '390x1500',
+            theme: combo.id,
+            themeState: theme,
+            completedVia,
+            verifiedSheetTitle: dialog?.titleText ?? null,
+            verifiedSheetAriaLabel: dialog?.ariaLabel ?? null,
+            dialogsInDom: panel.dialogsInDom,
+            visibleDialogsWithPill: panel.visibleDialogsWithPill,
+          };
+
+          if (dialog) {
+            await t092ShootClip(page, dialog.rect, 0, `${base}-sheet`, {
+              ...shared,
+              frame: 'whole set editor sheet',
+            });
+          } else {
+            t092Record({ png: null, ...shared, frame: 'whole set editor sheet', error: 'no dialog' });
+          }
+          if (pill) {
+            await t092ShootClip(page, pill.rect, 22, `${base}-grabber`, {
+              ...shared,
+              frame: 'set editor grabber tight crop',
+              pad: 22,
+              pillCss: {
+                width: pill.cssWidth,
+                height: pill.cssHeight,
+                background: pill.background,
+              },
+            });
+          }
+          // The whole screen behind it, so the sheet is judged in context.
+          await t092ShootClip(
+            page,
+            { x: 0, y: 0, width: 390, height: 1500 },
+            0,
+            `${base}-in-context`,
+            { ...shared, frame: 'set editor over the workout screen' }
+          );
+        } catch (e) {
+          t092Record({
+            png: null,
+            group: 'g5',
+            theme: combo.id,
+            error: String(e).replace(/\s+/g, ' ').slice(0, 220),
+          });
+        }
+      }
+    } catch (e) {
+      t092Record({ group: 'g5', fatal: String(e).replace(/\s+/g, ' ').slice(0, 300) });
+    }
+    await t092Flush();
+  });
+});

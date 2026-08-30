@@ -6084,3 +6084,74 @@ browser or the build this batch, which is what makes that round trustworthy.
   cataloguing. **Both files may already hardcode RTL semantics with no `dir` check** — if a file is
   already correct for Hebrew today, say so and convert it anyway so it cannot break in LTR, or
   explain why not. Do NOT touch `SegmentedControl.tsx` itself.
+
+
+---
+
+# Batch 30 — THE CAPTURE ROUND. Dispatched 2026-08-30 10:48. Amit: "תעשה כל מה שאתה חושב".
+
+### Why capture comes BEFORE the four remaining token sites — I am applying my own rule to myself
+Batches 28 and 29 shipped 20 measured claims about contrast, geometry and page width, and **every
+one is arithmetic. No human eye has seen any of it.** I enforce "measure before you continue" on every
+worker; building a third layer on unverified arithmetic is the same mistake with my name on it.
+**If any batch-28/29 figure is wrong I want to know now, not after another batch.** The four remaining
+`--fs-primary` sites are documented with their four-state numbers in T-090's report and the batch-29
+commit message — they are not going anywhere. They land in batch 31 together with the verdict.
+
+### Consequence, stated plainly: the set-logging screen is photographed HALF FIXED
+8 of 12 sites landed. That is deliberate — the capture worker shoots what exists, and the verdict
+worker will be told 4 sites are pending so it does not file them as new defects.
+
+### The five rules that cost five dead capture rounds — all in the brief, none optional
+1. **`locator('#main-content').screenshot()` is MANDATED. Scroll-and-stitch is FORBIDDEN.** Offering a
+   CHOICE of method killed round 4 — it picked stitching, which is scroll-shoot-scroll-shoot per combo.
+2. **The worker may NOT enumerate, count or list its own output.** THREE of five deaths happened while
+   `Get-ChildItem`-ing PNGs it had just written. It writes files and stops. **I count.**
+3. **ONE `npx playwright test` invocation.** Round 5 ran three.
+4. **An explicit priority order, cheapest-and-most-critical first.** This is what saved round 5: it got
+   through groups 1-3 and died in the epilogue, so the valuable frames were already on disk.
+5. **NO analysis, NO report, NO verdict.** Capture and verdict are always two workers; that split has
+   now finished on the first attempt five times running.
+
+### The measurement-JSON gap is fixed STRUCTURALLY, not as a step
+`s26-measure.json` held 16 records, all sheets, and none of the 46 Settings frames — so the `on`/`off`
+in those filenames was unbacked. The brief therefore requires a measurement record **per frame, written
+as each frame is captured**, rather than a collection pass at the end. A final pass is exactly the
+epilogue that keeps dying.
+
+### Ownership map
+- **T-092** → WRITES `visual-qa/**` + `e2e/settings-s20.spec.ts` only. Read-only in `src/`.
+  **HOLDS PLAYWRIGHT AND THE BUILD — sole owner. CAPTURE ONLY.**
+- **T-093** → WRITES ONLY `plans/HEADING-ON-ACCENT.md`. Read-only everywhere. **No browser, no build,
+  no gates** — that constraint is what keeps T-092's build trustworthy.
+- **NOBODY WRITES `src/` THIS BATCH.** Accumulated lesson of six rounds.
+- Only two workers. A third would have been filler, and the only genuinely valuable third item (the
+  coach-side e2e screenshots, shot as a guest since batch 18) needs the browser T-092 holds.
+
+## [T-092] Photograph two batches of arithmetic
+- status: dispatched (batch 30)
+- owner: fitness-qa
+- goal: batches 28 and 29 changed a token every sheet depends on, six page containers and eight
+  control edges on the hot path. None of it has been seen.
+- done when: PNGs + one measurement record PER FRAME on disk, in this priority order — (1) the five
+  newly-capped pages at 1280 AND 390, (2) Settings at 1280, (3) a bottom sheet showing the new grabber
+  in all four theme states, (4) the numpad's new grab cue and its top edge, (5) the set editor open
+- notes: **MANDATED element screenshot; stitching FORBIDDEN. FORBIDDEN from counting its own output.
+  ONE playwright invocation. NO report.** Build FIRST. Wipe localStorage AND IndexedDB per combo.
+  Dark is the `html.dark` CLASS; HC is `html.high-contrast` and STACKS. Label every crop from its
+  verified text content — a previous round's 24 crops were all silently a different control.
+
+## [T-093] The defect family a --fs-primary sweep walks straight past
+- status: dispatched (batch 30)
+- owner: fitness-design
+- goal: T-090 found `--fs-heading` sitting on an `--fs-accent` fill at two sites — 1.50:1 in dark and
+  1.25:1 in both HC, failing the 4.5:1 TEXT floor in three of four states. One instance of this shape
+  was already known at `SettingsPrimitives.tsx:162`, but these two are logged nowhere, and the token
+  sweep cannot find them because they do not involve `--fs-primary` at all.
+- done when: every site in `src/` putting a theme-varying ink token on an accent or signal fill is
+  listed with file:line, its four-state contrast, and whether it is a real failure or correct-as-is
+- notes: read-only, ONE new plan file, NO gates, NO browser, NO build. The known-correct token for ink
+  on an accent fill is `--color-ink-on-accent`; `--fs-heading`, `--fs-ink` and `--fs-primary` are the
+  suspects. **A site is NOT automatically broken** — near-black ink on a bright mint fill is correct in
+  all four states, and an earlier round caught 12 sites a mechanical sweep would have damaged. Verify
+  your method against figures the repo publishes for itself before trusting your own arithmetic.
