@@ -1,3 +1,4 @@
+import { WATER_SETTINGS_KEY } from '../constants/nutrition';
 import { logger } from '../utils/logger';
 import { STORES, dbClear } from './indexedDBCore';
 
@@ -22,6 +23,7 @@ export const USER_SCOPED_STORAGE_REGISTRY = {
     'user_profile',
     'supabase_session',
     'nutrition_goals',
+    WATER_SETTINGS_KEY,
     'workout_prefs',
     'last_sync_time',
     'notification_settings',

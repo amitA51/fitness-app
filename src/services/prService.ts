@@ -2,11 +2,13 @@
 // SPARKOS FITNESS - PR Service (Personal Records)
 // ============================================================================
 
+import { isSupabaseConfigured } from '../lib/supabase';
 import type { PersonalRecord, WorkoutSession } from '../types';
 import { logger } from '../utils/logger';
 import { safeJsonParseOr } from '../utils/safeJson';
 import { oneRepMax, setVolume } from '../utils/workoutMath';
 import { STORES, dbDelete, dbGet, dbGetAll, dbPut, initDB } from './indexedDBCore';
+import { queueMutation } from './offlineQueue';
 import { getCurrentUser } from './supabaseAuth';
 import { syncPersonalRecord } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
@@ -113,34 +115,47 @@ export const getPRsForMultipleExercises = async (
 export const savePR = async (pr: PersonalRecord): Promise<void> => {
   await dbPut(STORES.PERSONAL_RECORDS, pr);
 
+  // The cloud row shape. Built once so the direct push and the offline-queue
+  // fallback can never drift apart.
+  const payload = {
+    id: pr.id,
+    exerciseId: pr.exerciseId,
+    exerciseName: pr.exerciseName,
+    weight: pr.weight,
+    reps: pr.reps,
+    date: pr.date,
+    recordType: pr.type,
+  };
+
   const user = await getCurrentUser();
-  if (user) {
-    syncWithRetry(
-      () =>
-        syncPersonalRecord(user.id, {
-          id: pr.id,
-          exerciseId: pr.exerciseId,
-          exerciseName: pr.exerciseName,
-          weight: pr.weight,
-          reps: pr.reps,
-          date: pr.date,
-          recordType: pr.type,
-        }),
-      `savePR:${pr.id}`,
-      3,
-      {
+
+  // No cloud configured means nothing to sync to and nothing at risk — mirrors
+  // syncWithRetry, which returns early in that case rather than queueing.
+  if (isSupabaseConfigured()) {
+    if (user) {
+      const userId = user.id;
+      void syncWithRetry(() => syncPersonalRecord(userId, payload), `savePR:${pr.id}`, 3, {
         type: 'record:create',
-        payload: {
-          id: pr.id,
-          exerciseId: pr.exerciseId,
-          exerciseName: pr.exerciseName,
-          weight: pr.weight,
-          reps: pr.reps,
-          date: pr.date,
-          recordType: pr.type,
-        },
-      }
-    );
+        payload,
+      });
+    } else {
+      // THE FIX (T-118, same shape as sessionDb.saveWorkoutSession and
+      // waterService.addWaterEntry). This enqueue used to live inside the
+      // `if (user)` above, and getCurrentUser() returns null not only for a guest
+      // but for a signed-in user whose token refresh just failed with a 401
+      // (services/supabaseAuth models that path). In this codebase the enqueue IS
+      // syncWithRetry's 4th argument, so a guarded call that never runs leaves NO
+      // queue row at all: the record existed only on this device, every defence
+      // keys off the queue and could not see it, and the sign-out wipe destroyed
+      // it with no warning.
+      //
+      // queueMutation resolves and stamps ownership itself (real account id, or
+      // GUEST_OWNER / UNKNOWN_OWNER), so no user id is needed from here. An
+      // ownerless entry is quarantined into the dead-letter store on replay
+      // (claimable from Settings) and re-stamped by adoptGuestDataForUser on a
+      // first sign-in. Either way it is inside the machinery, not invisible to it.
+      await queueMutation('record:create', payload);
+    }
   }
 };
 
@@ -170,7 +185,6 @@ export const deletePR = async (prId: string): Promise<void> => {
   await dbDelete(STORES.PERSONAL_RECORDS, prId);
 
   const user = await getCurrentUser();
-  if (!user) return;
 
   const deletedAt = new Date().toISOString();
   const tombstone = {
@@ -185,13 +199,29 @@ export const deletePR = async (prId: string): Promise<void> => {
     deletedAt,
   };
 
-  syncWithRetry(() => syncPersonalRecord(user.id, tombstone), `deletePR:${prId}`, 3, {
-    // record:create replays through syncPersonalRecord, which writes
-    // deleted_at when present — NOT record:delete, whose replay would
-    // physically delete the cloud row and reintroduce the resurrection bug.
-    type: 'record:create',
-    payload: tombstone,
-  });
+  // No cloud configured means there is no cloud row to tombstone.
+  if (!isSupabaseConfigured()) return;
+
+  if (user) {
+    void syncWithRetry(() => syncPersonalRecord(user.id, tombstone), `deletePR:${prId}`, 3, {
+      // record:create replays through syncPersonalRecord, which writes
+      // deleted_at when present — NOT record:delete, whose replay would
+      // physically delete the cloud row and reintroduce the resurrection bug.
+      type: 'record:create',
+      payload: tombstone,
+    });
+  } else {
+    // A DELETE NEEDS A TOMBSTONE QUEUED, not a skipped call. This function used
+    // to `return` here, with the LOCAL delete already done above — so under null
+    // auth the row was removed from this device and the cloud was never told,
+    // and the next pull RESURRECTED a record the user had deleted.
+    //
+    // Same `record:create` type as the direct call, for the same reason: it
+    // replays through syncPersonalRecord, which carries `deleted_at` through as a
+    // soft delete. `record:delete` would hard-delete the cloud row and let any
+    // other device re-insert it.
+    await queueMutation('record:create', tombstone);
+  }
 };
 
 // Internal: diff a completed set against an in-memory list of existing PRs

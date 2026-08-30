@@ -507,16 +507,37 @@ export const deleteWorkoutSession = async (sessionId: string): Promise<void> => 
   await clearUnsyncedSessionMarker(sessionId);
 
   const user = await getCurrentUser();
-  if (user) {
-    // Targeted soft-delete UPDATE (house pattern). The previous tombstone
-    // upsert sent startTime: '' which Postgres rejected (22007), dropping the
-    // tombstone and letting other devices resurrect the session.
-    syncWithRetry(
-      () => deleteCloudWorkoutSession(user.id, sessionId),
-      `deleteWorkoutSession:${sessionId}`,
-      3,
-      { type: 'session:delete', payload: sessionId }
-    );
+  // No cloud configured means nothing to sync to and nothing at risk — mirrors
+  // syncWithRetry, which returns early in that case rather than queueing.
+  if (isSupabaseConfigured()) {
+    if (user) {
+      // Targeted soft-delete UPDATE (house pattern). The previous tombstone
+      // upsert sent startTime: '' which Postgres rejected (22007), dropping the
+      // tombstone and letting other devices resurrect the session.
+      void syncWithRetry(
+        () => deleteCloudWorkoutSession(user.id, sessionId),
+        `deleteWorkoutSession:${sessionId}`,
+        3,
+        { type: 'session:delete', payload: sessionId }
+      );
+    } else {
+      // THE FIX (T-119) — the same shape as `saveWorkoutSession` above, and as
+      // `deleteBodyWeight` / `deleteMealEntry`. The local delete two lines up is
+      // UNCONDITIONAL while the cloud tombstone was reachable only with a
+      // resolved user, and `getCurrentUser()` answers null for a real account
+      // holder mid-failed-token-refresh (services/supabaseAuth models that 401
+      // path), not only for a guest. That user deleted a workout here, nothing
+      // queued the tombstone — the enqueue IS syncWithRetry's 4th argument, so a
+      // guarded call that never runs leaves NO queue row — and the next pull
+      // faithfully RESURRECTED the workout, because a cloud row with no
+      // `deleted_at` is re-inserted by `mergeWorkoutSessionsFromCloud`.
+      //
+      // `session:delete` replays through `deleteCloudWorkoutSession`, which
+      // stamps `deleted_at` rather than hard-deleting, so what is queued really
+      // is a tombstone and it converges on every other device too.
+      // `queueMutation` stamps ownership itself, so no user id is needed here.
+      await queueMutation('session:delete', sessionId);
+    }
   }
 
   // Trigger UI Refresh

@@ -7884,3 +7884,253 @@ All three terminal. Newest `src/` mtime 2.5 min cold before any gate ran. Suite 
 2. **The delete-path sub-shape** — `sessionDb:503`, `deletePR`, `deletePersonalExercise`. All three
    skip the cloud tombstone under null auth, so deleted records come back.
 3. **Then a sweep that must come back EMPTY** before I call this family closed.
+
+
+---
+
+# Batch 42 — CLOSE THE FAMILY. Amit: "תתקן הכל ותעשה כל מה שצריך". Dispatched 2026-08-30 19:1x.
+
+Tree clean at `456816b` == `origin/master`. Full delegation of the work.
+
+### ⚠️ THE SPLIT IS BY **FILE**, NOT BY DEFECT SHAPE — and that is deliberate
+The obvious split ("the three services" / "the delete paths") **collides on two files**: `prService.ts`
+and `exerciseDb.ts` each carry BOTH a guarded save enqueue AND a guarded delete, and `sessionDb.ts`
+carries only a delete. Two workers on one file is this project's most-repeated coordination failure.
+**So each worker owns whole files and fixes every instance inside them.**
+
+### ⭐ WHY THE EMPTY SWEEP IS **NOT** IN THIS BATCH
+My own new rule is that this family is not closed until a sweep comes back EMPTY. **A sweep run while
+two workers are rewriting the very files it inspects proves nothing** — T-114 already hit exactly that,
+noticing `sessionDb.ts` changing under it mid-audit. The sweep runs NEXT, on a static tree. Putting it
+here would spend a worker to produce a result I would have to discard.
+
+### Ground truth I verified MYSELF by grep, just now — do not re-derive
+- **`templateDb.ts`** — 3 sites, `if (user) {` at **:101, :133, :154**, each wrapping `syncWithRetry`,
+  no `else`. Matches T-117 exactly.
+- **`prService.ts`** — save guard `if (user) {` at **:117**; `deletePR`'s
+  `const user = await getCurrentUser(); if (!user) return;` at **:172-173**, with the local delete
+  ABOVE it and the tombstone `syncWithRetry` at **:188** below.
+- **`exerciseDb.ts`** — 4 sites: **:153-155, :188-190, :231-233** are
+  `getCurrentUser().then((user) => { if (user) {` — **a floating promise with no `.catch`** — plus an
+  awaited one at **:331-332**.
+- **⚠️ `sessionDb.ts`'s bare `if (user)` is at :510, NOT :503.** My own board carried 503; batch 41's
+  ledger additions shifted the file. **Line numbers in this repo's own reports drift — the seventh time
+  this has bitten. Workers are told to locate by FUNCTION NAME and treat any line I give as a hint.**
+- **`water_settings`** — the key is defined at `src/constants/nutrition.ts:66`, used at
+  `waterService.ts:6,58,78`, and appears in **NEITHER** registry: `userScopedLocalData.ts`'s list holds
+  `user_profile` / `workout_prefs` / `appSettings` / `date_prefs`, and `MIRRORED_LOCAL_KEYS` holds
+  `user_profile` / `workout_prefs` / `appSettings`. Both gaps confirmed.
+
+### ⭐ MY RULINGS, written here so no worker re-litigates them
+1. **The enqueue pattern is COPIED, never invented.** It exists in four files now
+   (`sessionDb.ts`, `waterService.ts`, `nutritionService.ts`, `bodyStatsService.ts`):
+   `await queueMutation('<type>', payload)` on the null-user path, the whole block gated by
+   `isSupabaseConfigured()`. **`queueMutation` stamps ownership itself**, so no caller supplies a user
+   id. A fifth variant is a defect, not a fix.
+2. **A DELETE needs a cloud TOMBSTONE queued, not a skipped call.** `deletePR` already builds a
+   tombstone at `:188` — the null-user path must enqueue that same tombstone, not a bare delete.
+3. **`water_settings` goes in the WIPE list ONLY. Do NOT add it to `MIRRORED_LOCAL_KEYS`.** The bug is
+   a leak (a previous account's hydration goal surviving sign-out on a shared device). Whether a
+   hydration goal should follow a user across devices is a FEATURE decision nobody has asked for.
+   Fix the leak, not the feature. **And do NOT remove `date_prefs`** — T-058 proved that entry purges a
+   deleted feature's stale key and removing it strands the key forever.
+4. **No worker runs the full suite.** Three concurrent `test:run` invocations pollute each other's
+   counts (proven in batch 2). Each runs `npx tsc --noEmit` plus `npx vitest run` on its OWN test paths.
+   **My post-batch run is the only authoritative one.**
+5. **NO PLAYWRIGHT, NO BUILD, NO SERVER anywhere this batch.**
+
+### Ownership map — disjoint, verified by grep against the clean tree
+- **T-118** → `src/services/templateDb.ts`, `src/services/prService.ts` + tests.
+- **T-119** → `src/services/exerciseDb.ts`, `src/services/sessionDb.ts` + tests.
+- **T-120** → `src/pages/onboarding/useOnboardingWizard.ts`,
+  `src/services/userScopedLocalData.ts` + tests.
+- **`src/services/sessionDb.ts` is T-119's exclusively** — it exports the shared ledger every other
+  service imports, so nobody else may write it. Importing from it is fine.
+
+## [T-118] Templates and PRs — the two stores a user cannot regenerate
+- status: dispatched (batch 42)
+- owner: fitness-dev
+- goal: a template you authored, and a personal record the app just congratulated you for, can both be
+  written with no cloud copy and then wiped without warning.
+- done when: verify green (`tsc` + its own vitest paths only); a test per site proving a record written
+  with a null user is still recoverable; a test proving `deletePR` under null auth does not resurrect
+  the record on the next pull
+- notes: **templates rank FIRST — they are authored content and non-regenerable.** `deletePR` is the
+  sharper defect: `if (!user) return;` sits AFTER the local delete, so the row goes and the tombstone
+  never does. Copy the pattern from `sessionDb.ts`'s save path; do NOT invent a fifth variant. Locate
+  by function name — the line numbers in this repo's reports drift.
+
+## [T-119] Exercises, and the delete residue in the file I already accepted as fixed
+- status: dispatched (batch 42)
+- owner: fitness-dev
+- goal: custom exercises repeat the same shape four times, three of them inside a floating promise with
+  no `.catch`; and `deleteWorkoutSession` still skips the cloud tombstone, so the next pull resurrects
+  a workout the user deleted.
+- done when: verify green (`tsc` + its own vitest paths only); a test per site; a test proving a
+  deleted workout stays deleted across a pull
+- notes: **built-in exercises re-seed themselves for free (`exerciseDb.ts:29-53`) — the custom ones are
+  what matter.** The three floating `getCurrentUser().then()` sites have no rejection handler at all;
+  fix that while you are in them. **`deleteWorkoutSession`'s guard is around `sessionDb.ts:510`** and
+  the comment a few lines below documents a previous tombstone bug of this exact family — read it.
+  **`sessionDb.ts` also exports the shared unsynced ledger; do not change its exported signatures**,
+  other services import them.
+
+## [T-120] Two small ones that are genuinely wrong
+- status: dispatched (batch 42)
+- owner: fitness-dev
+- goal: (1) `updateData` carries the same event-laundering shape that made the app unreachable for
+  every new user last batch; (2) a previous account's hydration goal survives sign-out on a shared
+  device.
+- done when: verify green (`tsc` + its own vitest paths only); a test proving `updateData` cannot
+  absorb a DOM event; a test proving the water-settings key is cleared on sign-out
+- notes: ORDERED, partial-in-order acceptable. **The hardening already exists on `goNext` in the same
+  file — copy it exactly.** The defect requires laundering through a prop typed `() => void`, which
+  erases the parameter; a direct wiring does not compile. **MY RULING: `water_settings` goes in the
+  sign-out wipe list ONLY — do NOT add it to `MIRRORED_LOCAL_KEYS`** (that is a feature nobody asked
+  for), and **do NOT remove `date_prefs`**, which deliberately purges a deleted feature's stale key.
+
+
+## [T-120] ACCEPTED 2026-08-30 19:2x. **Step 1 REFUSED with compiler proof — MY PREMISE WAS WRONG.**
+- status: **done** — 1 modified + 1 new test. `useOnboardingWizard.ts` **UNTOUCHED, verified by me** via
+  `git status --short` on that exact path (empty). `localStateMirror.ts` untouched, as ruled.
+  Scratch probe deleted, confirmed absent.
+
+### ⚠️⚠️ STEP 1 DOES NOT EXIST, AND THE DISTINCTION IS REAL — I CONFIRMED IT MYSELF
+This board has carried "`updateData` has the **same latent `() => void`-laundering shape** as the fixed
+`goNext`" since batch 33. **It does not.** The two signatures differ in exactly the way that decides it:
+- `goNext(updates?: Partial<OnboardingData>)` — **OPTIONAL** parameter
+- `updateData(updates: Partial<OnboardingData>)` — **REQUIRED** parameter (`useOnboardingWizard.ts:68`,
+  read by me: `(updates: Partial<OnboardingData>)`, no `?`)
+A `() => void` prop ERASES the parameter, so it accepts `goNext` and **REJECTS** `updateData` —
+TS2322, *"Target signature provides too few arguments. Expected 1 or more, but got 0."* A function that
+REQUIRES an argument is not assignable to a zero-argument type. **That is a language fact, not just its
+probe result**, which is why I accept the refusal rather than asking for a second opinion.
+- It proved the route open for `goNext` and closed for `updateData` with one probe under the project's
+  own strict flags, then **swept all four prop shapes that could accept `updateData` and be handed to
+  `onClick`** (React's handler types are bivariant, so both directions needed checking). **The only
+  opening is an explicit `any`, which `docs/CODING_STANDARDS.md` bans.** So a runtime guard would have
+  been unreachable code behind a rule the linter already enforces.
+- Corroborated twice more without resting on the probe: `updateData`'s single call site is
+  `OnboardingFlow.tsx:74` `<ProfileStep onChange={updateData} />` where `ProfileStep.tsx:10` types the
+  prop with the **exact** signature — no erasure — and every internal call passes an object literal.
+  And `Partial<OnboardingData>` is a WEAK type (all-optional), so a `SyntheticEvent` sharing no property
+  name with it is the second lock.
+- **⭐ THE INSIGHT WORTH KEEPING, and it is a live future hazard:** `goNext`'s guard is load-bearing
+  **precisely because its parameter is optional.** If anyone ever "harmonises" the two signatures by
+  making `updateData`'s optional, **the route opens for real.** Recorded here so the next person sees it.
+- **MY ERROR, precisely: I carried a claim about a SHAPE for ten batches without ever reading the
+  SIGNATURE.** Batch 33's fix was real; the "latent sibling" never was. This is the family-vs-symbol
+  error in a new costume — I matched the call pattern and never checked the type.
+- **MY RULING on its offer to add a type-level pin against that future refactor: NO, not now.** It is a
+  guard against a hypothetical nobody has proposed, and the hazard is now written down where it will be
+  read. Building tests for defects that do not exist is exactly what I descoped this afternoon.
+
+### ⭐ STEP 2 — the leak was real and is closed
+- `water_settings` was in **neither** registry. It confirmed the wipe list's only prefix rule is
+  `ai_tutorial_`, so nothing caught it incidentally. Registered via the **imported constant**
+  (`WATER_SETTINGS_KEY` from `src/constants/nutrition.ts:66`) rather than a retyped literal — verified by
+  me at `userScopedLocalData.ts:1` and `:26`. `date_prefs` left in place at `:47` as ruled.
+- It checked the import direction rather than assuming: `constants/nutrition.ts` declares itself a leaf
+  module that must not import from services, so services → constants keeps the graph acyclic.
+- **The second test is the better one and nobody asked for it:** it asserts the key is in the REGISTRY,
+  not just that one sign-out cleared it — "so expiry / account switch / delete-my-data clear it too."
+  A registry-level fix closes every wipe path at once; a special case in the sign-out path would not.
+  Its first test also pins an already-registered key alongside, so a failure there means the wipe itself
+  broke rather than this one key being unregistered.
+- **MEASURED BOTH WAYS: 2 failed / 2 against the original** — `expected '{"goalMl":4000,...}' to be null`
+  and `expected [...27 keys] to include 'water_settings'` — **2 passed after.** `tsc --noEmit` exit 0,
+  biome clean on both files. No full-suite run, as instructed.
+- Disclosed: it audited no OTHER registry for further unregistered keys, and per my ruling did not open
+  `localStateMirror.ts`, so whether a hydration goal follows a user across devices is still untouched and
+  still a feature question.
+
+
+## [T-118] Templates + PRs — ACCEPTED 2026-08-30 19:2x. All 5 sites, and it built more than the enqueue.
+- 2 modified + 1 new test (14 tests, 338 lines). Every line number in my brief was **exact** — it said so
+  rather than padding, and confirmed the `deletePR` description matched the code precisely.
+- **The five sites, verified by me:** `templateDb` create/update/delete + `prService` `savePR`/`deletePR`.
+  `prService.ts:157` and `:223` now carry `await queueMutation(...)` on the null-user path, gated by
+  `isSupabaseConfigured()` at `:134`/`:203`.
+- **⭐ IT WENT BEYOND THE BRIEF AND GAVE TEMPLATES THE LEDGER *WITH* ITS CLEAR-ON-PULL PATH** —
+  `markRecordUnsynced` before the push, cleared when the cloud confirms, plus clears in BOTH
+  `replaceWorkoutTemplatesFromCloud` and `mergeWorkoutTemplatesFromCloud`. So the sign-out warning now
+  counts unsynced templates and does not over-count forever.
+- **⭐ AND IT REFUSED THE LEDGER FOR PRs, WITH THE BETTER ARGUMENT.** PRs merge through
+  `cloudMerge.mergeGenericRecords`, **not** `prService`, so there is no clear-on-pull path inside the
+  file it owns; `processQueue` does not clear markers either. A PR written under null auth, queued and
+  successfully replayed would leave a marker **nothing ever clears** — the sign-out dialog would claim
+  unsynced data permanently. **And `savePR` runs in a LOOP** (`persistSessionPRs`,
+  `rebuildPRsFromHistory` writes one per exercise per PR type), so it is hundreds of stuck markers, not
+  one. **The queue row is the load-bearing fix and it is in place either way.** Correct call.
+  - ⚠️ **One leg of its reasoning is weaker than it thinks, and I am correcting it here:** it cited PRs
+    being regenerable via `rebuildPRsFromHistory`. **This board already established that function has
+    NO CALLER anywhere in `src/`** — so the theoretical repair does not exist. Its primary argument (no
+    clear path → a permanent false warning) stands on its own, so the verdict is unchanged.
+- Also de-duplicated a cloud-row literal that was written twice in `savePR`, "so the direct push and the
+  queue fallback can never drift apart" — a real class of bug, removed in passing.
+- **Its tombstone reasoning is the sharp part:** `deletePR` queues `record:create`, **not**
+  `record:delete`, because the latter's replay would physically delete the cloud row and reintroduce the
+  resurrection bug. It read what each queue type replays through rather than picking by name.
+- **MEASURED BOTH WAYS: 13 failed / 1 passed on the original, 14 passed after** — and it named the one
+  that passes either way as a regression guard, with what it guards.
+- **⚠️ A RISK IT COULD NOT CLOSE AND CORRECTLY HANDED TO ME:** `templateDb.ts` now imports `sessionDb`,
+  and `OfflineIndicator.test.tsx` + `SettingsSignOutGuard.test.tsx` mock `sessionDb` with factories that
+  do not define the ledger exports. It could not verify (component suites were off-limits to it).
+  **MY FULL RUN CLEARS THIS: 203 files / 1736 tests, exit 0, three consecutive runs.**
+- Disclosed: the merge's marker-clear relies on `updatedAt` surviving a Postgres round-trip byte-identical;
+  if normalised, the marker survives one pull. **Degrades toward over-warning**, which is the direction
+  this codebase deliberately errs in.
+
+## [T-119] Exercises + the delete residue — ACCEPTED 2026-08-30 19:2x. **It corrected my brief twice.**
+- 2 modified + 1 new test (11 tests). Every line number I gave was right — `:153, :188, :231, :331, :509`.
+- **⚠️ CORRECTION 1, AND I CONFIRMED IT: `exerciseDb` is 2 SAVES + 2 TOMBSTONES, not "four save sites".**
+  My brief said "its four save sites" and told it to find the delete path separately. **The delete path
+  IS `:231`, the third of the three floating `.then` ranges I had already listed** — so I asked it to
+  hunt for a fifth site that does not exist. Verified by me: `exercise:update` at `:220`/`:251`,
+  `exercise:delete` at `:293`/`:394`.
+- **⚠️⚠️ CORRECTION 2 — IT FOUND A CROSS-FILE CASCADE, AND THE BATCH SPLIT CLOSED IT BY ITSELF.**
+  `deletePersonalExercise` cascades into `prService.deletePR`. Under null auth, its own fix would
+  tombstone the exercise while leaving that exercise's personal records **live in the cloud**, so the
+  next pull re-adds them **orphaned** — the exact bug the comment above that cascade says was already
+  fixed once. **It could not fix it: `prService.ts` belonged to T-118.** I read `prService.ts` myself:
+  **`:223` now queues the tombstone under null auth, so the cascade is CLOSED by the sibling task in the
+  same batch.** Splitting by file rather than by defect shape is what made the two halves compose.
+- **ONE shared helper instead of four copies** — `pushExerciseMutation` at `:164`, carrying the house
+  shape once. **And it fixed the missing rejection handling I asked about:** a *rejected*
+  `getCurrentUser()` now takes the same road as null instead of becoming an unhandled rejection.
+- **⭐ AN UNPROMPTED CORRECTNESS FIX I DID NOT BRIEF:** the push used to fire **inside** the IndexedDB
+  `onsuccess` callback and was then abandoned, so **the queue row could still be unwritten when the
+  caller — and the tab — moved on.** It moved the push out and awaited it. That is the difference between
+  "a queue row is created" and "a queue row is created in time to matter."
+- `sessionDb.ts:539` — `await queueMutation('session:delete', sessionId)` on the null-user path, verified
+  by me. Exported signatures untouched; `flushUnsyncedSessions` still session-only, with a test pinning it.
+- **MEASURED BOTH WAYS: 9 failed / 2 passed pre-fix, 11 passed after.** The resurrection test failed with
+  the ticket's exact symptom: `expected [ { id: 's-401', ... } ] to have a length of +0 but got 1`.
+  **And it was honest about a guard that fails pre-fix for the wrong reason** — the signed-in-create test
+  also failed, not from data loss but because the abandoned promise had not run when the assertion fired.
+- Declined the ledger for exercises with a reason: `incrementExerciseUse` → `updatePersonalExercise` runs
+  **on every workout**, so built-ins would get marked too and the warning would claim N unsynced records
+  forever. Same shape as T-118's PR refusal, reached independently.
+- Left alone with an argument: `healDuplicateBuiltIns` (`:90`) hard-deletes untrained name-duplicates with
+  no tombstone — same family, but its own comment argues the case and the symptom is a duplicate
+  reappearing in the picker, not lost data.
+
+### Verified baseline — 2026-08-30 19:2x, MINE, on a confirmed-static tree
+All 40 runs terminal (`spawn_list`). Newest `src/` mtime 5 minutes cold before any gate ran.
+Suite run **THREE times, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **742** files (739 + 3 new test files) |
+| `npm run test:run` | **203 files / 1736 tests**, exit 0 on all three runs — **NEW FLOOR** |
+| arithmetic | 200+3=203 files; 1709 + 14 (T-118) + 11 (T-119) + 2 (T-120) = 1736. **Nothing deleted, skipped or weakened.** |
+| `npx playwright test --list` | **126 tests / 16 files**, exit 0 (unchanged) |
+| debris | zero scratch; both workers restored their own backups hash-verified and used no git |
+
+### ⭐ THE FAMILY IS NOW FIXED IN 7 SERVICES — BUT IT IS NOT CLOSED UNTIL A SWEEP COMES BACK EMPTY
+sessionDb save + **delete** · water · nutrition · body-stats · **templates · PRs · exercises**.
+Three sweeps each found more, and I reported this family as closing twice and was wrong twice.
+**The next batch is the sweep, on this now-static tree, and it must come back EMPTY.** Known candidates
+for it to adjudicate: `healDuplicateBuiltIns`'s untombstoned local delete · whether any remaining store
+writes without an enqueue at all · the ledger's coverage gaps for PRs and exercises (both deliberate,
+both documented above, both reachable only through a flush path nobody owns yet).

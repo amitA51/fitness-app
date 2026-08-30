@@ -6,10 +6,13 @@
  */
 
 import { NotFoundError } from '../errors';
+import { isSupabaseConfigured } from '../lib/supabase';
 import type { CreatePersonalExerciseInput, PersonalExercise } from '../types';
 import { generateId } from '../utils/id';
+import { logger } from '../utils/logger';
 import { mergeGenericRecords } from './cloudMerge';
 import { STORES, dbDelete, dbGetAll, dbGetByIndex, dbPut, initDB } from './indexedDBCore';
+import { type MutationType, queueMutation } from './offlineQueue';
 // prService does NOT import this module, so there is no cycle here.
 import { deletePR } from './prService';
 import { getCurrentUser } from './supabaseAuth';
@@ -131,6 +134,62 @@ export const getPersonalExercise = async (id: string): Promise<PersonalExercise 
 };
 
 /**
+ * Push one personal-exercise write to the cloud, or hand it to the offline queue
+ * when there is no account to push it under.
+ *
+ * THE HOLE THIS CLOSES (T-119), the same one sessionDb closed in T-111 and
+ * water / nutrition / body stats in T-115. In this codebase the enqueue IS
+ * `syncWithRetry`'s 4th argument (services/syncEngine.ts), so an enqueue that
+ * lives INSIDE `if (user)` produces NO QUEUE ROW AT ALL when `getCurrentUser()`
+ * answers null — and it answers null not only for a guest but for a real account
+ * holder whose token refresh just failed with a 401 (services/supabaseAuth models
+ * that path). The exercise then existed only on this device, invisible to the
+ * retry engine, the dead-letter store and the sign-out guard — every one of which
+ * reads the queue — and the sign-out wipe destroyed it. Built-in exercises
+ * re-seed themselves (`loadAndSeedBuiltIns` above); a CUSTOM one is gone.
+ *
+ * `queueMutation` resolves and stamps ownership itself (real account id, or
+ * GUEST_OWNER / UNKNOWN_OWNER), so no user id is needed from the caller. An
+ * ownerless entry is quarantined into the dead-letter store on replay (claimable
+ * from Settings) and re-stamped by `adoptGuestDataForUser` on a first sign-in.
+ *
+ * A REJECTED `getCurrentUser()` takes the same road as null instead of becoming
+ * an unhandled rejection: the four call sites used to be floating
+ * `getCurrentUser().then(...)` chains with no `.catch`, so an auth failure both
+ * lost the write and raised an unhandled rejection.
+ *
+ * Never throws: the local write has already happened and must not be reported as
+ * failed because the cloud leg could not be scheduled.
+ */
+const pushExerciseMutation = async (
+  tag: string,
+  record: Parameters<typeof syncPersonalExercise>[1],
+  queue: { type: MutationType; payload: unknown }
+): Promise<void> => {
+  // No cloud configured means nothing to sync to and nothing at risk — mirrors
+  // syncWithRetry, which returns early in that case rather than queueing.
+  if (!isSupabaseConfigured()) return;
+
+  let user: Awaited<ReturnType<typeof getCurrentUser>> = null;
+  try {
+    user = await getCurrentUser();
+  } catch (err) {
+    logger.sync.warn('Auth lookup failed while pushing an exercise; queueing instead', err);
+  }
+
+  try {
+    if (user) {
+      const userId = user.id;
+      void syncWithRetry(() => syncPersonalExercise(userId, record), tag, 3, queue);
+    } else {
+      await queueMutation(queue.type, queue.payload);
+    }
+  } catch (err) {
+    logger.sync.warn('Could not schedule an exercise cloud write', { tag, err });
+  }
+};
+
+/**
  * Create a new personal exercise.
  */
 export const createPersonalExercise = async (
@@ -144,26 +203,25 @@ export const createPersonalExercise = async (
   } as PersonalExercise;
 
   const db = await initDB();
-  return new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORES.PERSONAL_EXERCISES, 'readwrite');
     const store = tx.objectStore(STORES.PERSONAL_EXERCISES);
     const request = store.add(newExercise);
 
-    request.onsuccess = () => {
-      getCurrentUser().then((user) => {
-        if (user) {
-          syncWithRetry(
-            () => syncPersonalExercise(user.id, { ...newExercise, name: newExercise.name ?? '' }),
-            `createPersonalExercise:${newExercise.id}`,
-            3,
-            { type: 'exercise:update', payload: { ...newExercise, name: newExercise.name ?? '' } }
-          );
-        }
-      });
-      resolve(newExercise);
-    };
+    request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
+
+  // Local write first, cloud leg second — and AWAITED. It used to be fired from
+  // inside `request.onsuccess` and abandoned, so the queue row could still be
+  // unwritten when the caller (and the tab) moved on.
+  const payload = { ...newExercise, name: newExercise.name ?? '' };
+  await pushExerciseMutation(`createPersonalExercise:${newExercise.id}`, payload, {
+    type: 'exercise:update',
+    payload,
+  });
+
+  return newExercise;
 };
 
 /**
@@ -179,25 +237,19 @@ export const updatePersonalExercise = async (
   const updated = { ...existing, ...updates, id };
 
   const db = await initDB();
-  return new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORES.PERSONAL_EXERCISES, 'readwrite');
     const store = tx.objectStore(STORES.PERSONAL_EXERCISES);
     const request = store.put(updated);
 
-    request.onsuccess = () => {
-      getCurrentUser().then((user) => {
-        if (user) {
-          syncWithRetry(
-            () => syncPersonalExercise(user.id, { ...updated, name: updated.name ?? '' }),
-            `updatePersonalExercise:${id}`,
-            3,
-            { type: 'exercise:update', payload: { ...updated, name: updated.name ?? '' } }
-          );
-        }
-      });
-      resolve();
-    };
+    request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
+  });
+
+  const payload = { ...updated, name: updated.name ?? '' };
+  await pushExerciseMutation(`updatePersonalExercise:${id}`, payload, {
+    type: 'exercise:update',
+    payload,
   });
 };
 
@@ -227,17 +279,19 @@ export const deletePersonalExercise = async (id: string): Promise<void> => {
   // Hard-delete locally
   await dbDelete(STORES.PERSONAL_EXERCISES, id);
 
-  // Soft-delete in cloud (set deleted_at so other devices pick up the tombstone)
-  getCurrentUser().then((user) => {
-    if (user) {
-      syncWithRetry(
-        () => syncPersonalExercise(user.id, { id, name: '', deletedAt: now, updatedAt: now }),
-        `deletePersonalExercise:${id}`,
-        3,
-        { type: 'exercise:delete', payload: id }
-      );
-    }
-  });
+  // Soft-delete in cloud (set deleted_at so other devices pick up the tombstone).
+  //
+  // Awaited and unguarded by auth (T-119): the local hard-delete above always
+  // happens, so a tombstone that was reachable only with a resolved user meant a
+  // null-auth delete removed the row here while the cloud row stayed LIVE — and
+  // the next pull re-inserted the exercise the user deleted. `exercise:delete`
+  // replays through `deleteCloudPersonalExercise`, which stamps `deleted_at`
+  // rather than hard-deleting, so the queued entry really is a tombstone.
+  await pushExerciseMutation(
+    `deletePersonalExercise:${id}`,
+    { id, name: '', deletedAt: now, updatedAt: now },
+    { type: 'exercise:delete', payload: id }
+  );
 };
 
 /**
@@ -328,19 +382,17 @@ export const removeDuplicateExercises = async (): Promise<number> => {
   }
 
   if (cloudTombstones.length > 0) {
-    const user = await getCurrentUser();
-    if (user) {
-      const now = new Date().toISOString();
-      for (const id of cloudTombstones) {
-        // Fire-and-forget with an offline-queue fallback, matching
-        // deletePersonalExercise. Cleanup must not block on the network.
-        syncWithRetry(
-          () => syncPersonalExercise(user.id, { id, name: '', deletedAt: now, updatedAt: now }),
-          `removeDuplicateExercise:${id}`,
-          3,
-          { type: 'exercise:delete', payload: id }
-        );
-      }
+    const now = new Date().toISOString();
+    for (const id of cloudTombstones) {
+      // Same path as deletePersonalExercise: pushed directly when an account
+      // resolves, queued as a tombstone when it does not. The local deletes above
+      // are unconditional, so skipping the cloud leg under null auth made this
+      // cleanup self-undoing — the next pull re-inserted every duplicate.
+      await pushExerciseMutation(
+        `removeDuplicateExercise:${id}`,
+        { id, name: '', deletedAt: now, updatedAt: now },
+        { type: 'exercise:delete', payload: id }
+      );
     }
   }
 

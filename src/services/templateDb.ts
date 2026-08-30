@@ -5,12 +5,15 @@
  */
 
 import { NotFoundError, ValidationError } from '../errors';
+import { isSupabaseConfigured } from '../lib/supabase';
 import type { Exercise, PersonalItem, WorkoutTemplate } from '../types';
 import { createWorkoutSet } from '../types';
 import { generateId } from '../utils/id';
 import { safeTimestamp } from './cloudMerge';
 import { STORES, dbDelete, dbGet, dbGetAll, dbPut, initDB } from './indexedDBCore';
+import { queueMutation } from './offlineQueue';
 import { addPersonalItem } from './personalItemsDb';
+import { clearUnsyncedRecordMarker, markRecordUnsynced } from './sessionDb';
 import { getCurrentUser } from './supabaseAuth';
 import { syncWorkoutTemplate } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
@@ -98,14 +101,44 @@ export const createWorkoutTemplate = async (
   await dbPut(STORES.WORKOUT_TEMPLATES, newTemplate);
 
   const user = await getCurrentUser();
-  if (user) {
-    const userId = user.id;
-    syncWithRetry(
-      () => syncWorkoutTemplate(userId, newTemplate),
-      `createWorkoutTemplate:${newTemplate.id}`,
-      3,
-      { type: 'template:update', payload: newTemplate }
-    );
+
+  // No cloud configured means nothing to sync to and nothing at risk — mirrors
+  // syncWithRetry, which returns early in that case rather than queueing.
+  if (isSupabaseConfigured()) {
+    // Ledger FIRST (services/sessionDb). From here until the cloud confirms,
+    // this template exists in exactly one place; recording that is what lets the
+    // sign-out guard and the offline indicator see it at all — including if the
+    // tab is closed while the request is still in flight.
+    await markRecordUnsynced(STORES.WORKOUT_TEMPLATES, newTemplate.id);
+
+    if (user) {
+      const userId = user.id;
+      void syncWithRetry(
+        () => syncWorkoutTemplate(userId, newTemplate),
+        `createWorkoutTemplate:${newTemplate.id}`,
+        3,
+        { type: 'template:update', payload: newTemplate }
+      ).then((synced) => {
+        if (synced) void clearUnsyncedRecordMarker(STORES.WORKOUT_TEMPLATES, newTemplate.id);
+      });
+    } else {
+      // THE FIX (T-118, same shape as sessionDb.saveWorkoutSession and
+      // waterService.addWaterEntry). This enqueue used to live inside the
+      // `if (user)` above, and getCurrentUser() returns null not only for a guest
+      // but for a signed-in user whose token refresh just failed with a 401
+      // (services/supabaseAuth models that path). In this codebase the enqueue IS
+      // syncWithRetry's 4th argument, so a guarded call that never runs leaves NO
+      // queue row at all — the template existed only on this device, every
+      // defence keys off the queue and could not see it, and the sign-out wipe
+      // destroyed authored content the user cannot regenerate.
+      //
+      // queueMutation resolves and stamps ownership itself (real account id, or
+      // GUEST_OWNER / UNKNOWN_OWNER), so no user id is needed from here. An
+      // ownerless entry is quarantined into the dead-letter store on replay
+      // (claimable from Settings) and re-stamped by adoptGuestDataForUser on a
+      // first sign-in. Either way it is inside the machinery, not invisible to it.
+      await queueMutation('template:update', newTemplate);
+    }
   }
 
   return newTemplate;
@@ -130,13 +163,26 @@ export const updateWorkoutTemplate = async (
   await dbPut(STORES.WORKOUT_TEMPLATES, updatedTemplate);
 
   const user = await getCurrentUser();
-  if (user) {
-    syncWithRetry(
-      () => syncWorkoutTemplate(user.id, updatedTemplate),
-      `updateWorkoutTemplate:${id}`,
-      3,
-      { type: 'template:update', payload: updatedTemplate }
-    );
+
+  if (isSupabaseConfigured()) {
+    await markRecordUnsynced(STORES.WORKOUT_TEMPLATES, updatedTemplate.id);
+
+    if (user) {
+      const userId = user.id;
+      void syncWithRetry(
+        () => syncWorkoutTemplate(userId, updatedTemplate),
+        `updateWorkoutTemplate:${id}`,
+        3,
+        { type: 'template:update', payload: updatedTemplate }
+      ).then((synced) => {
+        if (synced) void clearUnsyncedRecordMarker(STORES.WORKOUT_TEMPLATES, updatedTemplate.id);
+      });
+    } else {
+      // Same hole as the create path: an EDIT made while auth could not answer
+      // was written locally with nothing scheduled to push it, so the next cloud
+      // pull silently reverted it to the older cloud revision.
+      await queueMutation('template:update', updatedTemplate);
+    }
   }
 
   return updatedTemplate;
@@ -149,22 +195,38 @@ export const deleteWorkoutTemplate = async (id: string): Promise<void> => {
   if (!id) throw new ValidationError('Template ID is required for deletion.');
   const now = new Date().toISOString();
   await dbDelete(STORES.WORKOUT_TEMPLATES, id);
+  // The local row is gone, so it is no longer a template that can be lost.
+  await clearUnsyncedRecordMarker(STORES.WORKOUT_TEMPLATES, id);
 
   const user = await getCurrentUser();
-  if (user) {
-    syncWithRetry(
-      () =>
-        syncWorkoutTemplate(user.id, {
-          id,
-          name: '',
-          exercises: [],
-          deletedAt: now,
-          updatedAt: now,
-        }),
-      `deleteWorkoutTemplate:${id}`,
-      3,
-      { type: 'template:delete', payload: id }
-    );
+
+  if (isSupabaseConfigured()) {
+    if (user) {
+      const userId = user.id;
+      void syncWithRetry(
+        () =>
+          syncWorkoutTemplate(userId, {
+            id,
+            name: '',
+            exercises: [],
+            deletedAt: now,
+            updatedAt: now,
+          }),
+        `deleteWorkoutTemplate:${id}`,
+        3,
+        { type: 'template:delete', payload: id }
+      );
+    } else {
+      // A DELETE needs a tombstone QUEUED, not a skipped call. The local row is
+      // hard-deleted above regardless of auth, while the cloud tombstone sat
+      // inside the guard — so with a null user the deletion existed nowhere but
+      // this device and the next pull RESURRECTED the template the user deleted.
+      //
+      // `template:delete` replays through deleteCloudWorkoutTemplate, which
+      // stamps `deleted_at` (a soft delete — see supabaseSync), so the queued
+      // form propagates the deletion exactly like the direct call above.
+      await queueMutation('template:delete', id);
+    }
   }
 };
 
@@ -217,7 +279,7 @@ export const replaceWorkoutTemplatesFromCloud = async (
   templates: WorkoutTemplate[]
 ): Promise<void> => {
   const db = await initDB();
-  return new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORES.WORKOUT_TEMPLATES, 'readwrite');
     const store = tx.objectStore(STORES.WORKOUT_TEMPLATES);
     store.clear();
@@ -228,6 +290,12 @@ export const replaceWorkoutTemplatesFromCloud = async (
     tx.onerror = () => reject(tx.error);
     tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
   });
+
+  // Same reasoning as the merge: these rows came FROM the cloud, so they are not
+  // unsynced local work any more.
+  for (const template of templates) {
+    if (template.id) await clearUnsyncedRecordMarker(STORES.WORKOUT_TEMPLATES, template.id);
+  }
 };
 
 /**
@@ -253,6 +321,8 @@ export const mergeWorkoutTemplatesFromCloud = async (
 
   const writes: WorkoutTemplate[] = [];
   const deletes: string[] = [];
+  /** Ids the cloud demonstrably holds at or ahead of our revision. */
+  const confirmed: string[] = [];
 
   for (const cloud of cloudTemplates) {
     if (!cloud.id) continue; // skip records without a usable key
@@ -263,20 +333,30 @@ export const mergeWorkoutTemplatesFromCloud = async (
         deletes.push(cloud.id);
         deleted++;
       }
+      confirmed.push(cloud.id);
       continue;
     }
 
     const local = localMap.get(cloud.id);
     if (!local) {
       writes.push(cloud);
+      confirmed.push(cloud.id);
       added++;
     } else {
       const localTime = safeTimestamp(local.updatedAt) || safeTimestamp(local.createdAt);
       const cloudTime = safeTimestamp(cloud.updatedAt) || safeTimestamp(cloud.createdAt);
       if (cloudTime > localTime || (cloudTime > 0 && localTime === 0)) {
         writes.push(cloud);
+        confirmed.push(cloud.id);
         updated++;
       } else {
+        // The cloud holds this id at the SAME revision, so it demonstrably has a
+        // copy of the local row — stop counting it as unsynced local work. A
+        // cloud copy that is OLDER keeps its marker: a template is mutable, so a
+        // newer local edit really can still be unpushed. (Sessions clear only the
+        // rows they write for the same reason; water clears every reported id
+        // because a water entry is an immutable amount.)
+        if (cloudTime > 0 && cloudTime === localTime) confirmed.push(cloud.id);
         kept++;
       }
     }
@@ -298,6 +378,13 @@ export const mergeWorkoutTemplatesFromCloud = async (
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error ?? new Error('Merge transaction aborted'));
     });
+  }
+
+  // A row the cloud reported at or ahead of our revision demonstrably has a
+  // cloud copy, so its ledger marker is no longer real risk. Leaving it would
+  // make the sign-out warning fire forever for a template that is safely stored.
+  for (const templateId of confirmed) {
+    await clearUnsyncedRecordMarker(STORES.WORKOUT_TEMPLATES, templateId);
   }
 
   return { added, updated, kept, deleted };
