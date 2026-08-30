@@ -116,6 +116,21 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
             const isEditing = editingSetIndex === index;
             const isCompleted = !!set.completedAt;
 
+            // One declaration used to serve three row states, so it could not be
+            // swept: the EDITING row's own fill is the bright mint (--fs-accent
+            // below), where near-black --fs-primary ink reads 7.16:1 (light) to
+            // 15.85:1 (dark+HC) -- correct as is. Blanket-swapping it to
+            // --fs-edge would put dark's rgba(255,255,255,0.42) on that mint at
+            // 1.24:1 and destroy a passing edge. Only the PENDING row moves: it
+            // sits on --fs-surface, where --fs-primary measured 1.05:1 (dark)
+            // and 1.06:1 (dark+HC) -- no visible outline at all -- against
+            // --fs-edge's 4.10:1 / 21:1. The completed row keeps --color-check.
+            const rowBorderColor = isEditing
+              ? 'var(--fs-primary)'
+              : isCompleted
+                ? 'var(--color-check)'
+                : 'var(--fs-edge)';
+
             return (
               <div
                 key={setKeys[index]}
@@ -125,7 +140,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                     : isCompleted
                       ? 'color-mix(in srgb, var(--color-check) 8%, transparent)'
                       : 'var(--fs-surface)',
-                  border: `2px solid ${isEditing || !isCompleted ? 'var(--fs-primary)' : 'var(--color-check)'}`,
+                  border: `2px solid ${rowBorderColor}`,
                   borderRadius: 12,
                   padding: 16,
                 }}

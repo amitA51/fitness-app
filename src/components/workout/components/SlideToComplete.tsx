@@ -488,7 +488,16 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
       className="relative w-full select-none overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 disabled:cursor-not-allowed"
       style={{
         height: TRACK_HEIGHT,
-        background: `${patternFill}, var(--fs-primary)`,
+        // --fs-panel: this track is deliberate dark chrome on the PAGE backdrop.
+        // WorkoutBottomBar sets the footer to --fs-bg on purpose (it stays visible
+        // behind a sheet, so an opaque surface avoids a second backdrop sample on
+        // the same pixels) -- a page backdrop, which is exactly where --fs-panel is
+        // sanctioned, not the --fs-surface-2 case that reads 1.00:1. --fs-primary
+        // measured 1.06:1 there in both dark and dark+HC, so the app's hottest
+        // control had no edge; --fs-panel is 1.39:1 / 1.64:1, and the
+        // --color-ink-on-dark label on it stays 13.27:1 (dark), 12.80:1
+        // (light+HC) and 11.23:1 (dark+HC).
+        background: `${patternFill}, var(--fs-panel)`,
         borderRadius: 999,
         opacity: disabled ? 0.48 : 1,
         cursor: disabled ? 'not-allowed' : isDragging ? 'grabbing' : 'grab',

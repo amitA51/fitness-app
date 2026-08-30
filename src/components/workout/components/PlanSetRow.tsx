@@ -161,7 +161,13 @@ const PlanSetRow = memo<PlanSetRowProps>(
           style={{
             width: 28,
             height: 28,
-            background: 'var(--fs-primary)',
+            // --fs-panel is legal here: the badge sits inside the exercise card,
+            // whose fill is --fs-surface (WorkoutPlanScreen.tsx:274), NOT the
+            // elevated --fs-surface-2 that would make this token 1.00:1. As a
+            // deliberate dark chrome band --fs-primary vanished at 1.05:1 (dark)
+            // and 1.06:1 (dark+HC); --fs-panel is 1.25:1 / 1.47:1. The --fs-accent
+            // numeral on it stays far clear: 8.84:1 (dark), 10.25:1 (both HC).
+            background: 'var(--fs-panel)',
             color: 'var(--fs-accent)',
             fontFamily: 'var(--font-mono)',
             fontSize: 12,

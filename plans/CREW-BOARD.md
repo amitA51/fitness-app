@@ -6155,3 +6155,335 @@ epilogue that keeps dying.
   suspects. **A site is NOT automatically broken** — near-black ink on a bright mint fill is correct in
   all four states, and an earlier round caught 12 sites a mechanical sweep would have damaged. Verify
   your method against figures the repo publishes for itself before trusting your own arithmetic.
+
+
+---
+
+# Batch 30 CLOSED — committed `73c128a`, pushed. Batch 31 dispatched 2026-08-30 11:26.
+
+### Verified baseline — 2026-08-30 11:22, MINE, on a confirmed-static tree
+All 8 runs terminal. Newest `src/` mtime 10:38 — i.e. **batch 30 changed ZERO `src/` files**, exactly
+as designed. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **726** files (unchanged — no `src/` edits) |
+| `npm run test:run` | **187 files / 1595 tests**, exit 0 both runs — **floor held exactly** |
+| `npx playwright test --list` | **122 tests / 15 files**, exit 0 (was 112; +10 T-092 capture tests) |
+| debris | e2e 15 specs, zero scratch, `test-results/` + `playwright-report/` swept |
+| commit | **`73c128a`**, 3 files, +1155/−0. HEAD == origin. `master` untouched at `3bf1f7f`, **31 commits behind.** |
+
+## [T-092] The capture round — ⏱ TIMED OUT (the SIXTH), evidence recovered, **g1 and g2 COMPLETE**
+- status: **partially accepted — 26 usable frames + 32 per-frame measurement records recovered from disk**
+- **⚠️ THE FIVE HARDENED RULES ALL HELD, AND THE DEATH MOVED.** Rounds 1, 2, 4 and 5 died in the
+  epilogue (three of them literally `Get-ChildItem`-ing their own PNGs). This one died **inside
+  `npx playwright test`** — one invocation, no self-enumeration, no report attempted. So the epilogue
+  is fixed. **And the binding priority order is what saved the round:** it did g1, then g2, then g3,
+  so the most valuable group is 100% on disk.
+- **✅ g1 COMPLETE — all five newly-capped pages × light/dark × 390/1280 = 20 frames.** Accessibility
+  statement, legal doc, progress, public profile, workout detail. This is the group that proves
+  batch 29's largest change and it is fully captured.
+- **✅ g2 COMPLETE AND BEYOND BRIEF — Settings at 1280 in ALL FOUR theme states** (I asked for 1280;
+  it got light, dark, light+HC, dark+HC).
+- **g3 PARTIAL** — sheet grabber at light and light+HC; **the two tight 36×4 grabber crops wrote
+  0 BYTES.** The full-sheet frames at the same states are 20–21KB and fine, so the sheet rendered and
+  the tight clip is what failed. Dark and dark+HC not reached.
+- **g4 (numpad cue) and g5 (set editor) not reached.**
+- `visual-qa/t092-capture.json` — **39KB, 32 records, written PER FRAME during capture** as required
+  rather than as a final aggregation pass. That requirement is why the measurements survived a
+  timeout for the first time.
+- Spec +736 lines inside its declared file; `--list` proves it parses.
+
+### ⚠️ TWO TOOLING DEFECTS THIS ROUND EXPOSED — fix BEFORE the next capture
+1. **`visual-qa/s26-measure.json` was CLOBBERED, 75KB → 1.3KB.** `e2e/settings-s20.spec.ts:1539`
+   still writes that path for the OLD s26 pass, and that pass was cut off by the timeout right after
+   writing its `meta` block. **The batch-26 raw measurements are gone.** Their conclusions survive in
+   `reports/visual-qa-s26.md` (committed `07106b7`), so nothing load-bearing was lost — but the s26
+   writer must be **removed or made append-only** or the next round destroys the round before it.
+2. **The 0-byte grabber crops.** A tight clip on a 36×4 element produced empty PNGs twice.
+
+### ⚠️⚠️ SIX ROUNDS. I AM CHANGING THE SHAPE AGAIN, AND THIS TIME IT IS THE LIST, NOT THE EPILOGUE.
+Diagnosis, from where this one died versus the previous five: the epilogue rules WORKED. What is left
+is that **five groups × up to four theme states × two widths does not fit in 30 minutes on this host**
+— a build up front, then a `localStorage` + IndexedDB wipe and a fresh navigation per combination.
+**NEW RULE: a capture worker gets ONE OR TWO groups, never five.** And the remaining three groups
+are the EXPENSIVE ones — g3/g4/g5 all require driving into a live workout, which g1/g2 did not.
+So the next capture round is: fix the two spec defects, then shoot g3-dark + g4 + g5 only.
+**That round is batch 32, not this one** — batch 31 writes `src/components/workout/**`, which is
+exactly the tree those three groups photograph.
+
+## [T-093] Ink on a fixed bright fill — ACCEPTED 2026-08-30 11:20. `plans/HEADING-ON-ACCENT.md`, 348 lines
+- status: **done** — one file written, read-only elsewhere. No gate, no build, no browser, no git.
+  **No scratch script ever existed** — all contrast arithmetic ran as inline PowerShell.
+- **VERDICT: the family is SMALL — 8 sites / 12 declarations — against 26 sites that are
+  byte-identical to a grep and are CORRECT.** A mechanical sweep would have damaged 26 to fix 8.
+  **Third and largest quantification of that hazard in this repo** (12 sites in an earlier round, 12
+  in another). Roughly 3:1 against.
+- **Method verified against FOURTEEN figures this repo publishes for itself, all exact**, including
+  the brief's own 7.16 / 1.50 / 1.25 / 1.25 and `SettingsPrimitives`' 8.90 / 10.98 / 16.82 / 16.82.
+  Three alpha-composited figures elsewhere come out **0.01 low from 8-bit channel rounding** —
+  disclosed, and **no ledger number depends on compositing.**
+- **FIVE PREVIOUSLY UNLOGGED SITES, and three are unfindable by the methods we have been using:**
+  1. **`global.css:395` `.block-hero`** — accent fill + `--fs-heading`, **in a STYLESHEET**, feeding
+     two further inherited text roles.
+  2. **⚠️ `global.css:408` `.block-hero .label` IS THE WORST SITE IN THE APP AND THE ONLY FOUR-STATE
+     FAILURE: 3.32 / 1.47 / 1.12 / 2.02.** Cause is **the high-contrast fall-through trap** —
+     `--fs-ink-muted` is undeclared in the HC block, so **light+HC and dark+HC resolve it
+     DIFFERENTLY.** That is the **THIRD instance** of that exact trap here (`--fs-accent-text` in
+     batch 22, `--color-drag-handle` in batch 28).
+  3. **⚠️ `WorkoutSummary.tsx:942` has NO `color` declaration at all** — it inherits `--fs-ink` from
+     `body`. **So no token sweep can ever find this site.** A genuinely new methodological finding,
+     not another row.
+  4. `ExerciseReorderItem.tsx:261`.
+  5. **Two more unconditional heading-ink chips in `SettingsPrimitives`** — the file whose
+     already-fixed sibling was the ONLY logged instance of the family. **The original audit found one
+     and walked past two neighbours.**
+- **TWO CORRECTIONS TO MY BRIEF, PLUS ONE TO ITS OWN METHOD:**
+  - `SetEditBottomSheet.tsx:334` is **NOT** the site — that button carries its own surface fill. The
+    real defect is a **WRAPPER fill at `:123-124`** governing four declarations at `:141, :160, :222,
+    :303`.
+  - **It caught its OWN false negative:** its first pass missed that site because `background:` and
+    `var(--fs-accent)` sit on **separate lines**. It noticed, re-ran multi-line-aware — **and that is
+    also how the `WorkoutSummary` inherited-ink case surfaced.** A worker finding and fixing a flaw in
+    its own instrument.
+  - `SettingsPrimitives.tsx:162` was **already fixed**, with a comment quoting the exact figures.
+- **CORRECT-AS-IS CALLS A SWEEP WOULD HAVE BROKEN:** `SupersetPicker.tsx:196` measures 1.00:1 in
+  three states **but its glyph renders only when selected**; `.day-cell.rest` puts theme-varying ink
+  on an accent-**DERIVED** fill and **PASSES at 4.64 / 4.89 / 4.78 / 4.78 — diluting the mint to 46%
+  is what makes it legal.**
+- **IT DID NOT INVENT A TOKEN FOR THE ONE SITE THAT HAS NONE.** Muted ink on a bright fill has no
+  token in this app. It measured the house technique instead:
+  **`color-mix(--color-ink-on-accent 72%, --fs-accent)` clears all four at 5.03 / 5.69 / 8.28 / 8.28,
+  and it published that 66% misses light at 4.31.**
+  **MY RULING: use the 72% mix.** Flattening to `--color-ink-on-accent` would make the muted label
+  the same colour as the primary heading and **erase the muted/primary hierarchy**; the mix preserves
+  the hierarchy AND clears the floor. Recorded so it is not re-litigated.
+- Four file-exclusive fix batches (A–D) defined, parallel-safe.
+
+---
+
+# Batch 31 — dispatched 2026-08-30 11:26. Autonomous. Tree clean at `73c128a`.
+
+### Sequencing decided: read the evidence, then finish the token sweep. NO capture this batch.
+26 frames and 32 measurement records are on disk and **nobody has read them** — that is the same
+liability that justified batch 30 in the first place, and it is now cheap to close because the verdict
+worker needs no browser (a shape that has finished first-try six times running).
+The four remaining `--fs-primary` sites go in beside it because their numbers are already in hand and
+they are on the app's hottest path. **The remaining captures (g3-dark, g4, g5) are batch 32** — they
+photograph `src/components/workout/**`, which T-096 writes this batch, and the two spec defects must
+be fixed first anyway.
+
+### Ownership map — disjoint
+- **T-094** → WRITES ONLY `reports/visual-qa-t092.md`. Read-only. **No browser, no build, no gates.**
+- **T-095** → `src/styles/tokens.css` (the `--fs-ink-muted` HC declaration ONLY) +
+  `src/styles/global.css`. **MUST NOT open `src/components/**` or `src/pages/**`.**
+- **T-096** → `src/components/workout/**` + a test. **MUST NOT open `src/styles/**`** — T-095 holds
+  both stylesheets this batch.
+- **`src/styles/tokens.css` is lead-serialized and T-095 holds it alone.**
+- **NO PLAYWRIGHT, NO BUILD, NO SERVER anywhere this batch.**
+
+## [T-094] Read the 26 frames two batches of arithmetic were waiting on
+- status: dispatched (batch 31)
+- owner: fitness-qa
+- goal: batches 28 and 29 shipped ~20 measured claims with no human eye on any of them. The frames
+  that settle the largest of those claims are now on disk.
+- done when: `reports/visual-qa-t092.md` states whether the five newly-capped pages really render as
+  a centred column at 1280 **with the page wash still full-bleed behind it**, whether 390 is
+  unchanged, whether Settings holds in **dark and dark+HC**, whether the sheet grabber reads at light
+  and light+HC, and every defect with its PNG
+- notes: NO browser — that constraint is what makes this finish. **Any pre-aggregated colour field in
+  a measure JSON is a trap that has both INVENTED and CONCEALED a defect** — sample glyph pixels.
+  Coverage is partial and must be stated as such: **g3 dark/dark+HC, g4 and g5 were never captured**,
+  and **two grabber crops are 0-byte files** — list them unverified, do not infer.
+  **`visual-qa/s26-measure.json` is now a 1.3KB stub — do NOT cite it.**
+
+## [T-095] The worst contrast site in the app, and the trap that caused it
+- status: dispatched (batch 31)
+- owner: fitness-design
+- goal: `global.css:408` fails the text floor in **all four** theme states (3.32 / 1.47 / 1.12 /
+  2.02) because `--fs-ink-muted` is undeclared in the high-contrast block, so the two HC states
+  resolve it differently. Fix the token AND the two `.block-hero` sites.
+- done when: verify green; test:run >= 1595; both sites stated as a number in all four states before
+  and after; the HC declaration proven to make both HC states agree
+- notes: **MY RULING, so it is not re-litigated: the muted label takes
+  `color-mix(--color-ink-on-accent 72%, --fs-accent)`** — measured at 5.03 / 5.69 / 8.28 / 8.28,
+  where 66% misses light at 4.31. Do NOT flatten it to `--color-ink-on-accent`: that erases the
+  muted-vs-primary hierarchy. **`--fs-primary` must NOT move** (dual-use). This is the THIRD instance
+  of the HC fall-through trap — check whether any sibling token in the same declaration is also
+  missing from that block, and say so rather than fixing only the one I named.
+
+## [T-096] The last four --fs-primary sites, and the test the sweep never got
+- status: dispatched (batch 31)
+- owner: fitness-design
+- goal: finish the set-logging segment (8 of 12 landed last batch) and give those 8 conversions the
+  load-bearing test they still lack.
+- done when: verify green; test:run >= 1595 plus a test that FAILS if any of the landed conversions
+  is reverted; each of the four stated as a number in all four theme states before and after
+- notes: numbers already in hand, do not re-derive from a plan doc — **`SetEditBottomSheet.tsx:128`
+  is a SPLIT BRANCH: the `!isCompleted` half sits on `--fs-surface` at 1.05 dark, so pending set rows
+  have no outline at all. It needs the branch split, not a blanket swap.** `StatsGrid.tsx:312` 1.31
+  dark · `PlanSetRow.tsx:164` 1.05 dark (`--fs-panel` is legal there) · `SlideToComplete.tsx:491`
+  1.06 dark (textbook `--fs-panel`, **but first confirm `WorkoutBottomBar.tsx:94` setting the bar to
+  `--fs-bg` is intentional**). **The consumption rule is written next to `--fs-panel`: over a
+  `--fs-surface-2` backdrop it is 1.00:1 in dark** — confirm each real backdrop before converting.
+  A site whose surround is `--fs-accent` or `--fs-signal` is **CORRECT as-is**; 20 such sites have
+  been caught across two rounds and converting one breaks working code.
+  **Do NOT fix the ink-on-accent sites in this tree** (`SetEditRow.tsx:334`,
+  `SetEditBottomSheet.tsx:123-124`, `ExerciseReorderItem.tsx:261`) — they are batch 32, deliberately,
+  so this task is not the one that runs out of budget the way its predecessor did.
+
+
+## [T-094] The t092 verdict — ACCEPTED 2026-08-30 11:57. `reports/visual-qa-t092.md`, 350 lines
+- status: **done** — one file written, read-only elsewhere. No gate, no browser, no git. **All NINE scratch
+  scripts deleted**, the 29 `t092-*` evidence files untouched. The browser-free verdict shape has now
+  finished first-try SEVEN times running.
+- **✅ THE REGRESSION I WAS MOST WORRIED ABOUT DID NOT HAPPEN, AND IT PROVED THE NEGATIVE PROPERLY.**
+  Capping the content did not shrink the page wash: in every dark frame the margins outside the column
+  measure `#000000` at mean luminance **0.000–0.008**. Had the wrong layer been capped they would read
+  near-white. **And it ran a SEAM TEST** — the median colour at x=[0..360) versus the strip just outside
+  the column differ by **0–1 per channel**, so there is no boundary where a capped background would have
+  ended. That is the right way to prove an absence rather than assert it.
+- **✅ Q3 IS THE CLEANEST RESULT IN THE ROUND: 64 of 64 sampled core pixels are EXACTLY the expected
+  composited colour**, in both captured states — **3.21:1 light and 21.00:1 light+HC, matching the
+  published figures exactly.** Pill measured exactly 36×4, centred to within 0.5px. So batch 28's grabber
+  arithmetic is now pixel-confirmed.
+- **Q1 PASS at 390 across 10 frames** (content x=[20..370]) and **Q2 PASS** — Settings' shell measures
+  x=400 w=480 in **all four** theme states, including dark and dark+HC which no round had ever captured.
+- **METHOD: 39 published figures reproduced, 34 within 0.01.** It hit FIVE apparent mismatches and
+  resolved every one rather than discarding them: **one was its own mis-attribution** (dark `--fs-accent`
+  is redefined in `html.dark`, and its "wrong" pair turned out to reproduce the published `--fs-ink` dark
+  figures exactly, which validated the arithmetic harder), and **four are STALE FIGURES in
+  `reports/04-A11Y-RTL-HEBREW.md`** — one older token pair reproduces all four exactly. **That table must
+  not be trusted for dark-theme work.** Fourth documented drift in our own docs.
+- **⚠️ THE PRE-AGGREGATED COLOUR FIELD TRAP FIRED AGAIN — FOURTH INSTANCE.** `inkOnFill` / `sampledInk` /
+  `inkShare` report **1.29 for ink that really measures 16.19:1**. It did not use them, and it also
+  guarded the crop margin (116px, deviation 0) — the exact hazard that nearly produced a fabricated bug
+  two batches ago.
+- **⚠️ F1 MEDIUM — THE PAGE TITLE IS STRANDED OUTSIDE ITS OWN CONTENT COLUMN, AND NOW IT IS MEASURED.**
+  196–272px to the right of the column it introduces, with a **240px empty gap** and zero edge energy
+  between them. **This is the `PageHeader` item two independent workers flagged in batches 28 and 29 —
+  now confirmed with pixels.** And it was careful about causation: "plausibly caused by capping the
+  content while the header stayed full-width — but I have no before-frame, so I reported it as observed
+  state rather than asserting a regression." Correct discipline on a claim it could not close.
+- **⚠️ F3 MEDIUM, unrelated to this batch:** `/u/:username` emits **2 console errors (HTTP 400) on every
+  load.** New finding.
+- F2 LOW — a faint 12–13px notch at x=1021 on Settings and public profile; at 1.05–1.11:1 seam contrast
+  it graded it LOW rather than inflating it. O1 — the HC page is not pure black (~1.22:1).
+- **⚠️ COVERAGE IS WORSE THAN MY BRIEF STATED, AND IT SAID SO INSTEAD OF INFERRING.** `workout-detail`
+  rendered with `pageShellCount: 0` and `public-profile` rendered "not found" — **both probe IDs do not
+  exist in the seeded data.** So **Q1 is verified for THREE of its five pages, not five.** Those two plus
+  the sheet in dark/dark+HC, the numpad and the set editor are all in an explicit 14-item
+  could-not-determine list.
+
+## [T-095] The four-state failure — ACCEPTED 2026-08-30 11:55. **And it derived the general rule.**
+- 2 files, exactly its ownership (`tokens.css` + `global.css`). No scratch file ever created — inline
+  one-liners only. Method verified against 3 published figures **plus it reproduced ALL FOUR of my
+  before-numbers exactly** (3.32 / 1.47 / 1.12 / 2.02 and the heading's 7.16 / 1.50 / 1.25 / 1.25).
+- **The label: 3.32 / 1.47 / 1.12 / 2.02 → 5.02 / 5.69 / 8.28 / 8.28.** The heading: **1.50 dark → 10.98**,
+  and **1.25 → 16.82** in both HC states.
+- **THE TWO FURTHER INHERITED ROLES I FLAGGED ARE CONFIRMED AND CARRIED BY ONE DECLARATION** — `.number`
+  and `.sub` declare no colour, so the parent's ink fixes all three at once. No half-fix.
+- **⚠️ THE PROOF THE TRAP IS CLOSED IS STRUCTURAL, NOT MEASURED.** After the fix both inks derive from
+  `--color-ink-on-accent` and `--fs-accent`, **both declared INSIDE the HC block**, so the two HC states
+  resolve to the same colour BY CONSTRUCTION: label 8.28 = 8.28, heading 16.82 = 16.82. And
+  `--fs-ink-muted` itself now resolves `#f2f2f2` in both HC states (was `#f2f2f2` vs `#a3a3a3`), so its
+  remaining consumers are pinned too.
+- **It disagreed with my 72% figure by 0.01 and explained WHY:** exact float mixing gives 5.02; quantise
+  to 8-bit first — which is what actually rasterizes — and it is 5.03, my number. Both right, they differ
+  only in where you round. **My 66% ruling held** (it measured 4.32 vs my 4.31 — fails either way).
+- **Light is NOT byte-identical and it named the change:** the label had to move because 3.32 fails in
+  light too.
+- **⚠️⚠️ THE SIBLING SWEEP FOUND THREE MORE, TWO FAILING — AND IT DERIVED THE GENERAL RULE THAT SEPARATES
+  A REAL TRAP FROM NOISE.** 89 tokens are declared in `:root` and `html.dark` but absent from HC; most are
+  harmless. The rule:
+  > **A token omitted from the HC block diverges across the two HC states IFF at least one of its
+  > declarations is a LITERAL. If every declaration is a `var()` whose chain terminates at an HC-declared
+  > token, both HC states agree for free.**
+  Applied to ink-role tokens it surfaces: **`--stone-light` via `--color-text-muted` at 3.93 FAILING in
+  light+HC** — and the subtle part, **that alias LOOKS safe because both its declarations are `var()`, but
+  the chain terminates at a literal HC never declares, so it silently FORWARDS the hole**;
+  **`--label-tertiary` at 4.24 FAILING in dark+HC**, i.e. the OPPOSITE state; `--label-secondary`
+  (disagrees, both pass); `--ink-rgb`, **the highest latent risk** — consumed as `rgba(var(--ink-rgb), α)`
+  for text it would paint near-black ink on the HC black page.
+  **Honest caveat it stated: it could NOT verify which of these are actually used as text, because usage
+  lives in files another worker held this batch.**
+  **MY RULING: they do NOT get fixed piecemeal.** The rule above turns this into a BOUNDED, COMPLETE
+  audit — enumerate every token absent from the HC block, check whether any declaration is a literal,
+  then verify usage. Fixing three tokens whose consumers nobody has seen is exactly the mechanical-sweep
+  mistake that has already cost 20+ sites here. **Batch 32, as one task.**
+- **⚠️ A TEST-PARSER LANDMINE, and it fixed its own comment rather than the test.** `NumpadGrabCue.test.tsx`
+  parses `tokens.css` with a `--token:`-shaped regex that does NOT strip comments, so **any comment prose
+  containing `--some-token:` is read as a real declaration.** Its first two comment drafts broke that test
+  twice; it rewrote the prose. **There is a PRE-EXISTING instance at `global.css:120`** waiting for whoever
+  writes the next test that parses `global.css`.
+- Its `verify` came back exit 2 with six TS errors **all in T-096's file**, and it **proved its own two
+  files clean in isolation first** (biome on just its files, `lint:check`, `format:check` all exit 0) then
+  named the foreign file and STOPPED. Correct lane discipline. My own run confirms the tree ends green.
+
+## [T-096] The last four token sites + the missing test — ACCEPTED 2026-08-30 11:57
+- 4 modified + 1 new test, exactly its ownership. `src/styles/**` untouched. Method verified against
+  **six** published figures. Scratch script deleted, confirmed absent.
+- **SITE 1 IS THE ONE THAT JUSTIFIED THE WHOLE TASK, AND IT MEASURED THE COUNTERFACTUAL.** One
+  declaration served THREE row states, which is why no sweep could touch it. Only the PENDING half moved:
+  **1.05 dark / 1.06 dark+HC → 4.10 / 21.00** — pending set rows had **no visible outline at all**. The
+  EDITING half sits on the mint and stays: **a blanket swap would have composited dark `--fs-edge` over
+  the mint to 1.24:1, destroying an edge that reads 11.57:1 today.**
+- **SITE 2 — it REJECTED `--fs-panel` with the consumption rule:** in dark that token IS `--fs-surface-2`,
+  which is this site's own backdrop = **1.00:1**. Used `--fs-edge`: **1.31 dark → 3.89**, and
+  **1.25 / 1.05 → 18.88** in both HC states. PR branch keeps its mint.
+- **SITE 3 — it found the REAL backdrop rather than the nearest one:** the badge sits inside the exercise
+  card (`--fs-surface` at `WorkoutPlanScreen.tsx:274`), NOT the `--fs-surface-2` add-set button further
+  down. So `--fs-panel` is legal. 1.05 → 1.25 dark; 1.06 → 1.64 dark+HC.
+- **SITE 4 — it CHECKED THE PRECONDITION I ASKED FOR AND FOUND THE REASON WRITTEN DOWN.**
+  `WorkoutBottomBar.tsx:94` sets the footer to `--fs-bg`, and the comment at `:92-93` documents why ("can
+  remain visible behind a sheet... avoiding a second backdrop sample on the same pixels"). Deliberate, and
+  a page backdrop is exactly where `--fs-panel` is sanctioned → converted. **1.06 → 1.39 dark, 1.06 → 1.64
+  dark+HC**, on the app's hottest control.
+- **THE REVERT MEASUREMENT IS FOUR-PHASE, not two:** head **11 pass** · only its four reverted **4 fail** ·
+  only the eight landed reverted **3 fail** · all twelve reverted (true pre-conversion code) **7 fail** ·
+  restored **11 pass**. **So 7 of 11 assertions fail on pre-conversion code and 4 are regression guards** —
+  and it named which four and what they pin.
+- **⚠️ THE TEST DESIGN IS SHARPER THAN I SPECIFIED: the counts fail in BOTH directions.** `toBe(8)` on
+  `--fs-edge` edges and `toHaveLength(1)` on `--fs-primary` edges catch reverting a converted site AND
+  sweeping a mint-backed one. So the four correct-as-is sites now break the BUILD instead of the contrast.
+- **⚠️ A VACUOUS-TEST TRAP CAUGHT: `border` shorthand containing `var()` does NOT round-trip through
+  `el.style.border` in jsdom — it returns `''`, which would have made every assertion PASS while testing
+  nothing.** It reads the authored `style` ATTRIBUTE instead. Copied the pointer polyfill and
+  `setPointerCapture` stub as instructed.
+- **⚠️ SIX MORE `--fs-primary` SITES IN `SetEditBottomSheet.tsx` IT WAS NOT ASSIGNED** — `stepperButtonStyle`
+  at :30-31 plus borders at :205, :266, :336, :355-356. **Line 31's `2px solid` sits on an `--fs-surface`
+  fill, i.e. 1.05:1 in dark — the same defect family.** Line 30's fill carries `--fs-accent` ink, so likely
+  correct-as-is. **So the twelve-site plan either scoped these elsewhere or never enumerated them** —
+  another count drift in `FS-PRIMARY-EXPOSURE.md`, the fourth.
+- Disclosed, not taken: the `PlanSetRow` badge now reads 1.25 / 1.64 against its card, which is the
+  documented figure for a card backdrop and NOT a 3:1 boundary — the mint numeral carries legibility. An
+  added `--fs-edge` ring is a design decision it declined to take alone.
+
+### Verified baseline — 2026-08-30 11:59, MINE, on a confirmed-static tree
+All 11 runs terminal. Newest `src/` mtime 6 minutes old before any gate ran. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **727** files (726 + 1 new test file) |
+| `npm run test:run` | **188 files / 1606 tests**, exit 0 both runs — **NEW FLOOR** |
+| arithmetic | 187+1=188 files; 1595 + 11 (T-096) = 1606. T-094 and T-095 added none. **Nothing deleted, skipped or weakened.** |
+| `npx playwright test --list` | **122 tests / 15 files**, exit 0 (unchanged) |
+| RTL | **zero new physical-direction CSS.** The two `marginRight: 3` hits at `SetEditBottomSheet.tsx:436,457` are PRE-EXISTING — confirmed absent from this batch's diff. Backlog. |
+| debris | e2e 15 specs, zero scratch anywhere (root, `visual-qa/`, `e2e/`), `test-results/` swept |
+
+### Backlog changes from batch 31
+**CLOSED:** the four-state `.block-hero` failure · the HC fall-through on the muted ink token · the last
+four set-logging `--fs-primary` sites · the missing load-bearing test on all twelve conversions ·
+batch 29's page-cap claim (pixel-confirmed, 3 of 5 pages) · batch 28's grabber claim (64/64 pixels exact).
+**NEW:** three more HC fall-through holes, two failing (`--stone-light` 3.93 light+HC, `--label-tertiary`
+4.24 dark+HC, `--ink-rgb` latent) — **to be done as ONE bounded audit using T-095's literal-vs-alias rule,
+not piecemeal** · six more `--fs-primary` sites in `SetEditBottomSheet.tsx` · `/u/:username` emits two
+HTTP 400 console errors on every load · `reports/04-A11Y-RTL-HEBREW.md`'s dark figures are STALE (four
+proven) · the `--token:`-in-a-comment parser landmine, pre-existing at `global.css:120` · two pre-existing
+`marginRight: 3` sites · the `workout-detail` and `public-profile` probe IDs do not exist, so those two
+pages are still unphotographed · the capture spec still clobbers `s26-measure.json` and still writes
+0-byte tight crops.
+**MEASURED AND NOW HIS CALL:** the page title sits **196–272px outside its own content column with a
+240px empty gap** at 1280. Two workers flagged it structurally in batches 28 and 29; T-094 has now
+measured it. The header is deliberately full-bleed today, so following the column is a design decision,
+not a bug fix.

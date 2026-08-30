@@ -309,7 +309,12 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
             gap: 12,
             padding: '18px 20px',
             background: 'var(--fs-surface-2)',
-            border: `2px solid ${heroIsPr ? 'var(--fs-accent)' : 'var(--fs-primary)'}`,
+            // --fs-edge, not --fs-panel: the sibling fill above is --fs-surface-2,
+            // and dark --fs-panel IS --fs-surface-2 -- it would land at exactly
+            // 1.00:1 here. As a control edge on that elevated surface --fs-primary
+            // measured 1.31:1 (dark) and 1.05:1 (dark+HC); --fs-edge is 3.89:1 /
+            // 18.88:1. The PR branch keeps --fs-accent: the mint is the reward.
+            border: `2px solid ${heroIsPr ? 'var(--fs-accent)' : 'var(--fs-edge)'}`,
             borderRadius: 'var(--radius-card)',
           }}
         >

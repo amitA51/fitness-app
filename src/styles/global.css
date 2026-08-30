@@ -389,10 +389,20 @@ body {
     color: var(--color-ink-on-dark);
   }
 
-  /* Mustard Block — hero stat */
+  /* Mustard Block — hero stat.
+     The fill is --fs-accent, which is a FIXED bright mint in every state, so its
+     ink must be an on-accent token, never a theme-varying page-ink token. It was
+     --fs-heading, which lightens with the theme while the fill stays bright:
+     7.16 light / 1.50 dark / 1.25 light+HC / 1.25 dark+HC against the 4.5:1 text
+     floor — three of four failed, and --fs-heading's own declaration in
+     tokens.css says "NEVER on accent/primary fills ... Use --color-ink-on-* there".
+     --color-ink-on-accent is declared in :root, html.dark AND html.high-contrast,
+     so all four states are pinned: 8.90 / 10.98 / 16.82 / 16.82.
+     This one declaration carries THREE text roles — the block's own heading ink
+     plus .number and .sub below, which declare no colour and inherit it. */
   .block-hero {
     background: var(--fs-accent);
-    color: var(--fs-heading);
+    color: var(--color-ink-on-accent);
     padding: 28px 22px;
     position: relative;
   }
@@ -403,9 +413,20 @@ body {
     font-weight: 600;
     letter-spacing: -0.01em;
     margin-bottom: 8px;
-    /* ink-muted instead of opacity: 0.75 on the heading ink — on dark the
-       multiplicative opacity left the label sub-AA (visual QA, nutrition). */
-    color: var(--fs-ink-muted);
+    /* Muted ink on a bright fill has no token of its own, so it is derived from
+       the two tokens already in this rule by the house technique (a uniform
+       operation on the existing accent — no third hue): the on-accent ink mixed
+       toward the accent, which keeps the label QUIETER than the heading above it
+       instead of flattening both to the same colour and erasing the
+       muted-vs-primary hierarchy these two elements exist to express.
+       72%, measured: 5.02 light / 5.69 dark / 8.28 light+HC / 8.28 dark+HC.
+       Not 66% — that lands at 4.32 in light and misses the 4.5:1 floor.
+       Was the muted ink token, which measured 3.32 / 1.47 / 1.12 / 2.02 — the
+       app's only four-state failure, because that token was absent from the
+       html.high-contrast block and the two HC states inherited different values.
+       It is declared there now (tokens.css), so the HC pair agrees for its
+       remaining consumers. */
+    color: color-mix(in srgb, var(--color-ink-on-accent) 72%, var(--fs-accent));
   }
 
   .block-hero .number {

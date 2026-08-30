@@ -663,6 +663,21 @@ html.high-contrast {
   --fs-surface-2: #111111;
   --fs-ink: #ffffff;
   --fs-muted: #f2f2f2;
+  /* THE THIRD INSTANCE of this block's recurring hole, after --fs-accent-text and
+     the --color-drag-handle case below. This token had no declaration here, so the
+     two HC states inherited DIFFERENT values — light+HC fell through to the :root
+     alias of --fs-muted (#f2f2f2, resolved against this block) while dark+HC kept
+     html.dark's LITERAL #a3a3a3, because html.dark and html.high-contrast have
+     equal specificity and no combined selector. On the --fs-accent hero fill that
+     read 1.12:1 and 2.02:1 — the app's only four-state failure, and the two HC
+     numbers disagreeing was the tell.
+     Aliasing --fs-muted is safe here for the same reason the grabber can alias
+     the border token — that target is declared in THIS block, so both HC states
+     resolve to the same #f2f2f2 (18.76:1 on the black page/card). The general rule
+     this block keeps re-learning is that a token omitted here is only safe if
+     EVERY declaration of it is a var() whose chain terminates at an HC-declared
+     token — one literal anywhere and the two HC states diverge. */
+  --fs-ink-muted: var(--fs-muted);
   --fs-heading: #ffffff;
 
   /* Borders become visible structure rather than a hint. */
