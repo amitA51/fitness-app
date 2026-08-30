@@ -5860,3 +5860,139 @@ My focused shortlist was four items. I verified all four in the code first, and 
   copies. **Where they disagree, the value that SHIPS today on the surface the user actually meets
   wins**; say which surface that is per key rather than picking by preference. Do NOT change what an
   existing user has already stored, and do NOT touch `src/styles/**` or `src/pages/**`.
+
+
+## [T-086] The invisible drag cue — ACCEPTED 2026-08-30 10:09. **All four states now clear the floor.**
+- 3 files, exactly its ownership (`tokens.css` — that token only, `NumpadOverlay.tsx`, 1 new test).
+- **Grabber vs the SHEET's own fill:** light **1.51 → 3.21** · dark **1.84 → 3.20** · light+HC
+  **1.04 → 21.0** · dark+HC **1.66 → 21.0**.
+- **⚠️ MY DIAGNOSIS CONFIRMED AND SHARPENED: light+HC was 1.04:1, the worst of the four**, purely
+  because the token had no `html.high-contrast` declaration and fell through to `:root`'s near-black
+  pill onto a now-black sheet. That is why the defect spanned four states rather than two.
+- **⚠️ IT REFUSED THE ALPHA I OFFERED AS PRECEDENT, WITH ARITHMETIC.** `--fs-edge`'s `0.42` was
+  derived for the ELEVATED `#262626` surface; on the sheet fill it measures **4.10:1** —
+  "overshooting a grabber into a rule". It derived its own per state and published the steps it
+  rejected (.47 = 2.95, .48 = 3.04, .50 = 3.21), choosing so light and dark land at the same
+  measured presence rather than at the bare minimum.
+- **⚠️ THE NUMPAD CUE USES A DIFFERENT TOKEN, AND THE REASON IS THE GOOD PART.**
+  `--color-drag-handle` is tuned against `--fs-surface` and is dark ink in light; on the numpad's
+  NAVY masthead it measures **1.02:1** — i.e. reusing it would have reintroduced the exact defect it
+  was fixing. It used `--color-ink-on-dark`, which **`--fs-panel`'s own comment names** as the ink
+  for dark chrome (11.2–15.1:1 across the four states). Same 36×4 geometry, same radius.
+- **Both `--fs-primary` sites in the numpad fixed:** the 2px top rule — its ONLY separation from the
+  page, because its fill IS the page colour — **1.06 → 3.95** dark via `--fs-edge`; the masthead band
+  the gesture listens on → `--fs-panel`, **and it checked the consumption rule** (backdrop is
+  `--fs-bg`, a page colour, not `--fs-surface-2`, so permitted). `--fs-primary` itself untouched.
+- **It checked the cascade trap instead of assuming.** For the HC block it used
+  `var(--color-border)` and verified that token IS declared inside the HC block — unlike
+  `--navy-light`, which was the trap — so light+HC and dark+HC cannot disagree. **Its test asserts
+  that premise mechanically** rather than trusting it.
+- Honest about what moved: light is **NOT** byte-identical for the pill (it had to leave 1.51:1);
+  light IS byte-identical for both numpad sites **by construction**, since `:root` aliases both new
+  tokens to `--fs-primary`.
+- Load-bearing proof: reverted all five changes → **5 of 6 fail**. And it named the sixth as a
+  pass-either-way guard (that the gesture and keypad still work), rather than implying all six proved
+  the fix.
+- Method verified against **three** figures `tokens.css` already records for itself, reproduced exactly.
+- **⚠️ REAL A11Y GAP IT FOUND, LARGER THAN ITS OWN TASK:** `Sheet.tsx:78` marks the pill
+  `aria-hidden="true"` and **there is no accessible drag affordance anywhere** — on both sheet shapes
+  the gesture is pointer-only, unreachable by keyboard or screen reader. Not a blocker (a close button
+  exists), but it deserves its own task.
+- Also named, untouched: the numpad's `boxShadow` is a hardcoded navy literal, invisible in dark ·
+  `.glass-surface-dark` sets a background every consumer overrides inline.
+
+## [T-087] Settings uncapped on desktop — ACCEPTED 2026-08-30 10:09
+- 2 files (`Settings.tsx` + 1 new test). `src/styles/**` and `src/pages/settings/**` untouched.
+- Content box at 1280: **~1198px → 440px**. There was never a cap to adjust — zero `max-w` in the file.
+- **It found the house precedent itself:** `Dashboard.tsx` already keeps the ambient wash full-bleed
+  on an outer div and puts `.page-shell` on an inner one — exactly the split needed so capping the
+  column does not shrink the page wash to a 480px strip. **Its fourth test asserts the wash is a
+  separate UNCAPPED ancestor**, so nobody collapses the two layers later.
+- **⚠️ IT DID NOT INVENT A MEASUREMENT.** jsdom has no layout engine and this project runs Vitest
+  with `css: false`, so it said so plainly and proved the cap by the resolved CSS chain
+  (`page-shell` → `max-width: var(--max-width)` → `480px`) instead of reporting a fabricated pixel.
+- **⚠️ IT CHECKED THE PADDING EQUIVALENCE I TOLD IT TO CHECK, AND THE TWO ARE NOT EQUIVALENT.**
+  Old `max(112px, 64px + inset)` vs `.page-shell`'s `92px + inset`: identical at inset 20, but the
+  old rule's visible gap above the nav **collapsed from 28px to 14px once the inset passed 34px**
+  (iPhone home bar). It kept `.page-shell`'s because that one is COMPOSED from the real
+  `--nav-height`, and **disclosed that "390px pixel-identical" is therefore true on the inline axis
+  only** — a caveat I did not ask for.
+- Load-bearing proof: reverted the two className values → **4 of 4 fail**.
+- **⚠️ THE SAME DEFECT IS IN FOUR MORE PAGES** — `Progress.tsx:209`, `LegalDocPage.tsx:72`,
+  `PublicProfilePage.tsx:108`, `AccessibilityStatement.tsx:66` all hand-roll the same
+  `pb-[max(7rem,…)]` with no `.page-shell`, plus a variant at `WorkoutDetail.tsx:113`. **Settings was
+  the second instance, not the last.** This is a family.
+- Also named: **`Dashboard.tsx` pays the bottom padding TWICE** (inline + `.page-shell`, ~204px
+  total), looks accidental · at 1280 `PageHeader` stays full-bleed outside the capped column, so the
+  title no longer aligns with its own content. It followed the Dashboard precedent and flagged this
+  for its own ticket rather than changing a sticky glass bar out of scope.
+
+## [T-088] One default-settings object instead of two — ACCEPTED 2026-08-30 10:09
+- 4 files: the two owners, 1 new test, plus one disclosed file outside its list (see below).
+- **Diff computed, not eyeballed: 57 keys vs 64.** The workout copy was a strict SUPERSET — 7
+  disagreements, 7 workout-only keys, **zero** context-only.
+- **⚠️ IT CORRECTED MY PREMISE, AND ITS VERSION IS STRONGER.** I wrote that which defaults a new user
+  gets "depended on which store woke first". It traced the read path: `SettingsProvider` mounts above
+  the whole tree (`App.tsx:29`), seeds a COMPLETE object from its own defaults, and `WorkoutProvider`
+  seeds `state.appSettings` from that. Every workout-side read consults its own defaults **only when a
+  key is `undefined`**, which for a shared key it never was. **So the workout copy's 7 differing
+  values were unreachable dead code, not a race.**
+- **It resolved each key by naming the surface that reads it**, per instruction — `voiceVolume` 0.7,
+  `longRestTime` 120, `autoAdvanceExercise` true, each with the file:line of the live consumer.
+- **⚠️ AND IT REFUSED TO GUESS ON THE OTHER FOUR.** `extendRestAfterFailure`,
+  `confirmExerciseComplete`, `timerDisplayMode`, `showMuscleGroupBalance` have **no surface at all** —
+  no control renders them and the four hooks exposing them (`useSmartRestSettings`,
+  `useWorkoutFlowSettings`, `useTimerDisplaySettings`, `useRestTimerSettings`) have **zero
+  consumers**. It said so explicitly instead of picking, noted the read path makes the observed value
+  determinate anyway, and kept the context's. An honest unknown reported as a result.
+- All 7 workout-only keys kept with their shipping values — the context left them `undefined`, so the
+  workout-side fallback was what users actually got.
+- **THE TEST ENFORCES ONE DEFINITION TWO WAYS:** reference identity through both import paths, and a
+  source scan allowing exactly one DECLARING file. It stated why a field-by-field comparison would not
+  do: that still passes with two copies present.
+- Load-bearing proof: reintroduced the divergence → **2 failed** with the exact identity and
+  declaring-file messages. Restored from a byte-exact backup, hash verified.
+- **⚠️ ONE FILE BEYOND ITS LIST, AND TAKING IT WAS CORRECT.** `sheetDragAdoption.test.tsx` mocked
+  `SettingsContext` wholesale, so once the overlay reached the constant through that module the mock
+  threw. **Both other workers saw that failure and correctly attributed it to this task; this worker
+  traced it and identified it as its OWN breakage rather than an in-flight edit**, which is exactly
+  the distinction my stop-and-report rule needs a worker to make. Fixed with vitest's prescribed
+  `importOriginal`; the `useSettings` stub is byte-identical and all 7 drag assertions untouched. It
+  **rejected the alternative** (inverting the dependency) because that would pull speech synthesis
+  and the workout reducer into the app-root import graph to satisfy a test mock.
+- Risk disclosed: the 7 new keys are now WRITTEN into a new user's stored `appSettings` where they
+  were previously absent and resolved by fallback. Effective read identical for all 14; `mergeSettings`
+  still spreads stored over defaults, and a test asserts a device holding old workout-copy values
+  (e.g. `longRestTime: 180`) keeps them. No migration, no stored value changed.
+
+### Verified baseline — 2026-08-30 10:09, MINE, on a confirmed-static tree
+All three runs `[done]`; newest `src/` mtime 5 minutes old before any gate ran. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **718** files (715 + 3 new test files) |
+| `npm run test:run` | **179 files / 1554 tests**, exit 0 both runs — **NEW FLOOR** |
+| arithmetic | 176+3=179 files; 1533 + 11 (T-088) + 6 (T-086) + 4 (T-087) = 1554. **Nothing deleted, skipped or weakened.** |
+| `npx playwright test --list` | **112 tests / 15 files**, exit 0 (unchanged — no e2e added) |
+| debris | e2e 15 specs, zero scratch, `test-results/` + `playwright-report/` swept |
+| commit | **`1db54f3`** on `feat/ux-templates-picker`, pushed, 10 files, +776/−109. HEAD == origin. `master` untouched at `3bf1f7f`. Tree clean. |
+
+### Owed after batch 28 — recorded so it is not silently dropped
+**NO SCREENSHOTS THIS ROUND.** All three workers were forbidden a build and Playwright so they could
+run in parallel, so every figure above is arithmetic from the token literals, each cross-checked
+against figures the repo publishes for itself. **The capture round that photographs the new grabber in
+four states, the capped Settings at 1280, and the numpad cue is batch 29** — and it must also fix the
+capture spec, whose measurement JSON records only sheets and none of the 46 Settings frames.
+
+### Backlog changes from batch 28
+**NEW, and it is a FAMILY not an instance:** four more pages are uncapped at desktop width
+(`Progress.tsx:209`, `LegalDocPage.tsx:72`, `PublicProfilePage.tsx:108`,
+`AccessibilityStatement.tsx:66`) plus a variant at `WorkoutDetail.tsx:113` · **no accessible drag
+affordance on any sheet** — pointer-only gesture, `aria-hidden` pill · `Dashboard.tsx` pays bottom
+padding twice (~204px) · `PageHeader` no longer aligns with the capped column at 1280 · the numpad's
+hardcoded navy `boxShadow` · `.glass-surface-dark` promises a background every consumer overrides ·
+four exported `use*Settings` hooks with zero consumers.
+**CLOSED:** the sheet grabber · the numpad's missing cue and invisible edge · Settings' width ·
+the two divergent defaults. **DISPROVED, not fixed:** the tutorial's "missing" accessible name (the
+wiring is correct) and "the tutorial is not a sheet" (correct, but it is the right shape — my
+bookkeeping was wrong, four sheets were migrated, not six).
