@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:release": "vite build && node scripts/strip-sourcemaps.mjs",
+    "build": "node scripts/check-supabase-env.mjs --warn && vite build",
+    "build:release": "node scripts/check-supabase-env.mjs && vite build && node scripts/strip-sourcemaps.mjs",
     "preview": "vite preview",
     "lint": "biome check ./src",
     "format": "biome format --write ./src",

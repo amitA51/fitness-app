@@ -1,5 +1,40 @@
 apply plugin: 'com.android.application'
 
+// --- Release signing ------------------------------------------------------
+// Signing values are read from android/keystore.properties, which is
+// git-ignored and never committed. The keystore itself is created and owned by
+// the app owner - see docs/ANDROID-RELEASE.md.
+// This block must evaluate cleanly when the file is absent, so a fresh clone
+// with no key can still run debug builds. Release builds fail loudly instead
+// (see the taskGraph guard at the bottom of this file); an unsigned artifact is
+// never produced.
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = new Properties()
+def releaseSigningReady = false
+def releaseSigningProblem = "'${keystorePropertiesFile}' does not exist"
+
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+    def required = ['storeFile', 'storePassword', 'keyAlias', 'keyPassword']
+    def missing = required.findAll { !keystoreProperties.getProperty(it)?.trim() }
+    def storeFile = missing.isEmpty()
+        ? rootProject.file(keystoreProperties.getProperty('storeFile').trim())
+        : null
+    if (!missing.isEmpty()) {
+        releaseSigningProblem = "'${keystorePropertiesFile}' is missing or blank: ${missing.join(', ')}"
+    } else if (!storeFile.exists()) {
+        releaseSigningProblem = "storeFile '${keystoreProperties.getProperty('storeFile').trim()}'" +
+            " resolves to '${storeFile}', which does not exist"
+    } else {
+        releaseSigningReady = true
+    }
+}
+
+if (!releaseSigningReady) {
+    logger.info("Release signing not configured (${releaseSigningProblem}). " +
+        "Debug builds are unaffected; release builds will fail. See docs/ANDROID-RELEASE.md")
+}
+
 android {
     namespace = "com.sparkos.fitness"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,10 +51,28 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        // Declared only when a usable keystore.properties is present, so that
+        // gradle still configures cleanly on a clone without one.
+        if (releaseSigningReady) {
+            release {
+                storeFile rootProject.file(keystoreProperties.getProperty('storeFile').trim())
+                storePassword keystoreProperties.getProperty('storePassword')
+                keyAlias keystoreProperties.getProperty('keyAlias').trim()
+                keyPassword keystoreProperties.getProperty('keyPassword')
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // When not ready, signingConfig deliberately stays null (AGP's
+            // default for release) and the taskGraph guard below aborts the
+            // build rather than letting an unsigned artifact out.
+            if (releaseSigningReady) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
@@ -51,4 +104,39 @@ try {
     }
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
+
+// --- Unsigned-release guard -----------------------------------------------
+// Only fires when a release packaging task is actually requested, so `tasks`,
+// `help` and every debug build keep working without a keystore.
+gradle.taskGraph.whenReady { taskGraph ->
+    if (releaseSigningReady) {
+        return
+    }
+    def modulePrefix = "${project.path}:"
+    def blocked = taskGraph.allTasks.findAll { t ->
+        t.path.startsWith(modulePrefix) &&
+            t.name ==~ /^(assemble|bundle|install|package|publish).*Release$/
+    }
+    if (!blocked.isEmpty()) {
+        throw new GradleException(
+            "\n" +
+            "Release signing is NOT configured, so ${blocked*.path.join(', ')} would emit an\n" +
+            "UNSIGNED artifact that Google Play rejects. Refusing to build.\n" +
+            "\n" +
+            "Reason: ${releaseSigningProblem}\n" +
+            "\n" +
+            "Fix - create ${keystorePropertiesFile} containing:\n" +
+            "    storeFile=app/release.jks\n" +
+            "    storePassword=<your store password>\n" +
+            "    keyAlias=<your key alias>\n" +
+            "    keyPassword=<your key password>\n" +
+            "\n" +
+            "storeFile is resolved relative to the android/ folder; an absolute path also works.\n" +
+            "You must generate the keystore yourself first - it can never be regenerated,\n" +
+            "and losing it means the app can never be updated under the same Play listing.\n" +
+            "\n" +
+            "Step-by-step: docs/ANDROID-RELEASE.md\n"
+        )
+    }
 }

@@ -58,6 +58,10 @@ captures/
 # updated on Google Play under the same listing.
 *.jks
 *.keystore
+*.p12
+
+# Release signing credentials (storeFile/passwords/alias) - see docs/ANDROID-RELEASE.md
+keystore.properties
 
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild

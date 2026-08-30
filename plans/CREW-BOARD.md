@@ -8134,3 +8134,320 @@ Three sweeps each found more, and I reported this family as closing twice and wa
 for it to adjudicate: `healDuplicateBuiltIns`'s untombstoned local delete · whether any remaining store
 writes without an enqueue at all · the ledger's coverage gaps for PRs and exercises (both deliberate,
 both documented above, both reachable only through a flush path nobody owns yet).
+
+
+---
+
+# Batch 43 — STORE READINESS. Amit: "תתחיל לתקן ותכין את זה לקראת העליה... טוב ואיכותי"
+
+Tree clean at `7865cad` == `origin/master`. The CODE is store-ready; the PACKAGING is not.
+
+### Ground truth I verified MYSELF before writing the briefs — do not re-derive
+- **`android/app/build.gradle:19-24`** — `release { minifyEnabled false; proguardFiles ... }` and **NO
+  `signingConfig`**. A release build today produces an **UNSIGNED** artifact, which Google rejects.
+- **⭐ THE HOUSE PATTERN FOR AN OPTIONAL FILE IS ALREADY IN THAT FILE**, at `:47-54`: a `try/catch`
+  that applies the google-services plugin **only if `google-services.json` exists**, and logs instead
+  of failing when it does not. The keystore wiring must follow that shape so a clone without the
+  key still builds debug.
+- **`targetSdk 36`, `minSdk 24`, one permission (`INTERNET`)** — all correct, do not touch.
+- **NO env guard exists.** `package.json` has `"build:release": "vite build && node
+  scripts/strip-sourcemaps.mjs"` — so `scripts/` is already an established build-step home.
+- **⭐ THE PRIVACY TEXT ALREADY EXISTS** — `src/content/legal/legalDocs.ts`, rendered by
+  `src/pages/legal/LegalDocPage.tsx`, versioned by `src/content/legal/legalHash.ts`. So hosting it
+  is an EXPORT job, not a writing job. `PrivacyPage.tsx` / `TermsPage.tsx` are 0KB thin wrappers.
+- **⭐ THE ICONS ARE CAPACITOR DEFAULTS, and the branded source is already on disk.**
+  `ic_launcher_foreground.png` exists at all five densities (2.1–15.5KB, the generated set) plus
+  `mipmap-anydpi-v26/ic_launcher.xml`. **But `public/pwa-maskable-512x512.png` (9KB) and
+  `public/pwa-512x512.png` (10KB) are already branded** — so the Android icon set is a CONVERSION
+  from an existing correct asset, not a design exercise.
+
+### ⭐ MY RULINGS, so nothing is re-litigated
+1. **NO WORKER GENERATES A KEYSTORE.** It is the one artifact that cannot be regenerated — lose it
+   and the app can never be updated under the same Play listing again. It is Amit's to create, on
+   his machine, backed up by him. The task is to wire the build to READ one, not to make one.
+2. **The signing config must be OPTIONAL, following the `google-services.json` precedent.** If
+   `android/keystore.properties` is absent, debug builds must still work and the release build must
+   fail with a CLEAR message — never silently produce an unsigned artifact.
+3. **⭐ THE ENV GUARD IS THE HIGHEST-VALUE ITEM IN THIS BATCH AND IT IS THE DAY'S OWN LESSON.**
+   Vite inlines env at build time, so a release build made without `.env.local` ships with **no
+   cloud sync at all** — and T-106's shape validator makes it degrade *cleanly*, which means it
+   fails **silently**. That is exactly the "green but wrong" family I have spent the whole day
+   removing. **A release build with missing or placeholder Supabase config must ABORT, not warn.**
+4. **The guard checks SHAPE, never prints a value.** `.env*` files are secrets and are correctly
+   gitignored. No worker may read, print, edit or delete one.
+5. **NOBODY WRITES `src/`.** The app code is done and gated; this batch is packaging only.
+6. **Build ownership: T-123 alone runs `npm run build`. T-121 may run gradle CONFIG checks only**
+   (no assemble/bundle) so the two do not fight over artifacts.
+
+### Ownership map — disjoint, verified against the clean tree
+- **T-121** → `android/app/build.gradle`, `android/.gitignore`, `docs/ANDROID-RELEASE.md` (new).
+  **MUST NOT touch `android/app/src/main/res/**` (T-122) or `package.json` (T-123).**
+- **T-122** → `android/app/src/main/res/**` ONLY. **MUST NOT touch `build.gradle`.**
+- **T-123** → `scripts/**` + `package.json`. **MUST NOT touch `android/**`.**
+- **T-124** → `store/**` (new top-level folder). Read-only everywhere else.
+
+## [T-121] A release build today comes out unsigned
+- status: dispatched (batch 43)
+- owner: fitness-dev
+- goal: wire release signing so a signed AAB becomes possible the moment the owner drops his keystore
+  in — without any worker ever creating that keystore.
+- done when: `gradlew` still evaluates cleanly with NO keystore present; debug still builds; a release
+  build without the properties file fails with a clear actionable message rather than producing an
+  unsigned artifact; the properties file and every key extension are gitignored and PROVEN so with
+  `git check-ignore`
+- notes: **follow the `google-services.json` try/catch at `build.gradle:47-54`** — that is this file's
+  own idiom for an optional file. **DO NOT run `keytool`, do not create any `.jks`/`.keystore`, do not
+  invent passwords.** `android/.gitignore:57-58` already ignores `*.jks`/`*.keystore` (I uncommented
+  those myself) — verify, do not duplicate. Write `docs/ANDROID-RELEASE.md` with the exact `keytool`
+  command the OWNER runs, what to put in the properties file, and a bolded warning that losing the
+  key is unrecoverable. Gradle config checks only — no assemble, no bundle.
+
+## [T-122] The app would install with the Capacitor logo on it
+- status: dispatched (batch 43)
+- owner: fitness-design
+- goal: replace the generated placeholder launcher icons with the real SparkOS mark, at every density,
+  as a proper adaptive icon.
+- done when: all five mipmap densities regenerated; the adaptive icon's foreground/background wired so
+  it renders correctly under a circle, a squircle AND a rounded square; nothing outside
+  `android/app/src/main/res/**` touched; the source asset used is named
+- notes: **the branded source already exists — `public/pwa-maskable-512x512.png` is the correct
+  foreground** (a maskable asset already carries the safe-area padding an adaptive icon needs), with
+  `public/app-icon.svg` and `public/pwa-512x512.png` as references. **Do not design a new mark and do
+  not recolour the existing one.** The brand navy/mint are tokenized — take the background colour from
+  the existing asset rather than inventing a hex. Note the trap: an adaptive icon crops ~33% off each
+  edge, so a foreground built from a NON-maskable square will lose its edges.
+
+## [T-123] A release build can silently ship with no cloud sync
+- status: dispatched (batch 43)
+- owner: fitness-dev
+- goal: make a release build ABORT when the Supabase config is missing or placeholder-shaped, instead
+  of producing an app that looks fine and saves nothing to the cloud.
+- done when: `npm run build:release` fails loudly with an actionable message when config is
+  absent/malformed, succeeds unchanged when it is valid, and `npm run build` (plain dev/preview build)
+  is NOT broken by the guard; no secret value ever printed
+- notes: **this is the day's own defect family** — the app degrades *cleanly* to local-only, so the
+  failure is invisible; that is why it must be a hard stop at BUILD time, not a runtime warning.
+  **Reuse the SHAPE validation that already exists in `src/lib/supabase.ts`** (absolute `https:` URL,
+  JWT-shaped key = three non-empty dot-separated segments) — do not invent a second rule that can
+  drift from it. `scripts/strip-sourcemaps.mjs` is the house precedent for a build-step script.
+  **Print variable NAMES only, never values. Do not read, edit or delete any `.env*` file.**
+
+## [T-124] Google will not accept an in-app page as a privacy policy
+- status: dispatched (batch 43)
+- owner: fitness-design
+- goal: Google requires a privacy policy at a URL it can fetch, plus a support URL. The app has real
+  legal content but only as in-app routes.
+- done when: standalone self-contained HTML pages (privacy, terms, support) exist under `store/`,
+  ready to host as-is; each is Hebrew RTL, readable on a phone, and needs no build step; plus a
+  `store/LISTING.md` holding the Hebrew store listing text and the Data Safety answers
+- notes: **the content already exists — export it from `src/content/legal/legalDocs.ts`, do not
+  rewrite it.** Read-only in `src/`. **Use the `hebrew-content-writer` skill** for anything you must
+  word yourself. For Data Safety, the facts I verified: the app requests exactly ONE Android
+  permission (`INTERNET`), stores account + workout/fitness data via Supabase, transmits over HTTPS,
+  and **account deletion already exists in-app** (`src/pages/settings/sections/DangerZoneSection.tsx`)
+  — that last one is a question Google asks directly. **Do not invent a claim about data handling you
+  cannot point at in the code; if something is unclear, list it as an open question instead.**
+
+
+## [T-123] The env guard — ACCEPTED 2026-08-30 19:5x. **⚠️ IT OVERRULED MY INSTRUCTION AND IT WAS RIGHT.**
+- status: **done** — 1 new (`scripts/check-supabase-env.mjs`, 139 lines) + `package.json:8-9`.
+  Nothing else touched, confirmed by me via `git status` on `scripts/`, `package.json`, `docs/`.
+
+### ⚠️⚠️ MY PREFERENCE WAS EXACTLY BACKWARDS FOR THE GOAL — AND I CONFIRMED ITS EVIDENCE MYSELF
+My brief said *"My preference is release-only, so local preview work stays frictionless"*. It refused,
+and the reason is decisive. Verified by me:
+- **`docs/native-capacitor-setup.md:23`** — `npm run build   # produces dist/ (the webDir)`
+- **`docs/native-capacitor-setup.md:32`** — `npm run build && npx cap sync`
+- **`netlify.toml:5`** — `command = "npm run build:release"`
+**So `build:release` is the WEB deploy, and the APK that goes to the 12 testers is fed by PLAIN
+`npm run build`.** Gating release-only would have guarded the website and left the tester APK **exactly
+as broken as before** — i.e. my instruction would have made the guard miss the one scenario the task
+existed to prevent. **Not a nuance; the preference inverted the outcome.**
+- **Its resolution is the right shape:** `build:release` aborts hard (exit 1); plain `build` prints the
+  IDENTICAL message to **stderr** and continues. Preview stays frictionless and is no longer silent.
+- **⭐ AND IT CAUGHT A SECOND THING THAT WOULD HAVE MADE THE GUARD USELESS ON THIS MACHINE:** a node
+  script **cannot see `.env.local` through `process.env`** — Vite loads env files itself. A
+  `process.env` guard would have aborted here, on a correctly-configured machine. It used Vite's own
+  `loadEnv`, so the guard checks **exactly the values Vite will inline**, with the same file
+  precedence. Its stated reasoning: *"a guard that cries wolf gets deleted within a week."*
+
+### Verified by me
+- `package.json:8-9` carry the guard on both scripts — read directly.
+- **Zero value leakage:** my grep for any log of a value / interpolation / env-read-into-output came
+  back **EMPTY**. Names only, as ruled. No `.env` file was opened, written or created by the script.
+- **MEASURED BOTH WAYS, four ways in fact:** absent config → `BUILD ABORTED`, `missing: VITE_SUPABASE_URL,
+  VITE_SUPABASE_ANON_KEY`, exit 1 · placeholder text injected inline → `malformed:` both, exit 1 ·
+  same with `--warn` → exit 0 · real `.env.local` → `npm run build:release` green, `built in 8.06s`,
+  `BUILD_EXIT=0`. Plus a 7-case table over the exported pure function (empty, http-not-https, 2-segment
+  key, empty middle segment, url-ok-key-missing). `npx tsc --noEmit` exit 0.
+- It ran the failure case **from a path with no `.env` files at all** rather than touching one — the
+  honest simulation, and it said so.
+
+### ⚠️ A RESIDUAL HOLE IT NAMED AND COULD NOT CLOSE — MY RULING BELOW
+Because the APK flow is `npm run build`, the tester artifact can still be produced syncless **with a
+warning a human can scroll past.** It said the real closure is a one-line docs change to
+`npm run build:release && npx cap sync`, and that `docs/` was not its file.
+**MY RULING: change the native doc to `build:release`.** That is not a workaround — an artifact handed
+to real users IS a release build, so the doc currently names the wrong script. `build:release` also
+strips source maps, which an APK should not ship anyway. **NOT dispatched now: T-121 is writing
+`docs/` this very batch** (`docs/ANDROID-RELEASE.md` already exists untracked), so editing it would
+collide. Next batch, one line.
+**MY SECOND RULING: leave the duplicated shape predicates as they are.** It copied the two rules from
+`src/lib/supabase.ts` verbatim with a comment naming the file they must stay in sync with, and offered
+to extract them into a shared module. Declined for now: extraction needs `src/` ownership and a new
+import path for a build script, and if the rules ever drift the guard gets stricter or looser — **not
+silent**, which is the bounded failure. The comment is adequate. Recorded so it is a choice, not a miss.
+- Also disclosed, and correct: a build driven through Vite's API or an IDE task bypasses an npm-script
+  guard entirely; the airtight version is a plugin in `vite.config.ts` gated on `command === 'build'`,
+  which it did not own. And the guard checks SHAPE, never reachability — a well-formed URL for a
+  deleted project still passes, as it must, since a build must not make network calls.
+- No vitest file added, with a reason I accept: it was forbidden from running the suite and **would not
+  commit a test it could not execute.** `validateSupabaseEnv` is exported and import-safe behind a
+  direct-invocation guard, so the test is a five-line addition later.
+
+
+## [T-122] The launcher icon — ACCEPTED 2026-08-30 20:0x. **It corrected my brief TWICE, both right.**
+- status: **done** — 16 files, **ALL under `android/app/src/main/res/**`**. Verified by me: `git status`
+  on `android/` shows only those 16 plus `android/.gitignore` and `android/app/build.gradle`, and
+  **those two are T-121's, still running.** Zero out-of-scope writes.
+- 15 PNGs regenerated at all five densities (1496 → 6791 bytes, scaling correctly for 108→432px),
+  mtime 19:55:58. Background layer `#FFFFFF` → **`#0D1516`**, read by me at
+  `values/ic_launcher_background.xml:3`.
+- **`mipmap-anydpi-v26/*.xml` mtime is 18:45:56 — BEFORE this batch — so it genuinely left the wiring
+  alone as it claimed, and both layers resolve: `@color/ic_launcher_background` +
+  `@mipmap/ic_launcher_foreground`.** Verified rather than taken on report.
+
+### ⚠️ MY BRIEF WAS WRONG TWICE, AND I CONFIRMED BOTH
+1. **The path.** I wrote `public/app-icon.svg`. **That file does not exist** — my `Test-Path` returned
+   false. The real path is `public/brand/app-icon.svg`. It found the right file without being told.
+2. **⭐ THE SOURCE ASSET — and this is the substantive one.** My board said
+   `public/pwa-maskable-512x512.png` is *"the right foreground, because a maskable asset carries the
+   safe-area padding"*. **Half right, and the half that was wrong made the file unusable.** That PNG has
+   `#0d1516` baked **opaque at all four corners (alpha 255)**. An adaptive icon is TWO independent
+   layers; an opaque foreground **hides the background layer entirely** and kills the launcher's
+   parallax. A foreground must be transparent and the colour must come from the background layer.
+   It used `public/brand/mark-mint.svg` — the same mark as vector, on transparency. **Verified: that
+   file exists.**
+   - Its second measurement: the maskable's mark is only **35.5% × 52.1%** of the canvas, because the
+     **web** maskable safe zone (80% circle) and **Android's** adaptive safe zone (66.7%) are different
+     specs. Shipping it verbatim would have been visibly timid next to neighbouring icons.
+   - **But it credited the padding instinct as sound** — its final 58dp lands at almost exactly the
+     maskable's own proportion (56.3dp equivalent). The instinct transferred; the file did not.
+- Both brand hexes were **sampled from pixel data, not chosen**: `#0d1516` (236,200 px) and `#4ddcbb`
+  (24,408 px), matching the `fill` attributes in the brand SVGs exactly. No colour invented, no mark
+  redesigned — my constraint held.
+
+### ⭐ IT REJECTED ITS OWN FIRST ATTEMPT AFTER LOOKING AT THE RENDER — and I looked too
+Its first build was Google's keyline **maximum** (66dp of 108, the 44×66dp tall-mark keyline). It
+rendered that under a real circle mask, saw the mark at **92% of the radius with the S's terminals
+jammed against the edge**, and tested 66/62/58/54dp empirically instead of arguing. Chose **58dp**.
+**I read all four renders myself rather than accept the judgement.** It is right: at 66dp the top-right
+terminal nearly touches the circle; at 54dp there is dead space and the mark reads weak. 58dp holds an
+even dark margin and is still confident at 48px. **Agreed on the evidence, not on the report.**
+- I also viewed the five-mask sheets in light AND dark: **the mark is intact and centred under circle,
+  squircle, rounded-square, teardrop and square, and legible at 48px in every one.** The dark-icon
+  risk (a `#0D1516` tile vanishing into a dark wallpaper) does not materialise — the mint S carries it.
+- Measured, not asserted: furthest opaque foreground pixel at **29.0dp** against a **36.0dp** circle
+  mask radius → 7.0dp margin, inside the 33dp keyline. Radial, so direction-independent.
+- Its own validator: 15/15 PNGs decode at the expected bucket size with an alpha channel; **all 5
+  foregrounds have all four corners transparent** (proving no baked background); 3 XMLs balance.
+
+### ⚠️ EVIDENCE WAS ABOUT TO BE LOST — I RESCUED IT MYSELF
+It captured into `%TEMP%\kirocrew-scratch`, **which is reclaimed when the session's process ends**,
+because my task said nothing outside `res/**` may change and its role brief says capture to
+`visual-qa/`. It flagged the conflict rather than silently breaking one of the two rules — correct.
+**I copied all four PNGs to `visual-qa/t122-verify-*.png` (40KB/36KB/62KB/18KB).** `visual-qa/` is
+gitignored (`.gitignore:64`), so this is local-only evidence either way, but it is now durable.
+**Rule for future icon/asset tasks: name the evidence path explicitly, or the constraint eats it.**
+
+### Two things it named and correctly did not touch — MY RULINGS
+1. **Two dead Android Studio template vectors ship inside the APK** —
+   `res/drawable-v24/ic_launcher_foreground.xml` is the **bugdroid head** and
+   `res/drawable/ic_launcher_background.xml` the default **teal grid**. Unreferenced (the adaptive icon
+   points at `@mipmap`/`@color`, different resource types) so there is no conflict and no visual
+   defect — but it is another vendor's artwork riding in our binary. It left them because it could not
+   run a resource compile to prove removal is clean. **MY RULING: delete them in the batch where
+   someone holds gradle, so the removal is proven by an actual `aapt` compile.** Not now — T-121 is
+   mid-run in `android/`.
+2. **No `<monochrome>` layer**, so on Android 13+ with themed icons enabled the launcher falls back to
+   the un-themed icon. Not broken; incomplete. **MY RULING: NOT NOW.** The mark is a single-colour path
+   so it is cheap, but this is a polish item on a surface no user has yet seen, and it is exactly the
+   class of work I was course-corrected for spending eight batches on. Recorded, unbuilt.
+- The 20% legacy corner radius is its own call — `DESIGN.md` specifies none, and legacy icons only
+  render on API < 26. Accepted.
+- It ran `npm run verify` (green, 742 files) **and said plainly that this proves nothing about its
+  change**, since all three steps are scoped to `./src` and have zero coverage of the Android resource
+  tree. It skipped `test:run` because two other workers were mid-edit in `src/services/` — correct
+  reasoning, and it matches my own rule.
+
+
+## [T-124] Store pages — ACCEPTED 2026-08-30 20:1x. **⚠️ AND IT FOUND A REAL COMPLIANCE BLOCKER.**
+- status: **done** — 4 new files, ALL under `store/`. **Scope verified by me:** `git status` filtered for
+  anything outside `store/` returned EMPTY (the `android/`, `scripts/`, `package.json`, `docs/` entries
+  belong to the other three workers). `privacy.html` 8.7KB · `terms.html` 10.1KB · `support.html` 9.6KB
+  · `LISTING.md` 18.7KB.
+- **Exported, not rewritten, as ruled:** `PRIVACY_DOC` (10 sections) and `TERMS_DOC` (13 sections)
+  verbatim, each carrying a header comment telling the next person to re-export on a version bump so
+  the hosted copy and `/legal/privacy` cannot silently diverge. Version **2026-06-09** from the `V1`
+  constant — I confirmed `legalDocs.ts:48` `const V1 = '2026-06-09'` feeds both `version` and
+  `effectiveDate` at `:54/:56`, `:149/:151`, `:232/:234`.
+- Self-contained: `performance.getEntriesByType('resource').length === 0` on all three from `file:///`.
+  390×844 both colour schemes, no overflow (390/390), contrast 6.62–16.57:1 all passing AA.
+- It fixed a real RTL defect in its own first draft: `inset-inline-start: -9999px` on the skip link
+  resolves to `right: -9999px` in RTL and was **the one element extending past `clientWidth`** — Chrome
+  told it so. Replaced with the clip pattern, which never contributes to layout in either direction.
+- It **measured** its own char counts after eyeballing them and corrected two (71→70, ~1180→1141).
+
+### ⚠️ MY SELF-CONTAINMENT GREP CONTRADICTED ITS CLAIM — I READ THE LINES, IT WAS RIGHT
+My grep found `<link` at `privacy.html:15`, `support.html:16`, `terms.html:15`. **I read all three
+before concluding anything.** Every hit is inside the header COMMENT whose text is *"Self-contained on
+purpose: no `<link>`, no `<script>`, no `@import`, no web font."* The pages really are self-contained,
+and the worker had **pre-emptively warned** that the only hits would be in that comment.
+**This is the THIRD instance on this project of prose-in-a-comment reading as a real declaration** —
+the others being `NumpadGrabCue.test.tsx`'s `--token:` regex and the pre-existing `global.css:120`
+instance. Rule: a grep for a code construct will match a comment describing its absence.
+
+### ⚠️⚠️ THE BLOCKER — VERIFIED BY ME, AND IT IS NOT THE WORKER'S DEFECT
+**An AI provider receives user data and the privacy policy does not name it.** Confirmed by my own greps:
+- **`src/services/ai/config.ts:34`** — `export const POLOAI_BASE_URL = 'https://poloai.top'`, an
+  OpenAI-compatible aggregator, called through the `ai-chat` Supabase Edge Function.
+- **`ExerciseTutorial.tsx:322-327`** sends the user's free-text question **plus grounding computed from
+  their last 100 workout sessions** on every use of the ask tab.
+- **`src/content/legal/` mentions the AI provider ZERO times.** My grep for `poloai|openai` across all
+  of `src/content/legal/*.ts` came back **empty**. The policy names exactly two processors —
+  `legalDocs.ts:182` Supabase and `:183` Sentry.
+**So publishing this policy as written publishes an incomplete disclosure.** This is the same family as
+everything else found today: the app states something it does not keep, and nothing fails while it happens.
+- **⭐ IT REFUSED TO PATCH THE HTML, AND THAT WAS THE RIGHT CALL.** Adding a paragraph to the hosted copy
+  alone would create exactly the hosted/in-app divergence this task exists to prevent. The fix belongs in
+  `legalDocs.ts` + a version bump. It put a ready-to-paste Hebrew bullet in `LISTING.md` instead.
+- **⚠️ THE SHARP CONSEQUENCE, and it is why this is a blocker and not a chore:** if PoloAI carries no
+  contractual commitment against retention or training, then Fitness info and Messages must be declared
+  **Shared**, not merely Collected. That is a materially heavier Data Safety declaration, **and a wrong
+  answer on that form is a policy violation that risks the developer account** — the same category of
+  risk I advised him against on the paid-tester gig.
+- **Second Play requirement it surfaced:** the Generative AI policy requires an in-app way to report
+  offensive AI output. The community feed has one (`ReportReasonSheet.tsx`); it grepped
+  `ExerciseTutorial.tsx` for `report`/`flag`/`feedback`/`דיווח` and found **nothing on the AI answer surface**.
+
+### ⭐ MY RECOMMENDATION TO AMIT — turn the AI ask tab OFF for v1
+Not a compliance dodge; the cheapest correct answer, and it follows his own standing rule
+(*"מה שלא עוזר אז למחוק"*). Removing that one surface deletes **three** compliance obligations at once —
+the sub-processor disclosure, the heavier "Shared" declaration, and the Generative AI report mechanism —
+for a feature that **batch 8's competitor research found three of four strength apps do not ship at all**
+(Strong, 5M users, 4.9★, ships zero AI). It also degrades to a keyword lookup table without a key, so
+the loss is small. **His decision, because it removes a feature.**
+
+### Two more it named, both verified by me
+1. **"No camera" is true today by TWO accidents.** The manifest declares only `INTERNET` — but
+   `BarcodeScanner.tsx:129` calls `getUserMedia`, unreachable only because
+   **`featureFlags.ts:47` `NUTRITION_TRAINEE_UI_ENABLED = false`** (both confirmed by my grep). **Flip
+   that one line and the app ships a camera feature with no permission declared.** Worth a comment at
+   the flag so the next person flipping it knows what else it turns on.
+2. **The hosted policy says "טיוטה" (draft) on purpose** — `isDraft: true` at `legalDocs.ts:57`, `:152`
+   and `:235`, and the file's own header says the text needs legal review before production. The in-app
+   page renders that banner, so the hosted copies do too. **It refused to hide it on the hosted copy
+   alone** — same divergence argument. But a Play reviewer may read it as placeholder content.
+- Also named, left alone: the policy identifies **no legal entity** (just "SparkOS Fitness" + a gmail
+  address) · `barcodeFood.ts:75` calls OpenFoodFacts, a second undeclared third party (behind the same
+  nutrition flag) · the terms describe subscriptions `checkoutService.ts:10` says cannot complete yet.
