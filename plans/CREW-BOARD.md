@@ -7477,3 +7477,222 @@ Both workers terminal; newest `e2e` mtime 3 minutes cold. Suite run **TWICE, ide
 | `npm run test:run` | **194 files / 1644 tests**, exit 0 both runs — floor held exactly (zero `src/` edits, correct) |
 | `npx playwright test --list` | **126 tests / 16 files**, exit 0 |
 | tree | `e2e/journey-t099.spec.ts` +1100 · `plans/FAILURE-PATHS.md` new · board. **`src/` + `supabase/` CLEAN** |
+
+
+---
+
+# Batch 40 — FIX EVERYTHING. Amit: "תתקן כל מה שצריך… ננסה לעלות אותה לחנות של האנרוייד"
+
+**⭐ THE STORE TARGET IS NOW NAMED: ANDROID / GOOGLE PLAY, not Apple.** That changes the store
+calculus materially and it is worth recording: **no Mac is needed** (Xcode was the hard blocker),
+and **Apple guideline 4.2 "Minimum Functionality" — the rule that targets a PWA in a WebView, which
+I named as the single biggest store risk — does not exist at Google.** Google is $25 one-time. The
+real Google constraint is different and administrative: **a NEW personal developer account must run
+a closed test with 12 testers for 14 days before it may publish to production.** So the store path
+is genuinely open, and the remaining blocker is ours, not theirs: **you cannot ship an app where a
+logged workout can silently vanish.** That is what this batch closes.
+
+### Ground truth I established MYSELF before writing the briefs — do not re-derive
+- **⚠️ MY OWN REPORT WAS WRONG BY ONE: `listMyAssignments` has THREE call sites, not two.**
+  `ActiveWorkoutNew.tsx:150`, `useNutritionData.ts:347` **and `MyCoach.tsx:129`** — T-109 named the
+  first two. Sixth instance of counting what I was handed instead of grepping the family.
+- `src/services/coach/assignmentService.ts` holds BOTH functions: `:241` `listMyAssignments`
+  (no auth guard) and `:251` its guarded sibling. **So the guard belongs in the service, once.**
+- **The three unexamined write files EXIST and are confirmed:** `src/services/nutritionService.ts`,
+  `src/services/waterService.ts`, `src/services/bodyStatsService.ts`. T-109's `catch` sweep died on
+  shell quoting before reaching them, so they are genuinely unaudited.
+- `OfflineIndicator.tsx` reads queue depth at `:16,19,21,22` and has its own test file — so the
+  blind spot is fixable in one component plus one test.
+
+### ⭐ MY RULINGS, written here so no worker re-litigates them
+1. **The 12-hour draft must NOT be deleted. Route it through the EXISTING resume dialog instead.**
+   The guard has a legitimate purpose — an ancient `startTimestamp` made the timer open at
+   hours-elapsed — but the fix for a bad CLOCK is to reset the clock, not to destroy the SETS.
+   `DraftConflictDialog` already exists and, since batch 37, already names both directions
+   honestly. Reuse it. Inventing a second dialog is the hand-rolled-copy defect this project has
+   now catalogued four times.
+2. **The `listMyAssignments` fix goes in the SERVICE, not the three call sites.** Matching its
+   guarded sibling closes all three at once and cannot recur at a fourth call site. Do NOT add
+   error handling — a guest has no assignments, so the call must not happen.
+3. **A pre-created template set must be PENDING, with the target as a SUGGESTION.** It may never be
+   counted as logged, or we replace "loses your prescription" with "fabricates sets you never did"
+   — the exact sin nine batches of this project have been spent removing.
+4. **The nutrition/water/body-stats sweep is READ-ONLY this batch.** If those files repeat the
+   `if (user)` shape, the worker must report and STOP — because T-111 is establishing the fix for
+   that same shape in `sessionDb.ts` in this very batch, and two workers inventing two fixes for
+   one defect shape is how divergent copies are born here.
+5. **No worker runs the full suite.** Four concurrent `test:run` invocations pollute each other's
+   counts (proven in batch 2) and cost minutes. Each runs `npx tsc --noEmit` plus `npx vitest run`
+   on its OWN test paths. **My post-batch run is the only authoritative one.**
+
+### Ownership map — disjoint, verified by grep against a clean tree at `6aad724`
+- **T-110** → `src/components/workout/core/WorkoutProvider.tsx` + a test.
+- **T-111** → `src/services/sessionDb.ts`, `src/components/ui/OfflineIndicator.tsx` (+ its test),
+  `src/pages/Settings.tsx` + tests.
+- **T-112** → `src/components/workout/active/useWorkoutEffects.ts` + a test.
+- **T-113** → `src/services/coach/assignmentService.ts` + a test.
+- **T-114** → WRITES ONLY `plans/SILENT-WRITE-SWEEP.md`. Read-only everywhere.
+- **NO PLAYWRIGHT, NO BUILD, NO SERVER anywhere this batch** — five workers and one `dist/`.
+- **`ActiveWorkoutNew.tsx` stays LEAD-SERIALIZED and should need no edit at all** under ruling 2.
+  A worker that believes it must edit it stops and reports.
+
+## [T-110] A workout you meant to finish tomorrow is deleted in silence
+- status: dispatched (batch 40)
+- owner: fitness-dev
+- goal: two of the three ways a logged workout can be lost, both in one file — a draft older than
+  12 hours is `removeItem`'d with no notice, and `persistState`'s `false` return is ignored at all
+  five call sites so the user keeps logging into RAM with no signal.
+- done when: verify green; a test that FAILS on current code proving a 13-hour-old draft's sets
+  survive; a second proving an unwritable store is surfaced ONCE, not per set
+- notes: **MY RULING — do not delete the draft; route it through the existing `DraftConflictDialog`
+  and reset only `startTimestamp`/`totalPausedTime`.** The sets live in `draft.exercises` and are
+  the whole value. For the storage failure reuse the app's existing `showToast`; do NOT invent a
+  new surface, and do NOT fire it on every set.
+
+## [T-111] The guards were all built to stop this, and they all miss it
+- status: dispatched (batch 40)
+- owner: fitness-dev
+- goal: the architectural one. `sessionDb.ts:29-38` puts the offline-queue enqueue INSIDE
+  `if (user)`, so a session written while `getCurrentUser()` is momentarily null is never queued
+  and never pushed — and the sign-out warning counts only queue + dead-letter, so the wipe proceeds
+  silently.
+- done when: verify green; a test proving a session written with a null user is still recoverable;
+  the sign-out guard and `OfflineIndicator` both counting unsynced LOCAL sessions, not queue depth
+- notes: the dead-letter store, owner stamping and the sign-out guard are elaborate defences that
+  **all key off the queue — a write that never entered it is outside every one of them.** Fix the
+  enqueue first; the counters are the second half, not the whole fix.
+
+## [T-112] The template promises 4x8 and hands you one blank set
+- status: dispatched (batch 40)
+- owner: fitness-dev
+- goal: `useWorkoutEffects.ts:114-116` honours `targetSets`/`targetReps` only when the exercise
+  carries `programExtras`, so every ordinary template is flattened to a single empty set — while the
+  editor displays those numbers as chips and computes `זמן משוער` from them.
+- done when: verify green; a test that FAILS on current code proving a 4x8 template exercise opens
+  with 4 pending sets carrying 8 as the target; and a test proving none of them counts as completed
+- notes: **the mechanism already exists and is proven — the program path does exactly this.** Reuse
+  it rather than writing a second one, and copy how that path marks pending vs completed. **MY
+  RULING: a pre-created set is PENDING and its reps are a SUGGESTION.** Leave `warmupCount` alone —
+  regular templates carry no warmup data.
+
+## [T-113] A guest calls a coach endpoint and takes a 401 twice per workout
+- status: dispatched (batch 40)
+- owner: fitness-dev
+- goal: `assignmentService.ts:241` `listMyAssignments` has no auth guard while its sibling at `:251`
+  does, so every guest fires two failing requests per workout.
+- done when: verify green; a test proving a signed-out caller gets an empty result with no request
+  issued; all three call sites confirmed unchanged and still correct
+- notes: **MY RULING — fix the SERVICE, not the three call sites**, matching the sibling's guard
+  shape exactly. Do NOT add error handling. **There are THREE call sites, not two:**
+  `ActiveWorkoutNew.tsx:150`, `useNutritionData.ts:347`, `MyCoach.tsx:129`. Confirm none of them
+  depends on the unguarded behaviour, and **edit none of them** — if one genuinely needs a change,
+  stop and report.
+
+## [T-114] The three write paths nobody has ever examined
+- status: dispatched (batch 40)
+- owner: fitness-qa
+- goal: T-109's exhaustive sweep FAILED on shell quoting before it reached nutrition, water and body
+  stats, and said so. If they repeat `sessionDb.ts`'s `if (user)` shape, the same silent data loss
+  applies there.
+- done when: `plans/SILENT-WRITE-SWEEP.md` states, per write function with file:line, whether the
+  offline-queue enqueue sits inside an auth guard, and what the user sees when that write fails
+- notes: read-only, ONE new plan file, no gates, no browser. **REPORT, DO NOT FIX** — a sibling task
+  is establishing the fix for this exact shape in `sessionDb.ts` this batch and both must end up
+  identical. **The shell truncates at the first Hebrew character with exit 0**, which is precisely
+  what defeated the previous attempt — use the `read`/`grep` tools, not a shell pipeline.
+
+
+## Batch 40 — ALL FIVE ACCEPTED 2026-08-30 18:31. **The three data-loss paths are closed.**
+
+### [T-110] The 12h discard + the ignored write failure — ACCEPTED. It found a THIRD defect inside defect 2.
+- 1 modified + 1 new test, exactly its ownership.
+- **`removeItem` on a stale draft is GONE — I read the diff myself.** `loadState` now returns
+  `{ draft, clockStale }`; the initializer resets **only** `startTimestamp` / `totalPausedTime`, and the
+  comment states that exercises, sets, supersets and the current index survive verbatim.
+- **A consequence I did not brief and it handled:** `closedAppElapsed = clockStale ? 0 : …`, so a
+  14-hour gap is no longer added to paused time — otherwise the fix would have preserved the sets and
+  still produced a nonsense duration.
+- **⚠️⚠️ IT CORRECTED MY DIAGNOSIS OF DEFECT 2, AND THE CORRECTION IS THE VALUABLE PART.** I wrote
+  "five call sites ignore `persistState`'s `false`". True — but it found that **the `false` was barely
+  reachable in the first place**, so surfacing it would have surfaced almost nothing. It added
+  `writeVerified()`: set, read back, compare. **Without that, my own fix would have shipped a
+  still-silent failure.** Sixth time a worker has corrected one of my premises in a row.
+- One toast per session via a module-level `persist()` wrapper + `resetPersistFailureNotice()`
+  re-armed on mount — the "not on every set" constraint held.
+- **⚠️ NOT VERIFIED BY ME: whether the user is TOLD about a stale-clock draft**, or only that the sets
+  survive. There is a `logger.workout.warn`, which is developer-facing. The data-loss half is closed;
+  the disclosure half is open. Recorded rather than assumed.
+
+### [T-111] The architectural one — ACCEPTED, and it built more than the enqueue.
+- 3 modified + 2 new tests. **The fix, read by me at `sessionDb.ts:177,224`: `await queueMutation(
+  'session:update', payload)` on the null-user path**, gated by `isSupabaseConfigured()` at `:196` so a
+  local-only install accumulates nothing.
+- **It answered the open question in my brief instead of guessing:** an entry does NOT need a user id
+  from the caller — **`queueMutation` stamps ownership itself** (comment at `:218`).
+- **Second half delivered: an unsynced-session LEDGER.** `unsynced-session:` markers in
+  `STORES.PENDING_SYNC`, plus `getUnsyncedSessionIds` / `getUnsyncedSessionCount` /
+  `flushUnsyncedSessions`. `Settings.tsx` and `OfflineIndicator.tsx` now count sessions with no
+  confirmed cloud copy, not queue depth. **So the guard that used to say "nothing to lose" while a
+  workout was at risk now sees it.**
+- Two details that prevent false positives: `deleteWorkoutSession` clears the marker, and a row that
+  arrived FROM the cloud clears its own — "demonstrably has a cloud copy".
+
+### [T-112] The template prescription — ACCEPTED (detail recorded at 18:24).
+- `isProgram` gate removed from the set/rep expressions; `warmupCount` and `notes` stay program-only.
+- **The pending constraint held and its test proves it against the app's REAL tally functions**
+  (`computeSessionStats`, `completedSetsVolume`), not a boolean flag.
+
+### [T-113] The guest 401 — ACCEPTED. Fixed in the service, three call sites untouched.
+- Guard at `assignmentService.ts:243`, copied from `listCoachAssignments` at `:230`, same early-return
+  contract. **Two files total — so `ActiveWorkoutNew.tsx`, `useNutritionData.ts` and `MyCoach.tsx` were
+  read and left alone**, exactly as ruled.
+- **Its test asserts NO REQUEST WAS ISSUED, and it named why:** asserting only on the returned `[]`
+  "would also pass against the unguarded code". That was the trap in my brief and it closed it.
+
+### ⭐ [T-114] The sweep — ACCEPTED. `plans/SILENT-WRITE-SWEEP.md`. **THE SAME BUG IS IN THREE MORE PLACES.**
+- Read-only confirmed, one file written. **The mechanical key it established: in this codebase the
+  enqueue IS the 4th argument to `syncWithRetry` (`syncEngine.ts:80-113`) — so when the guarded call
+  never runs, no queue row exists at all.** That is why the shape is silent everywhere it appears.
+- **`waterService.ts:100-104` — the most literal repeat.** `queueMutation('water:create', …)` inside
+  `if (user)`, the identical construct.
+- **`nutritionService.ts:146-179` — WORSE than the plain shape.** The whole auth+sync block is
+  fire-and-forget behind a bare `catch {}` **whose comment claims "failure is handled by the retry
+  queue" — untrue when `user` is null.** A comment that lies about the defect it is sitting on.
+- **`bodyStatsService.ts` `addRecoveryLog` — a SECOND, different asymmetry.** It hard-deletes same-day
+  duplicates locally **outside** the guard while their cloud tombstones sit **inside** it, so a null
+  user **resurrects the deleted duplicate on the next pull.**
+- **⚠️⚠️ AND IT CHECKED ITS SIBLING'S BRAND-NEW CODE AGAINST ITS OWN FINDINGS — THIS IS THE SHARPEST
+  PART OF THE BATCH.** T-111's ledger reads `unsynced-session:` markers against **`WORKOUT_SESSIONS`
+  only**, so nutrition, water and body-stats orphans are **counted by nothing** and then wiped by
+  `Object.values(STORES)`. **The sign-out warning is now honest about workouts and still blind to the
+  other three.** It noticed `sessionDb.ts` changing under it mid-audit, said so, and touched nothing.
+- **Graded HIGH, not blocker, with a stated reason:** a full push DOES read these stores directly
+  (`supabaseSyncOrchestrator.ts:349-404`) — but only on a manual Settings sync or guest adoption, since
+  sign-in only pulls. "A real mitigation, not a reliable one." Correct distinction.
+- **Two self-corrections, both checked rather than assumed:** `Progress.tsx:159-167` looked like an
+  unhandled rejection but `AddWeightModal.tsx:46-51` catches it, **so it did not report it**; and it
+  described the fix for these files without writing it, per the report-don't-fix ruling.
+- **A separate bug it kept OUT of scope, correctly:** `saveWaterSettings` writes `'water_settings'`,
+  which is in **neither the wipe registry nor the mirrored-keys list** — not data loss, but it **leaks a
+  previous account's hydration goal on a shared device.** Different class.
+- **Honest non-coverage:** `templateDb`, `exerciseDb`, `prService`, `personalItemsDb`,
+  `programProgressService` all use the same `syncWithRetry` idiom and are **plausible further instances
+  on the strength of their imports alone — it did not open them and does not claim they are affected.**
+
+### Verified baseline — 2026-08-30 18:31, MINE, on a confirmed-static tree
+All 34 runs terminal. Newest `src/` mtime 2.5 min cold before any gate ran. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **738** files (733 + 5 new test files) |
+| `npm run test:run` | **199 files / 1679 tests**, exit 0 both runs — **NEW FLOOR** |
+| arithmetic | 194+5=199 files; 1644 + 35 = 1679. **Nothing deleted, skipped or weakened** — the one edited test file gained assertions. |
+| `npx playwright test --list` | **126 tests / 16 files**, exit 0 (unchanged) |
+| debris | zero scratch; `test-results/` + `playwright-report/` swept |
+
+### ⭐ NEXT, and it is now unblocked
+The three fresh instances (water / nutrition / body-stats) were deliberately left as a report because
+T-111 had not landed yet and two workers inventing two fixes for one shape is this project's most
+repeated defect. **T-111 has now landed, so the pattern exists and can be copied rather than invented.**
+That is the next batch, plus extending the ledger beyond `WORKOUT_SESSIONS` so the sign-out guard stops
+being blind to those three stores.

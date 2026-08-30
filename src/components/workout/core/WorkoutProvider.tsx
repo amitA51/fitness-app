@@ -11,6 +11,7 @@ import { triggerHapticEffect, vibratePattern } from '../../../utils/haptics';
 import { logger } from '../../../utils/logger';
 import { safeJsonParse } from '../../../utils/safeJson';
 import { setVolume } from '../../../utils/workoutMath';
+import { showToast } from '../../ui/GlobalToast';
 import {
   WorkoutDerivedProvider,
   WorkoutDispatchProvider,
@@ -33,10 +34,12 @@ import {
 
 const STORAGE_KEY = 'active_workout_v3_state';
 
-// A persisted draft older than this is considered abandoned and is discarded on
-// load rather than silently resumed. Without this guard, a stale draft from a
-// previous day was restored as if "active" — its old startTimestamp made the
-// live timer open at hours-elapsed and the saved duration was nonsensical.
+// A persisted draft whose clock is older than this is treated as having a STALE
+// CLOCK — not as garbage. Resuming its ancient startTimestamp would open the
+// live timer at hours-elapsed and save a nonsensical duration, so the clock is
+// reset on restore. The draft itself, and every set logged into it, is KEPT:
+// draft.exercises is the entire value of the draft, and a bad clock is not a
+// reason to destroy it. See loadState() / the reducer initializer below.
 const MAX_DRAFT_AGE_MS = 12 * 60 * 60 * 1000; // 12 hours
 
 // Stable signature of the persistence-worthy fields. Shared by BOTH the debounced
@@ -57,9 +60,34 @@ const meaningfulStateKey = (s: WorkoutState): string =>
 const platform: PlatformAdapter = webPlatform;
 
 /**
+ * Write one value and PROVE it landed.
+ *
+ * A thrown error is not a usable failure signal here: `webPlatform.setItem`
+ * swallows the quota / private-mode exception itself, so `setItem` returning
+ * normally says nothing about whether anything was stored. The read-back is
+ * what actually distinguishes a real write from a silent no-op (Safari private
+ * mode, quota exceeded, iOS storage pressure).
+ *
+ * Runs on the debounced / interval / visibility persist paths only — never on
+ * the set-entry keystroke path — so it cannot slow logging a set.
+ */
+const writeVerified = (value: string): boolean => {
+  try {
+    platform.setItem(STORAGE_KEY, value);
+  } catch {
+    return false;
+  }
+  try {
+    return platform.getItem(STORAGE_KEY) === value;
+  } catch {
+    return false;
+  }
+};
+
+/**
  * Stringify-then-store with a single retry that drops transient/UI-only
  * fields (overlays, celebrations, ghost data) if the first attempt fails.
- * Returns true on success.
+ * Returns true on success — callers MUST surface a false (see persist()).
  */
 const persistState = (state: WorkoutState): boolean => {
   // A finished/discarded workout must never be re-persisted (which would let it
@@ -76,31 +104,70 @@ const persistState = (state: WorkoutState): boolean => {
   // Stamp the wall-clock write time so restore can subtract closed-app time.
   const payload = { ...state, lastPersistedAt: Date.now() };
   try {
-    platform.setItem(STORAGE_KEY, JSON.stringify(payload));
-    return true;
+    if (writeVerified(JSON.stringify(payload))) return true;
   } catch (err) {
-    // Try a stripped payload — keep only durable fields a user would lose
-    try {
-      const slim = {
-        exercises: state.exercises,
-        currentExerciseIndex: state.currentExerciseIndex,
-        supersetGroups: state.supersetGroups,
-        startTimestamp: state.startTimestamp,
-        totalPausedTime: state.totalPausedTime,
-        lastPauseTimestamp: state.lastPauseTimestamp,
-        isPaused: state.isPaused,
-        restTimer: state.restTimer,
-        appSettings: state.appSettings,
-        lastPersistedAt: payload.lastPersistedAt,
-      };
-      platform.setItem(STORAGE_KEY, JSON.stringify(slim));
-      logger.workout?.warn?.('Workout state slim-persist succeeded after full failure', err);
-      return true;
-    } catch (err2) {
-      logger.workout?.error?.('Workout state persist failed (full + slim)', err2);
-      return false;
-    }
+    logger.workout?.warn?.('Workout state serialize failed, trying slim payload', err);
   }
+  // Try a stripped payload — keep only durable fields a user would lose
+  try {
+    const slim = {
+      exercises: state.exercises,
+      currentExerciseIndex: state.currentExerciseIndex,
+      supersetGroups: state.supersetGroups,
+      startTimestamp: state.startTimestamp,
+      totalPausedTime: state.totalPausedTime,
+      lastPauseTimestamp: state.lastPauseTimestamp,
+      isPaused: state.isPaused,
+      restTimer: state.restTimer,
+      appSettings: state.appSettings,
+      lastPersistedAt: payload.lastPersistedAt,
+    };
+    if (writeVerified(JSON.stringify(slim))) {
+      logger.workout?.warn?.('Workout state slim-persist succeeded after full failure');
+      return true;
+    }
+  } catch (err2) {
+    logger.workout?.error?.('Workout state slim serialize failed', err2);
+  }
+  logger.workout?.error?.('Workout state persist failed (full + slim) — store is unwritable');
+  return false;
+};
+
+// The store being unwritable (Safari private mode, quota exceeded, iOS storage
+// pressure) used to be completely silent: persistState returned false and all
+// five call sites threw it away, so the trainee kept logging sets into RAM and
+// lost the lot the moment the tab closed.
+//
+// Surfaced ONCE per session, deliberately: the condition does not change
+// between sets, so a toast per set would add no information and would fight the
+// trainee for the screen mid-lift ("log first, admire later").
+let persistFailureNotified = false;
+
+/**
+ * persistState PLUS the user-visible consequence of a false. Every persist path
+ * goes through this — debounced write, unmount flush, visibility hide,
+ * beforeunload, 30s backup — so none of them can drop the failure again.
+ *
+ * Module-level rather than a useCallback: three of the five call sites live in
+ * effects that must never re-subscribe (the visibility listener, the 30s
+ * interval, the unmount flush), so this must not become a hook dependency.
+ */
+const persist = (state: WorkoutState): boolean => {
+  const ok = persistState(state);
+  if (ok || persistFailureNotified) return ok;
+  persistFailureNotified = true;
+  showToast('האימון לא נשמר במכשיר', {
+    variant: 'error',
+    description:
+      'הסטים קיימים רק בזיכרון הדפדפן. סיימו את האימון עכשיו כדי לשמור אותו — סגירת הכרטיסייה תמחק אותם.',
+    duration: 8000,
+  });
+  return ok;
+};
+
+/** A new workout session re-arms the notice. Called once, on provider mount. */
+const resetPersistFailureNotice = (): void => {
+  persistFailureNotified = false;
 };
 // REST_TIMER_SYNC_INTERVAL removed - useRestTimer hook handles its own timing locally
 // This eliminates unnecessary re-renders every second
@@ -140,8 +207,13 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
   const appSettingsContextRef = useRef(appSettingsContext);
   appSettingsContextRef.current = appSettingsContext;
 
-  // Load saved state or create new
-  const loadState = useCallback((): WorkoutState | null => {
+  // Load saved state or create new.
+  //
+  // Returns the draft PLUS whether its clock is stale. A stale clock is a clock
+  // problem: the caller resets startTimestamp/totalPausedTime and keeps every
+  // logged set. Deleting the draft here is what silently ate an evening's sets
+  // for anyone who meant to finish the workout the next morning.
+  const loadState = useCallback((): { draft: WorkoutState; clockStale: boolean } | null => {
     try {
       const saved = platform.getItem(STORAGE_KEY);
       if (saved) {
@@ -151,15 +223,18 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
           platform.removeItem(STORAGE_KEY);
           return null;
         }
-        // Discard abandoned drafts. A draft whose last persist was more than
-        // MAX_DRAFT_AGE_MS ago is treated as stale: resuming it would reuse an
-        // ancient startTimestamp (timer opens at hours-elapsed, duration bogus).
         const lastWrite = parsed.lastPersistedAt ?? parsed.lastPauseTimestamp ?? null;
-        if (lastWrite && Date.now() - lastWrite > MAX_DRAFT_AGE_MS) {
-          platform.removeItem(STORAGE_KEY);
-          return null;
+        const clockStale = !!lastWrite && Date.now() - lastWrite > MAX_DRAFT_AGE_MS;
+        if (clockStale) {
+          logger.workout?.warn?.(
+            'Restored draft has a stale clock — resetting timers, keeping sets',
+            {
+              ageMs: Date.now() - (lastWrite as number),
+              exercises: parsed.exercises?.length ?? 0,
+            }
+          );
         }
-        return parsed;
+        return { draft: parsed, clockStale };
       }
     } catch {
       // Ignore persistence errors silently
@@ -169,19 +244,23 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
 
   // Initialize state
   const [state, dispatch] = useImmerReducer(workoutReducer, null, () => {
-    const savedState = loadState();
+    const loaded = loadState();
     // Prefer the context: a restored draft carries its own (older) copy of
     // appSettings, and a second independent read of localStorage would diverge
     // from SettingsProvider the moment either side changed a value.
     const appSettings = appSettingsContext?.settings ?? loadAppSettings();
 
-    if (savedState) {
+    if (loaded) {
+      const { draft: savedState, clockStale } = loaded;
       // Subtract the wall-time the app was closed/backgrounded from the workout
       // duration by adding it to totalPausedTime. Prefer the persist stamp; fall
       // back to the last pause time, then to now (no adjustment).
       const lastTimestamp =
         savedState.lastPersistedAt || savedState.lastPauseTimestamp || Date.now();
-      const closedAppElapsed = Math.max(0, Date.now() - lastTimestamp);
+      // A stale clock is not carried forward at all: the gap is hours or days,
+      // so folding it into totalPausedTime would be as meaningless as reusing
+      // the old startTimestamp. The clock starts now; the sets are untouched.
+      const closedAppElapsed = clockStale ? 0 : Math.max(0, Date.now() - lastTimestamp);
       // Preserve the user's own pause state. Previously we force-paused on every
       // restore, which froze the duration timer with no obvious way to resume —
       // so a resumed-but-still-"paused" workout saved a far-too-short duration.
@@ -193,7 +272,10 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
         appSettings,
         isPaused: wasPaused,
         lastPauseTimestamp: wasPaused ? Date.now() : null,
-        totalPausedTime: (savedState.totalPausedTime || 0) + closedAppElapsed,
+        // ONLY the clock is reset for a stale draft — exercises, sets,
+        // supersets and the current index all survive verbatim above.
+        startTimestamp: clockStale ? Date.now() : (savedState.startTimestamp ?? Date.now()),
+        totalPausedTime: clockStale ? 0 : (savedState.totalPausedTime || 0) + closedAppElapsed,
         pendingHaptic: null,
         finalized: false,
         // Sanitize transient UI/celebration flags
@@ -234,6 +316,12 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
   const persistTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPersistedRef = useRef<string>('');
 
+  // One provider mount = one workout session, so the "store is unwritable"
+  // notice is re-armed here and only here.
+  useEffect(() => {
+    resetPersistFailureNotice();
+  }, []);
+
   useEffect(() => {
     // Only persist when meaningful workout data changes (exercises, index, supersets, pause state)
     // Skip overlay toggles, celebrations, and timer ticks
@@ -246,7 +334,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
     }
 
     persistTimeoutRef.current = setTimeout(() => {
-      persistState(state);
+      persist(state);
     }, 500);
 
     return () => {
@@ -260,7 +348,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(
     () => () => {
-      persistState(stateRef.current);
+      persist(stateRef.current);
     },
     []
   );
@@ -272,7 +360,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
   useEffect(() => {
     const removeVisibility = platform.onVisibilityChange((hidden) => {
       if (hidden) {
-        persistState(stateRef.current);
+        persist(stateRef.current);
       } else {
         if (stateRef.current.restTimer.active && stateRef.current.restTimer.endTime) {
           dispatch({ type: 'SYNC_REST_TIMER' });
@@ -281,7 +369,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
     });
 
     const removeUnload = platform.onBeforeUnload(() => {
-      persistState(stateRef.current);
+      persist(stateRef.current);
     });
 
     return () => {
@@ -302,7 +390,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
       const key = meaningfulStateKey(stateRef.current);
       if (key === lastPersistedRef.current) return;
       lastPersistedRef.current = key;
-      persistState(stateRef.current);
+      persist(stateRef.current);
     }, 30000);
 
     return () => clearInterval(intervalId);

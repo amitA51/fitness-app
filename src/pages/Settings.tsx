@@ -76,6 +76,13 @@ export default function Settings() {
   const cloudSync = useCloudSync();
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  // What exactly is at risk, so the dialog can NAME it. A workout that only
+  // exists on this device is a different loss from a queued change, and the user
+  // cannot weigh "להתנתק בכל זאת?" without being told which one they have.
+  const [signOutRisk, setSignOutRisk] = useState<{ changes: number; sessions: number }>({
+    changes: 0,
+    sessions: 0,
+  });
 
   // /paywall sits behind AdminGuard (no monetization model has been chosen, so
   // the screen exists only for the owner to look at). Offering the row to
@@ -121,6 +128,17 @@ export default function Settings() {
       const { getDeadLetterCount, getQueueDepth, processQueue } = await import(
         '../services/offlineQueue'
       );
+      const { flushUnsyncedSessions, getUnsyncedSessionCount } = await import(
+        '../services/sessionDb'
+      );
+
+      // A workout that never entered the queue is invisible to processQueue, so
+      // flush the unsynced-session ledger FIRST — otherwise "flush what we can"
+      // silently skips the exact writes this guard exists to protect.
+      if (navigator.onLine) {
+        await flushUnsyncedSessions();
+      }
+
       let depth = await getQueueDepth();
       if (depth > 0 && navigator.onLine) {
         await processQueue();
@@ -132,7 +150,14 @@ export default function Settings() {
       // to zero — so the warning never appeared and sign-out then deleted the
       // very payload the recovery UI was keeping for the user.
       const held = await getDeadLetterCount();
-      if (depth + held > 0) {
+      // …and the same blind spot one level deeper: a workout written while
+      // getCurrentUser() returned null (a 401 during token refresh) used to
+      // reach neither store, so queue depth AND held count were both zero while
+      // the workout existed only on this device. Counting the local ledger is
+      // what stops this dialog from reassuring the user right before the wipe.
+      const unsyncedSessions = await getUnsyncedSessionCount();
+      if (depth + held + unsyncedSessions > 0) {
+        setSignOutRisk({ changes: depth + held, sessions: unsyncedSessions });
         setShowSignOutConfirm(true);
         return;
       }
@@ -154,6 +179,23 @@ export default function Settings() {
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
+
+  // The warning has to NAME what is at risk. "יש שינויים שטרם סונכרנו" reads as
+  // plumbing; "אימון שטרם הגיע לענן" is the thing the user would actually mourn.
+  // No leading digit in either sentence — a number at the start of an RTL line
+  // is where mixed-direction text goes wrong.
+  const signOutDescription = (() => {
+    const { changes, sessions } = signOutRisk;
+    if (sessions === 0) {
+      return 'יש שינויים שטרם סונכרנו לענן — להתנתק בכל זאת? שינויים שלא סונכרנו יימחקו.';
+    }
+    const workouts =
+      sessions === 1
+        ? 'במכשיר שמור אימון אחד שטרם הגיע לענן.'
+        : `במכשיר שמורים ${sessions} אימונים שטרם הגיעו לענן.`;
+    const alsoChanges = changes > 0 ? ' יש גם שינויים נוספים שטרם סונכרנו.' : '';
+    return `${workouts}${alsoChanges} אם תתנתקו כעת הנתונים האלה יימחקו — בטלו וסנכרנו קודם.`;
+  })();
 
   // Two layers, deliberately — the page WASH and the content COLUMN are
   // different concerns:
@@ -382,7 +424,7 @@ export default function Settings() {
         isOpen={showSignOutConfirm}
         variant="warning"
         title="התנתקות מהחשבון"
-        description="יש שינויים שטרם סונכרנו לענן — להתנתק בכל זאת? שינויים שלא סונכרנו יימחקו."
+        description={signOutDescription}
         confirmLabel="התנתקות"
         cancelLabel="ביטול"
         onConfirm={() => {

@@ -108,12 +108,25 @@ export function useWorkoutEffects({
           const loaded: Exercise[] = [];
           for (const ex of template.exercises) {
             // Structured-program exercises carry programExtras (RPE target,
-            // intensity technique, substitutions, coaching notes) and a target
-            // set/rep prescription — preserve them so the runner shows the plan.
-            // Regular templates keep their original single empty-set behavior.
+            // intensity technique, substitutions, coaching notes) — those stay
+            // program-only.
             const isProgram = !!ex.programExtras;
-            const setCount = isProgram ? Math.max(1, ex.targetSets ?? ex.sets?.length ?? 1) : 1;
-            const reps = isProgram ? (ex.targetReps ?? 0) : 0;
+            // The set/rep prescription is honoured for EVERY template, program or
+            // not, via the one expression the program path has always used.
+            // Gating it on `isProgram` discarded what a regular template already
+            // stores: the built-in templates ship 4x8 / 3x12, the template editor
+            // renders those as chips and the estimated duration is COMPUTED from
+            // them — yet a 4x8 squat opened as "set 1 of 1", reps 0, so the lifter
+            // tapped "add set" three times and retyped the reps, per exercise.
+            //
+            // A pre-created set is a PLAN, never a result: createWorkoutSet
+            // defaults to isCompleted:false / completedAt:null and the weight is
+            // 0, so these sets are invisible to every completed-set count, volume
+            // sum and finish-dialog total (all of which gate on completion), and
+            // `reps` is only the target the set-logging UI pre-fills. It sizes the
+            // progress spine ("הבא · סט 1 מתוך 4") and nothing else.
+            const setCount = Math.max(1, ex.targetSets ?? ex.sets?.length ?? 1);
+            const reps = ex.targetReps ?? 0;
             // Structured-program exercises prepend the PDF's prescribed warmup
             // set(s) before the working sets: [ ...warmups (isWarmup), ...working ].
             // Warmups carry no target reps/weight (they're ramp-ups) and are

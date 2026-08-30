@@ -240,6 +240,11 @@ export const listCoachAssignments = async (
 /** The current trainee's inbox — direct + group assignments (RLS-scoped). */
 export const listMyAssignments = async (): Promise<Assignment[]> => {
   const supabase = requireClient();
+  // A signed-out guest has no inbox by definition — the RLS-scoped read would
+  // only come back 401. Same early-return contract as listCoachAssignments so
+  // every call site keeps treating "no user" exactly like "nothing assigned".
+  const user = await getCurrentUser();
+  if (!user) return [];
   const { data, error } = await supabase
     .from('assignments')
     .select(

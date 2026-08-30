@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getQueueDepth, processQueue } from '../../services/offlineQueue';
+import { flushUnsyncedSessions, getUnsyncedSessionCount } from '../../services/sessionDb';
 
 interface OfflineIndicatorProps {
   /**
@@ -14,6 +15,13 @@ interface OfflineIndicatorProps {
 export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [queueDepth, setQueueDepth] = useState(0);
+  // Queue depth alone was a blind spot with the same shape as the sign-out
+  // guard's: a workout written while getCurrentUser() returned null (a 401
+  // during token refresh) entered no queue, so this component rendered
+  // NOTHING — a reassuring "all synced" at the exact moment the only copy of
+  // that workout was on the device. The ledger in sessionDb is the second
+  // input that closes it.
+  const [unsyncedSessions, setUnsyncedSessions] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const refreshQueueDepth = useCallback(async () => {
@@ -23,7 +31,12 @@ export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
     } catch {
       // ignore - depth stays at last known value
     }
-  }, []);
+    try {
+      setUnsyncedSessions(isGuest ? 0 : await getUnsyncedSessionCount());
+    } catch {
+      // ignore — count stays at last known value
+    }
+  }, [isGuest]);
 
   // Force a sync pass now. Success/failure feedback is surfaced by the queue
   // itself via the shared toast; here we just refresh the visible depth.
@@ -31,6 +44,10 @@ export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
     if (isSyncing) return;
     setIsSyncing(true);
     try {
+      // A ledgered-only workout is in no queue, so processQueue cannot see it.
+      // Flushing first is what keeps this button from being a no-op for exactly
+      // the case the banner is warning about.
+      await flushUnsyncedSessions();
       await processQueue();
       await refreshQueueDepth();
     } catch {
@@ -60,7 +77,7 @@ export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
 
   // A signed-out visitor with leftover queued rows used to poll every 5s
   // forever behind a banner they could never clear.
-  const shouldPoll = !isGuest && (isOffline || queueDepth > 0);
+  const shouldPoll = !isGuest && (isOffline || queueDepth > 0 || unsyncedSessions > 0);
 
   useEffect(() => {
     if (!shouldPoll) return;
@@ -74,6 +91,12 @@ export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
       } catch {
         // ignore — depth stays at last known value
       }
+      try {
+        const pending = await getUnsyncedSessionCount();
+        if (active) setUnsyncedSessions(pending);
+      } catch {
+        // ignore — count stays at last known value
+      }
     };
 
     const id = setInterval(poll, 5000);
@@ -83,11 +106,15 @@ export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
     };
   }, [shouldPoll]);
 
+  // Only ever counted for a real account: a guest's local-only workouts are not
+  // "waiting for the cloud", so they must not raise this banner.
+  const atRiskSessions = isGuest ? 0 : unsyncedSessions;
+
   if (isGuest && !isOffline) return null;
 
-  if (!isOffline && queueDepth === 0) return null;
+  if (!isOffline && queueDepth === 0 && atRiskSessions === 0) return null;
 
-  if (!isOffline && queueDepth > 0) {
+  if (!isOffline && (queueDepth > 0 || atRiskSessions > 0)) {
     return (
       <div
         role="status"
@@ -100,12 +127,29 @@ export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
         }}
       >
         <span className="breathing-dot warn" aria-hidden="true" />
-        <span>
-          <span dir="ltr" className="kinetic-number">
-            {queueDepth}
-          </span>{' '}
-          {queueDepth === 1 ? 'פעולה אחת ממתינה לסנכרון' : 'פעולות ממתינות לסנכרון'}
-        </span>
+        {queueDepth > 0 ? (
+          <span>
+            <span dir="ltr" className="kinetic-number">
+              {queueDepth}
+            </span>{' '}
+            {queueDepth === 1 ? 'פעולה אחת ממתינה לסנכרון' : 'פעולות ממתינות לסנכרון'}
+          </span>
+        ) : (
+          // The queue is empty and a workout still exists only here. Naming the
+          // workout is the whole point: "0 pending" was the lie.
+          <span>
+            {atRiskSessions === 1 ? (
+              'אימון אחד שמור במכשיר בלבד'
+            ) : (
+              <>
+                <span dir="ltr" className="kinetic-number">
+                  {atRiskSessions}
+                </span>{' '}
+                אימונים שמורים במכשיר בלבד
+              </>
+            )}
+          </span>
+        )}
         <button
           type="button"
           onClick={handleSyncNow}
@@ -150,6 +194,20 @@ export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
             {queueDepth}
           </span>{' '}
           פעולות בתור
+        </span>
+      ) : atRiskSessions > 0 ? (
+        <span>
+          לא מחובר ·{' '}
+          {atRiskSessions === 1 ? (
+            'אימון אחד שמור במכשיר בלבד'
+          ) : (
+            <>
+              <span dir="ltr" className="kinetic-number">
+                {atRiskSessions}
+              </span>{' '}
+              אימונים שמורים במכשיר בלבד
+            </>
+          )}
         </span>
       ) : (
         'אין חיבור - האפליקציה פועלת במצב לא מקוון'
