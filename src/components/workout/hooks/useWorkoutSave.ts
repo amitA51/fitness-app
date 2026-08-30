@@ -126,6 +126,12 @@ export function useWorkoutSave({
       return;
     }
 
+    // ONE clock read for both the session that gets built and the short-session
+    // gate below. Two separate `Date.now()` calls can straddle a second boundary,
+    // which would let the gate judge a duration that is not the duration actually
+    // persisted on the session.
+    const now = Date.now();
+
     // Validate: Check if there's anything to save BEFORE closing overlay
     const buildResult = buildWorkoutSession({
       exercises: state.exercises,
@@ -133,6 +139,7 @@ export function useWorkoutSave({
       totalPausedTime: state.totalPausedTime,
       itemId: item?.id || `workout_${Date.now()}`,
       goalType: workoutSettings.defaultWorkoutGoal ?? 'general',
+      now,
     });
 
     if (!buildResult) {
@@ -148,7 +155,7 @@ export function useWorkoutSave({
     // would otherwise pollute history, streaks and volume stats.
     if (
       !shortSessionApprovedRef.current &&
-      isShortSession(state.startTimestamp, state.totalPausedTime)
+      isShortSession(state.startTimestamp, state.totalPausedTime, now)
     ) {
       setShortSessionAsk(true);
       return;

@@ -4,6 +4,11 @@
 // then secondary surfaces. Keep copy short, imperative, and concrete so new
 // users leave knowing exactly what to tap next.
 // Copy register is plural-imperative ("לחצו", "בחרו") to match the app standard.
+//
+// The sheet is shown ONLY to brand-new users, so step 1 must name the controls a
+// brand-new HOME screen actually renders — the FirstRunHero pair "בחרו תבנית
+// מוכנה" / "התחילו בלי תבנית". The masthead "התחל אימון" CTA is suppressed while
+// the first-run hero owns the start action, so it must not be referenced here.
 
 import { Dumbbell, ListChecks, TrendingUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -23,7 +28,7 @@ export const GUIDANCE_STEPS: readonly GuidanceStep[] = [
   {
     icon: Dumbbell,
     title: 'צעד 1 — התחילו אימון',
-    body: "במסך הבית לחצו על הכפתור הגדול 'התחל אימון'. מומלץ לבחור תבנית מוכנה — כבר יש בה תרגילים. אפשר גם להתחיל אימון ריק ולבחור תרגילים תוך כדי.",
+    body: "במסך הבית לחצו על 'בחרו תבנית מוכנה' — התבנית כבר כוללת את התרגילים. רוצים להרכיב אימון בעצמכם? לחצו על 'התחילו בלי תבנית'.",
   },
   {
     icon: ListChecks,

@@ -6699,3 +6699,430 @@ next journey worker rather than deleting it.
 **⚠️ THE REAL NEXT STEP: steps 3–10 of the journey have STILL never been walked.** Home, templates,
 adding exercises, starting a workout, logging a set, the rest timer, finish, summary, progress. We fixed
 the door; nobody has been inside.
+
+
+---
+
+# ⭐ PUSHED TO MASTER 2026-08-30 14:05 — Amit: "תדחוף ל-master ותרוץ על המסלול"
+
+`master` = **`e90a62a`** = `origin/master`, 0 ahead / 0 behind, tree clean. The blocker fix is live.
+Only `e2e/journey-t097.spec.ts` remains untracked, deliberately — it is batch 34's harness.
+
+# Batch 34 — THE REST OF THE JOURNEY. One worker.
+
+### Why one worker, and why it starts at step 3
+Steps 1–2 are now fixed AND covered by a unit test that drives real clicks, so re-proving them is
+spend without return. **Steps 3–10 have never been exercised by anything**: home, templates, adding
+exercises, starting a workout, logging a set, the rest timer, finish, summary, progress. That is where
+the next blocker lives if there is one. Nobody else may hold the browser or the build.
+
+### ⚠️ THE THREE LESSONS FROM T-097'S DEATH, all in the brief
+1. **It drifted into `npm run test:run`, which was never in its brief**, and the wall landed there.
+   **Batch 34 is explicitly FORBIDDEN from running the test suite, verify, or any gate.** It is not a
+   verification task; it is a usage task. I gate afterwards.
+2. **It spent a large part of its 30 minutes writing the harness.** That harness now exists on disk
+   and is HANDED OVER, so this round starts with a working walker instead of building one.
+3. **ONE `npx playwright test` invocation, and it may NOT enumerate or count its own output.** Three
+   of six capture deaths happened while a worker listed the files it had just written. I count.
+
+Also carried: build FIRST · wipe localStorage AND IndexedDB for a true cold start · **write a finding
+record PER STEP as it goes**, because that is the only reason evidence survived batch 30's timeout ·
+an explicit binding priority order, which saved rounds 5 and 6.
+
+## [T-099] Walk the rest of the app. Steps 3 to 10.
+- status: dispatched (batch 34)
+- owner: fitness-qa
+- goal: find out whether a user who is now finally inside the app can actually complete the thing the
+  app exists for — log a workout and see it afterwards.
+- files: WRITES `visual-qa/**` + `e2e/journey-t097.spec.ts` only. **Read-only in `src/`.**
+  **HOLDS PLAYWRIGHT AND THE BUILD — sole owner.**
+- done when: the journey is walked at 390px in priority order and every break is reported with the step
+  that produced it and the frame that shows it
+- notes: **P1 — reach a live workout and LOG A REAL SET, then prove the number stuck.** That is the
+  product (`PRODUCT.md`: a set logged in under 3 seconds, log first admire later). **P2 — finish the
+  workout, read the summary, then check Progress shows the SAME numbers.** P3 — templates: create one,
+  add exercises, start from it. P4 — can you get BACK out of every screen you got into. P5 — the rest
+  timer. **HIGH = a dead end, a control that does nothing, data that vanished, a number that disagrees
+  with what was just done, a step it could not complete, or a console error in normal use.**
+  Contrast and pixel alignment are OUT OF SCOPE. **If it cannot finish, the point where it stopped IS
+  the headline result** — being stuck is a finding, not a failure.
+
+
+## [T-099] The journey — ⏱ TIMED OUT (the EIGHTH), but **P1 IS PROVEN GREEN AND THE EVIDENCE SURVIVED**
+- status: **accepted on recovered evidence. VERDICT: the core product WORKS. 1 MEDIUM finding, 0 HIGH, 0 uncaught errors.**
+- **✅ THE INCREMENTAL-WRITE RULE PAID OFF FOR THE SECOND TIME.** 13 frames + `visual-qa/t099-journey.json`
+  (23.2KB: steps, findings, notes, timeline, loggedSets, consoleErrors) all on disk. Nothing was lost to
+  the wall, because the record was written per step rather than collected for a final pass.
+- Died **inside** its third `npx playwright test`, not in the epilogue. The hardened epilogue rules held.
+
+### ✅ P1 — THE PRODUCT'S CORE JOB WORKS, AND THE NUMBERS ARE TRUE
+- Cold launch → onboarding in **3 screens / 5 taps** → **live workout in 8 taps total.**
+- **Set 1: typed 47 kg × 9 → committed.** App confirmed back `47 ק"ג | 9 חזרות | 1RM ~61.1` with a PR toast.
+- **Set 2: typed 52 kg × 7 → committed.** Confirmed `52 ק"ג | 7 חזרות | 1RM ~64.1`.
+- `loggedSets` records **typed == shown** for both. `sets committed: 2/2`.
+  **So the app's one indispensable claim — the number you typed is the number it keeps — holds.**
+- **✅ P5 rest timer WORKS, measured:** `01:29 → 01:26` over 3s (counts down), `+15s` moves `01:26 → 01:41`,
+  and skip works.
+- **✅ Mid-workout reload SURVIVES:** same workout URL, live set UI restored.
+- **✅ `pageErrors: []` — ZERO uncaught errors anywhere in the walk.** Notable one batch after the blocker.
+
+### ⚠️ THE ONE REAL FINDING — MEDIUM, and it is a family we have fixed before
+The first-run guidance coach sits over the home screen and **tells the user to press `התחל אימון`. That
+button does not exist on home.** The real controls are `בחרו תבנית מוכנה` / `התחילו בלי תבנית`.
+Frame: `visual-qa/t099-02-coach-copy-mismatch.png`. **Same class T-012 fixed in batch 4** — bottom-bar copy
+naming a button not on screen. The guidance service was not in that sweep.
+
+### ⚠️⚠️ DO NOT READ THE 14:15–14:16 FRAMES AS FINDINGS — THE WORKER INVALIDATED THAT RUN ITSELF
+`t099-04-set1-not-committed.png`, `t099-04-set2-not-committed.png`, `t099-10-trapped_workout.png`,
+`t099-08-progress.png` and the `t099-09-*` template frames are from **run 2, whose set-detector was WRONG**
+and which the worker retracted. Their filenames read like HIGH findings and they are not.
+**It caught TWO of its own false negatives before reporting either:**
+1. Run 1 died on a wrong selector. It recognised that filing "cannot start a workout" from that **would
+   have been a false blocker** and fixed the harness instead.
+2. Run 2 concluded the sets never committed. **It re-checked and found its own false negative:** each
+   template exercise has exactly ONE set, so the slider label stays `סט 1` while the app advances to the
+   next exercise — progress went `2/7 → 3/7` with PR toasts carrying the typed numbers. The sets DID commit.
+**Each correction was right and each cost ~10 minutes. That is what killed the round, not the app.**
+
+### Noted, not filed
+- **2 console errors, both identical:** `401 GET /rest/v1/assignments` — a guest with no session hitting a
+  coach-assignments endpoint. Worth its own look; not a walk-blocker.
+- `weight field after reload: משקל: 0 ק״ג` — almost certainly the NEXT exercise's untouched field, since
+  progress had advanced. **Ambiguous; do not file until confirmed.**
+- Three `tap MISS` selector notes on the TEMPLATE path (`הוסיפו תרגיל ראשון`, `הוסף תרגיל`,
+  `התחל תבנית`) — harness misses, not app defects. It routed around them via `התחל אימון:`.
+
+### NOT REACHED — and this is the honest gap
+**P2 was never completed: finish → summary → does Progress show the same numbers.** The timeline's last
+entry is `7-finish-and-summary` starting, then the wall. **P3 templates likewise unproven** — the only
+template frames are from the invalidated run. `notReached: []` in the JSON is empty only because it never
+got to write it; do not read that as "everything reached".
+
+### ⚠️⚠️ EIGHTH TIMEOUT. THE ROOT CAUSE IS NOW UNAMBIGUOUS AND I AM SPLITTING THE JOB.
+Across all eight, one pattern: **a single worker cannot both DEBUG a browser harness and complete a long
+walk inside 30 minutes.** This round spent run 1 on a selector, run 2 on a detector, and died in run 3 —
+and both corrections were correct work, not waste.
+**But the harness is now DEBUGGED: `e2e/journey-t099.spec.ts`, 47KB, working selectors and a working
+set-detector, proven by the green P1 above.** So batch 35 does NOT rebuild anything — it inherits a working
+walker and runs only the unproven half.
+**NEW RULE: a journey worker gets ONE HALF of the walk, on an already-debugged harness. Never build and
+walk in the same round.** Same split that has finished capture/verdict first-try seven times.
+
+### Both journey specs deliberately LEFT UNTRACKED
+`e2e/journey-t097.spec.ts` and `e2e/journey-t099.spec.ts` are untracked on purpose. `npx playwright test`
+globs `e2e/`, and t099 timed out mid-run — committing an unproven spec breaks the suite for everyone. It is
+the next worker's input, not a deliverable. `--list` confirms both parse: **126 tests / 17 files, exit 0.**
+
+### State — MINE, 14:37
+`master` = **`e90a62a`** = `origin/master`. Zero `src/` changes this batch, so no gates were owed.
+`test-results/` swept. Test floor unchanged at 189 files / 1609 tests.
+
+
+---
+
+# Batch 35 — THE SECOND HALF OF THE JOURNEY. One worker, debugged harness.
+
+Applying the new rule immediately: this worker **builds nothing.** It inherits
+`e2e/journey-t099.spec.ts` (47KB, working selectors, working set-detector, proven by T-099's green P1)
+and walks only what is still unproven. That is a materially smaller job than the round that just died.
+
+## [T-100] Finish the workout, read the summary, prove Progress agrees
+- status: dispatched (batch 35)
+- owner: fitness-qa
+- goal: close the half of the journey nobody has ever reached — does a completed workout show up, with
+  the same numbers, where the user goes looking for it.
+- files: WRITES `visual-qa/**` + `e2e/journey-t099.spec.ts` only. **Read-only in `src/`.**
+  **HOLDS PLAYWRIGHT AND THE BUILD — sole owner.**
+- done when: the workout is finished, the summary read, and Progress checked against the sets actually
+  logged; then templates created + exercises added + started
+- notes: **P1 IS DONE, DO NOT RE-PROVE IT.** T-099 established: 8 taps cold-launch → live workout, sets
+  commit exactly as typed (47×9 and 52×7 confirmed back with PR toasts), the rest timer counts/extends/
+  skips, a mid-workout reload restores the live set UI, and `pageErrors` is empty. **P1 — finish →
+  summary → Progress shows THE SAME numbers.** A number disagreeing with what was just logged is HIGH.
+  **P2 — templates:** create, add exercises, start from it. T-099's three `tap MISS` notes are on exactly
+  this path (`הוסיפו תרגיל ראשון`, `הוסף תרגיל`, `התחל תבנית`) — **those are harness misses, not app
+  defects; find the real controls before filing anything.** P3 — can you get back out of every screen.
+  Contrast and pixels OUT OF SCOPE. Same hardened rules: build FIRST, ONE playwright invocation, no gates,
+  no self-counting, incremental per-step writes.
+
+
+## [T-100] The second half — ⏱ TIMED OUT (the NINTH). **I found the mechanical root cause of all nine.**
+- status: **partially accepted. P1 re-confirmed green. The finish step is a REPRODUCIBLE HANG, cause not yet attributed.**
+- 5 artifacts + `visual-qa/t100-journey.json` (23.7KB) recovered. The incremental-write rule held again.
+
+### ⚠️⚠️ THE ROOT CAUSE, AND IT IS ONE LINE IN THE SPEC — NOT A BRIEFING PROBLEM
+`e2e/journey-t099.spec.ts:241` is **`test.setTimeout(1_500_000)` — 25 MINUTES**, inside a 30-minute wall.
+**The walk itself takes 38 SECONDS** (T-099's own timeline, 11:19:10 → 11:19:48). So the spec cannot fail
+fast: any single stalled selector silently consumes the entire round, and the worker dies with nothing to
+say. That is what killed batches 34 and 35, and it explains why hardening the *brief* never helped.
+**I stopped diagnosing the brief. The instrument was the problem.**
+
+### ⭐ I THEN RAN IT MYSELF — a genuine change of approach after nine failures
+No subagent, no 30-minute wall. `npx playwright test ... --global-timeout=240000`, a cap the spec cannot
+override. **Result: EXIT 1 at 241s, and the hang is pinpointed and REPRODUCIBLE.**
+Timeline of my own run: entered `7-finish-and-summary` at 15:12:38 → the harness's deliberate 48s wait for
+the short-session clock completed and wrote its note at 15:13:26 → **then 144 seconds of nothing until my
+cap fired.** Three independent runs now hang at the same step: T-099, T-100, and mine.
+
+### ✅ P1 RE-CONFIRMED on a second independent run — the core product works
+Identical to T-099: **live workout in 8 taps**, `47 kg × 9` and `52 kg × 7` both committed with the app
+confirming the numbers back (`1RM ~61.1`, `~64.1`), `sets committed: 2/2`, `loggedSets` typed == shown,
+rest timer counts/extends/skips, mid-workout reload restores the live set UI, **`pageErrors: []`**.
+Same single MEDIUM finding as before (the guidance coach names `התחל אימון`, a button not on home).
+
+### What I established myself, by reading code rather than dispatching
+- **`SHORT_SESSION_SECONDS = 60`** (`src/components/workout/hooks/useWorkoutSave.ts:66`). Under a minute,
+  the app asks **`לרשום את האימון?`** via `ConfirmExitOverlay` with record/drop actions — a legitimate
+  question, not a defect. The harness knows about it and deliberately waits past 60s.
+- **So the gate is NOT the hang** — the hang is after it, on the finish click or the probe that follows.
+- **The harness's cross-check logic is GOOD and worth keeping:** it parses the finish dialog's own
+  `סטים / ק״ג / זמן` grid and compares it against the typed numbers, filing HIGH on a mismatch. That is
+  exactly the check this round exists for. It has never got to run.
+
+### ⚠️ WHAT I WILL NOT CLAIM
+I cannot yet say whether the finish step is an **app defect** or a **harness miss**. Both look identical
+from a stalled locator. Attributing it either way now would be a guess, and a false blocker is worse than
+no finding. **Unattributed and reproducible is the honest status.**
+
+---
+
+# Batch 36 — make the finish step ANSWERABLE. Narrow, not a journey.
+
+**Deliberately not another walkthrough.** The deliverable is one answer, and the instrument gets fixed
+first so a failure names itself instead of consuming the round.
+
+## [T-101] Lower the spec's self-granted timeout, then say what the finish dialog reports
+- status: dispatched (batch 36)
+- owner: fitness-qa
+- goal: turn a 25-minute silent hang into a fast, named failure — then answer the one open question:
+  does finishing the workout produce a summary whose numbers match the sets that were logged, and does
+  Progress agree.
+- files: WRITES `e2e/journey-t099.spec.ts` + `visual-qa/**` only. **Read-only in `src/`.**
+  **HOLDS PLAYWRIGHT AND THE BUILD — sole owner.**
+- done when: the spec fails fast instead of hanging; the exact stalled locator is named; and either the
+  finish → summary → Progress numbers are reported, or the reason it cannot complete is named with
+  evidence
+- notes: **FIRST EDIT: `test.setTimeout(1_500_000)` → `240_000`.** That single line is why three rounds
+  died. Everything else in the harness works and is proven — do NOT rewrite it.
+  **P1 is DONE, do not re-prove it.** Cross-check surfaces already coded: the finish dialog's
+  `סטים / ק״ג / זמן` grid, then the summary, then Progress. **A number disagreeing with the typed sets is
+  HIGH.** `SHORT_SESSION_SECONDS = 60` and the `לרשום את האימון?` overlay are CORRECT app behaviour, not
+  defects — answer the question, do not wait it out. **Attribute honestly: a stalled locator looks
+  identical to a broken button, so say which you proved.**
+
+
+## [T-101] ACCEPTED 2026-08-30 15:35. ⭐ **THE JOURNEY IS CLOSED. THE NUMBERS ARE TRUE.**
+- 4 edits, all confined to `e2e/journey-t099.spec.ts`. **`src/` and `supabase/` verified CLEAN by me.**
+  Spec parses: **126 tests / 17 files**, exit 0. `test.setTimeout` now `240_000`. No scratch left.
+
+### ⭐ THE ANSWER — and I confirmed 787 with my own eyes on both frames
+| surface | sets | volume |
+|---|---|---|
+| **typed (ground truth)** | 2 | **787 kg** (47×9 + 52×7) |
+| **finish dialog** | `2 סטים` | **`787 ק״ג`** |
+| **summary** | `2 סטים` / `2 תרגילים` | **`787 ק"ג` נפח** |
+| **Progress** | not printed | **`787`** + session row `2 תרגילים · 787 ק"ג` |
+Sets, volume and both per-exercise best sets agree across all three surfaces. Progress never prints a set
+count, so "2 sets" is an ABSENCE there, not a disagreement. **Zero page errors.**
+**So the app's end-state claim holds: the workout you log is the workout it reports.**
+**MY OWN ERROR: my brief stated 947 kg. The correct figure is 787 (423 + 364). The worker used 787.**
+
+### ⚠️ THE ROOT CAUSE OF THE INFINITE HANG — deeper than my diagnosis, and I verified it
+**`playwright.config.ts` has NO `actionTimeout`, so Playwright's default of 0 = NO TIMEOUT applies.**
+I read the config myself: it sets test `timeout: 30_000`, expect `timeout: 8_000`, `retries: 1` and
+webServer `timeout: 60_000` — **and no `actionTimeout` at all.** So `finish.click()` could wait forever.
+My `test.setTimeout(1_500_000)` finding explains why the ROUND died; this explains why the CLICK hung.
+**This affects every spec in the repo, not just the journey.** Real gap, worth its own one-line fix.
+
+### ⚠️ AND THE STALL WAS A HARNESS MISS — it said so rather than filing a false blocker
+After a mid-workout reload the app raises a resume-decision modal
+(`יש אימון פעיל שלא הסתיים — להמשיך אותו או להתחיל את התוכנית החדשה?`). The harness never answered it, so
+the finish button sat behind it. **Harness, not app.** It added the answer and got through.
+
+### ⚠️⚠️ IT RETRACTED TWO OF ITS OWN HIGH FINDINGS BEFORE I COULD READ THEM
+`visual-qa/t100-journey.json` contains `the finish dialog reports 787 kg … it says 0 kg` and
+`dialog said 0 kg, summary says 787 kg`. **BOTH ARE FALSE — do not cite them.** The harness parses
+`document.body` innerText, so its `ק״ג` regex matched the live weight field `משקל 0 ק״ג` sitting BEHIND
+the overlay before ever reaching the dialog's grid. It verified the real value by eye, told me not to
+trust its own JSON, **and refused to fix the regex because it had no run left to verify the fix** — it
+would not hand back an unverified change to a working harness. Correct on both counts.
+
+### Findings — 2 MEDIUM, 1 LOW, all real
+- **⚠️ MEDIUM — the dialog and the summary disagree about duration, and I SAW IT MYSELF.** The dialog's
+  `זמן` box reads **`00:17`** while the header clock read **`~01:09`** at that moment and the summary then
+  said **`1 דקות`**. One session, two durations. **Mechanism NOT established** — the worker said so
+  explicitly, and the mid-workout reload is the one unusual step in the sequence. One run without the
+  reload would tell us whether that is the trigger. Do not treat the cause as known.
+- **⚠️ MEDIUM — a plain reload asks about starting a NEW PROGRAM.** The user refreshed; they requested no
+  new program. `המשך אימון` is correct and non-destructive (787 confirmed intact after it). **The concern
+  is the other answer: `התחל חדש` sits ONE TAP from two logged sets, and it was deliberately NOT tapped,
+  so whether it discards them is UNVERIFIED.** Potential data loss — highest-value thing left open.
+- **LOW — Hebrew plural.** Per-exercise rows read `1 סטים`; the summary reads `1 דקות`. Should be
+  `1 סט` / `1 דקה`. Same family as the `1 אימונים` bug fixed in batch 3.
+- Carried, unchanged: the guidance coach names `התחל אימון`, a button not on home · a guest fires
+  `GET /rest/v1/assignments` and takes a **401 twice per workout**.
+
+### P3 — getting out
+**Out of the summary: verified.** No back/close control (`exits: []`) but three forward CTAs — and I can
+see in the frame that **`סיום` is the mint primary**, i.e. Amit's ruling is live and correct.
+`צפו בהתקדמות` landed on `/progress`. **Out of Progress: NOT click-verified** — the 240s cap arrived
+during the tab walk. The bottom nav is present in the probe; it was not tapped.
+
+### Not covered, stated honestly
+Progress tabs 5-6, the Progress exit tap, templates (create → add exercises → start), and the
+route-by-route exit audit. All outside T-101's question; the cap arrived first.
+
+### State — MINE, 15:35
+`master` = **`e90a62a`** = `origin/master`. Zero `src/` changes. Test floor unchanged: 189 files / 1609
+tests. Both journey specs still deliberately untracked.
+
+
+---
+
+# Batch 37 — FIX ALL FIVE. Amit: "תתקן את כל החמישה". Dispatched 2026-08-30 15:42.
+
+### ⭐ I ANSWERED TWO OF THE FIVE MYSELF FROM CODE — one is now a fix, one corrects my own report
+**Applying the lesson from the nine timeouts: read the code before spending a browser round.**
+
+**1. `התחל חדש` DOES discard the logged sets. CONFIRMED, no browser needed.**
+`src/components/workout/core/workoutReducerUiHandlers.ts` — `RESET_ACTIVE_WORKOUT` sets
+**`draft.exercises = []`**, and the logged sets live in `exercises`. It also resets
+`startTimestamp = Date.now()` and `totalPausedTime = 0`. The comment is explicit: *"Discard the current
+(restored) draft IN PLACE… the user chose התחל חדש."*
+**And `DraftConflictDialog.tsx:117` never says so.** Its text is
+`יש אימון פעיל שלא הסתיים — להמשיך אותו או להתחיל את התוכנית החדשה?` — nothing about losing what you
+logged. **So this stopped being a question and became a fix.** A browser round was saved.
+
+**2. ⚠️ CORRECTION TO MY OWN REPORT — the guidance copy defect is sharper than I said.**
+I told Amit the home button `התחל אימון` "does not exist". **It exists** —
+`src/pages/Dashboard.tsx:258,270` renders exactly that label. **But it is wrapped in
+`{!showFirstRunHero && (`**, i.e. **suppressed on first run, where `FirstRunHero` owns the start
+action instead.** The guidance is shown ONLY to first-time users. So the copy is correct for a
+returning user and wrong for precisely the audience that reads it. Same symptom, different cause,
+different fix. `src/components/guidance/guidanceSteps.tsx:26`.
+
+**3. A strong lead on the duration bug, from the same read:** `RESET_ACTIVE_WORKOUT` manipulates both
+`startTimestamp` and `totalPausedTime`, and the header clock and the finish dialog appear to compute
+elapsed by different routes. The journey answered `המשך אימון` (not `התחל חדש`), so the reset did not
+fire — yet the dialog still read `00:17` against a header clock of `~01:09`. **The two computations
+are the suspects, not the reset.** Mechanism still NOT established — do not brief it as known.
+
+### Ownership map — disjoint, verified by grep. NOBODY holds the browser or the build.
+- **T-102** → `src/components/workout/hooks/useWorkoutSave.ts`,
+  `src/components/workout/overlays/ConfirmExitOverlay.tsx`, `playwright.config.ts` + tests.
+  **MUST NOT open `WorkoutSummary.tsx` or `DraftConflictDialog.tsx`.**
+- **T-103** → `src/components/workout/components/DraftConflictDialog.tsx`,
+  `src/components/guidance/guidanceSteps.tsx` + tests.
+- **T-104** → `src/components/workout/WorkoutSummary.tsx`,
+  `src/components/workout/components/SummaryExerciseList.tsx` + tests.
+- **⚠️ DECLARED SEAM, in both briefs:** the summary's `1 דקות` string belongs to **T-104** (grammar);
+  the duration VALUE behind it belongs to **T-102**. T-104 must not change which number is passed in;
+  T-102 must not touch the summary. The summary's `1 דקות` is arithmetically CORRECT for ~69s — the
+  dialog's `00:17` is the outlier, so the duration fix should not need the summary at all.
+
+## [T-102] The duration that disagrees with itself + the config gap that hid nine timeouts
+- status: dispatched (batch 37)
+- owner: fitness-dev
+- goal: one session must report one duration; and a Playwright click must never be able to wait forever.
+- done when: verify green; test:run >= 1609 plus a test that FAILS on the current mismatch; the two
+  elapsed computations named with file:line and reconciled; `actionTimeout` added
+- notes: measured — finish dialog `00:17`, header clock `~01:09`, summary `1 דקות` (correct for 69s).
+  **Find which computation is wrong rather than making them agree by copying one into the other.**
+  `SHORT_SESSION_SECONDS = 60` gates the record/drop overlay off the same elapsed value, so a wrong
+  elapsed also mis-fires that gate. **`playwright.config.ts` has NO `actionTimeout`** → default 0 =
+  no timeout; that is why three rounds hung on one click. Add it; do NOT run Playwright this batch.
+
+## [T-103] Two dialogs that mislead the user, one of them about losing data
+- status: dispatched (batch 37)
+- owner: fitness-design
+- goal: a dialog that discards logged sets must say so, and first-run guidance must name a control the
+  first-run screen actually shows.
+- done when: verify green; test:run >= 1609 plus a test per site; every changed Hebrew string reported
+  old → new
+- notes: **`התחל חדש` really does wipe logged sets** — `RESET_ACTIVE_WORKOUT` sets `exercises = []`,
+  verified by the lead. The dialog must name the cost. **Do NOT change the reducer or add a second
+  confirmation step** — say what the action does, that is all. For the guidance: `התחל אימון` IS on
+  home but is suppressed on first run, which is the only time the guidance shows.
+
+## [T-104] Hebrew that reads like a machine wrote it
+- status: dispatched (batch 37)
+- owner: fitness-design
+- goal: `1 סטים` and `1 דקות` on the summary. Singular must read singular.
+- done when: verify green; test:run >= 1609 plus a test pinning the singular forms; every changed
+  string reported old → new
+- notes: same family as the `1 אימונים` bug fixed in batch 3 — **sweep the summary surface for every
+  count-plus-noun, do not fix only the two the walkthrough happened to catch.** Change grammar only:
+  the numbers themselves are correct and T-102 owns the duration value.
+
+
+## Batch 37 — ALL THREE ACCEPTED 2026-08-30 15:58. Five defects closed.
+
+### [T-102] The duration — ACCEPTED. **The diagnosis is the valuable part.**
+- 3 files (`ConfirmExitOverlay.tsx`, `useWorkoutSave.ts`, `playwright.config.ts`) + 2 tests.
+- **All three computations use the IDENTICAL formula** `(now - startTimestamp - totalPausedTime)/1000`.
+  **The difference is WHEN `now` is read.** The finish dialog's value is built in a `useMemo`
+  (`ActiveWorkoutNew.tsx:386`) whose deps are `[startTimestamp, totalPausedTime, exercises,
+  completedSetsCount, totalVolume]` — **`Date.now()` cannot be a dependency, so the string FROZE at the
+  last logged set.** In the repro: 2 sets, reload at ~17s, resume, wait past 60s logging nothing → no dep
+  changed → dialog stuck at `00:17` while the header ticked to `01:09`. **The header and the summary
+  agreed because both read a fresh clock.** The mid-workout reload was a red herring —
+  `startTimestamp`/`totalPausedTime` restored correctly.
+- **⚠️ IT CORRECTED MY BRIEF.** I claimed the short-session gate reads the same frozen value, so a
+  5-minute session could be asked "was this accidental?". **FALSE** — `isShortSession`
+  (`useWorkoutSave.ts:158`) defaults `now` to a live `Date.now()`. **And it pinned that with a test
+  rather than just asserting it.**
+- **The fix is structural, not a patch:** the overlay derives its own elapsed through
+  **`useWorkoutTimer` — the same hook the header uses** — so the three readings are one number **by
+  construction rather than by coincidence.** The old `duration` prop kept as `@deprecated` + optional so
+  existing callers compile.
+- **A second, unasked correctness fix:** ONE clock read now shared by the session builder AND the gate,
+  because two separate `Date.now()` calls can straddle a second boundary — the gate could otherwise
+  judge a duration that is not the one persisted.
+- `playwright.config.ts:55` → **`actionTimeout: 15_000`**. Not verified in a run (nobody held the
+  browser), and it said so.
+
+### [T-103] The two misleading dialogs — ACCEPTED.
+- Dialog now names both directions: `המשך אימון — כל הסטים שרשמתם נשמרים. התחל חדש — הסטים שרשמתם
+  יימחקו וזמן האימון יתחיל מחדש.` No second confirmation step, reducer untouched, as instructed.
+- **It deliberately did NOT rename the buttons** — because `e2e/journey-t099.spec.ts:1478` selects
+  `התחל חדש` by text. **It protected our own harness without being asked.**
+- Did NOT add the at-risk set count: the props are only `isOpen`/`onResume`/`onStartNew`, and I forbade
+  new plumbing. Correct call, stated.
+- Guidance now names `בחרו תבנית מוכנה` / `התחילו בלי תבנית`, **and its test checks those labels against
+  the FirstRunHero block of `Dashboard.tsx`** — so renaming a hero button fails the test. Structural,
+  better than a string assertion.
+- **⚠️ It flagged that `e2e/journey-t099.spec.ts:362` greps the OLD guidance string.** After this fix
+  that detector matches nothing — it will not fail, it will silently stop checking. Vacuous-test hazard,
+  the same class this project has hit before. Carried forward.
+
+### [T-104] Hebrew grammar — ACCEPTED, and it went past the two examples.
+- Found and reused the EXISTING shared helper `pluralizeHe` / `HE_NOUNS` rather than hand-rolling.
+- **Root cause named: `dateUtils.formatDuration` HARDCODES the plural noun** — 69s → `1 דקות`, and one
+  hour → `1 שעה` where Hebrew wants bare `שעה`.
+- **It handled real Hebrew grammar most passes miss:** the DUAL `שעתיים` for two hours, and the vav
+  conjunction rule — `ודקה` attaches directly to a word but `ו-30` takes a hyphen before a numeral.
+- Also fixed a truthiness slip in its own file: `hasMore = maxItems && …` → `moreCount > 0`.
+
+### ⚠️⚠️ THE GAP MY OWN SCOPING CAUSED — recorded because it is mine, not the worker's
+T-104 could only write the two files I gave it, so it added a LOCAL `formatDurationHe` inside
+`WorkoutSummary.tsx` instead of fixing the shared formatter. **`formatDuration` still hardcodes the
+plural, and it is consumed on at least five other surfaces:** `PerformanceAnalytics.tsx` (4 sites),
+`WorkoutHistory.tsx`, `pages/workout-detail/helpers.ts`, `pages/WorkoutDetail.tsx`,
+`services/workoutSessionBuilder.ts`. Implementations live at `src/utils/dateUtils.ts:135,143` and
+`src/utils/workoutFormatters.ts`.
+**So `1 דקות` is still live on workout history and workout detail.** I scoped the task to the two files
+the walkthrough happened to observe — **the family-not-the-symbol error, for the sixth time.** The
+worker named the root cause correctly and stayed in its lane. Next batch: fix the shared formatter and
+delete the local copy.
+
+### Verified baseline — 2026-08-30 15:58, MINE, on a confirmed-static tree
+All three workers terminal; newest `src/` mtime 4 minutes cold before any gate ran. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **732** files (728 + 4 new test files) |
+| `npm run test:run` | **193 files / 1630 tests**, exit 0 both runs — **NEW FLOOR** |
+| arithmetic | 189+4=193 files; 1609+21=1630. **Nothing deleted, skipped or weakened.** |
+| `npx playwright test --list` | **126 tests / 17 files**, exit 0 (unchanged) |
+| RTL | **zero new physical-direction CSS** — all 6 hits are pre-existing files this batch never touched |
+| debris | zero scratch in `src/` or root; `test-results/` swept |

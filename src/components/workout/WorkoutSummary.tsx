@@ -25,7 +25,6 @@ import type { WorkoutSession } from '../../types';
 import { triggerHapticEffect, vibratePattern } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
 import { HE_NOUNS, pluralizeHe } from '../../utils/pluralizeHe';
-import { formatDuration } from '../../utils/workoutFormatters';
 import { computeSessionStats, setVolume } from '../../utils/workoutMath';
 import { shareWorkoutCard } from '../../utils/workoutShareCard';
 import { MuscleMap } from '../fitness/MuscleMap';
@@ -88,11 +87,36 @@ const computeStats = (session: Partial<WorkoutSession>): ComputedStats => {
   // Duration is read from the canonical `session.duration` (SECONDS) — NOT
   // recomputed from start/end, which produced absurd values when a stale
   // persisted startTime leaked in. `durationMin` feeds the StatsGrid number;
-  // the subtitle/share text use formatDuration for the human label.
+  // the subtitle/share text use formatDurationHe for the human label.
   const durationSec = session.duration && session.duration > 0 ? session.duration : 0;
   const duration = Math.round(durationSec / 60);
 
   return { totalVolume, totalSets, totalReps, duration, durationSec, exerciseCount, exerciseStats };
+};
+
+// ============================================================
+// HEBREW DURATION LABEL
+// ============================================================
+// GRAMMAR ONLY — this takes the SAME seconds value as before and does the SAME
+// arithmetic (round to minutes; floor to hours + rounded remainder). It exists
+// because `dateUtils.formatDuration` hardcodes the plural noun: 69s rendered
+// "1 דקות" ("1 minutes"), and 1h30m rendered "1 שעה" ("1 hour"). Hebrew keeps
+// the noun singular at a cardinal of 1 — "דקה אחת" / "שעה" — and uses the
+// dedicated dual "שעתיים" for two. Numbers are untouched: whatever value the
+// session reports is the value shown.
+//
+// The vav conjunction attaches directly to a word ("ודקה") but takes a hyphen
+// before a numeral ("ו-30"), so the two branches differ.
+const formatDurationHe = (seconds: number): string => {
+  if (seconds < 3600) {
+    const minutes = Math.round(seconds / 60);
+    return minutes === 1 ? 'דקה אחת' : `${minutes} דקות`;
+  }
+  const h = Math.floor(seconds / 3600);
+  const m = Math.round((seconds % 3600) / 60);
+  const hoursLabel = h === 1 ? 'שעה' : h === 2 ? 'שעתיים' : `${h} שעות`;
+  if (m === 0) return hoursLabel;
+  return m === 1 ? `${hoursLabel} ודקה` : `${hoursLabel} ו-${m} דקות`;
 };
 
 // ============================================================
@@ -433,7 +457,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
     // the session's standout best-set — instead of a bare receipt line. The
     // receipt (duration · volume · sets) always follows so the share still
     // carries the full numbers.
-    const receipt = `אימון · ${formatDuration(stats.durationSec)} · ${stats.totalVolume.toLocaleString()} ק"ג · ${pluralizeHe(stats.totalSets, HE_NOUNS.set)}`;
+    const receipt = `אימון · ${formatDurationHe(stats.durationSec)} · ${stats.totalVolume.toLocaleString()} ק"ג · ${pluralizeHe(stats.totalSets, HE_NOUNS.set)}`;
 
     let headline: string | null = null;
     if (prsCount > 0) {
@@ -706,7 +730,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
               ) : (
                 '—'
               )}{' '}
-              · {stats.durationSec > 0 ? formatDuration(stats.durationSec) : '—'}
+              · {stats.durationSec > 0 ? formatDurationHe(stats.durationSec) : '—'}
             </p>
           </div>
         </div>

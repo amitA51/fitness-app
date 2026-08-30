@@ -6,6 +6,8 @@ import { X as CloseIcon, Dumbbell as DumbbellIcon } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { triggerHaptic } from '../../../utils/haptics';
 import { ModalOverlay } from '../../ui/ModalOverlay';
+import { useWorkoutState } from '../core/WorkoutContext';
+import { useWorkoutTimer } from '../hooks/useWorkoutTimer';
 
 // ============================================================
 // TYPES
@@ -17,7 +19,16 @@ interface ConfirmExitOverlayProps {
   workoutStats: {
     completedSets: number;
     totalVolume: number;
-    duration: string;
+    /**
+     * @deprecated IGNORED — the `זמן` box derives its own live elapsed from
+     * workout state (see the `useWorkoutTimer` call in the component). A
+     * pre-formatted string built in a parent `useMemo` snapshots `Date.now()`
+     * without it being a dependency, so it froze at the last logged set and
+     * disagreed with both the live header clock and the duration the session
+     * builder persists. Kept optional so existing callers compile unchanged;
+     * remove it when the callers stop computing it.
+     */
+    duration?: string;
     /** Non-warmup sets with weight/reps entered but not checked — they will NOT be saved. */
     pendingSets?: number;
   };
@@ -62,6 +73,22 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
     shortSessionAsk = false,
     onProceedWithSave,
   }) => {
+    // The `זמן` box must state how long THIS session has actually run at the
+    // moment it is read — the same number the header clock shows and the same
+    // number `buildWorkoutSession` is about to persist. It previously rendered
+    // `workoutStats.duration`, a string formatted inside the parent's
+    // `workoutStats` useMemo (ActiveWorkoutNew.tsx:386), which calls `Date.now()`
+    // but lists only startTimestamp/totalPausedTime/exercises/sets/volume as
+    // dependencies — so the value froze at the last logged set. Deriving it here
+    // from the same state, through the same hook the header uses, makes the three
+    // readings one number by construction rather than by coincidence.
+    const { startTimestamp, totalPausedTime, isPaused } = useWorkoutState();
+    const { formatted: elapsedFormatted } = useWorkoutTimer({
+      startTimestamp,
+      totalPausedTime,
+      isPaused,
+    });
+
     const handleConfirm = useCallback(() => {
       if (isSaving) {
         return; // Prevent double-click
@@ -272,7 +299,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                       letterSpacing: '-0.02em',
                     }}
                   >
-                    {workoutStats.duration}
+                    {elapsedFormatted}
                   </div>
                   <div
                     className="mt-1"

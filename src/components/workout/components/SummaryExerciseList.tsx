@@ -1,6 +1,7 @@
 // SummaryExerciseList — polished post-workout exercise rows
 
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { HE_NOUNS, pluralizeHe } from '@/utils/pluralizeHe';
 import { m } from 'framer-motion';
 import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import type React from 'react';
@@ -107,7 +108,10 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
               fontWeight: 500,
             }}
           >
-            {setsCompleted} סטים
+            {/* Hebrew keeps the noun SINGULAR for a cardinal of 1 — "סט אחד",
+                never "1 סטים". pluralizeHe owns that agreement; the digit path
+                (n ≠ 1) renders exactly as before. */}
+            {pluralizeHe(setsCompleted, HE_NOUNS.set)}
           </span>
           {bestSet && (
             <span
@@ -141,7 +145,7 @@ export interface SummaryExerciseListProps {
 export const SummaryExerciseList: React.FC<SummaryExerciseListProps> = memo(
   ({ exercises, prExercises, maxItems, startDelay = 0 }) => {
     const displayExercises = maxItems ? exercises.slice(0, maxItems) : exercises;
-    const hasMore = maxItems && exercises.length > maxItems;
+    const moreCount = maxItems ? exercises.length - maxItems : 0;
 
     return (
       <div className="flex flex-col gap-2">
@@ -168,7 +172,7 @@ export const SummaryExerciseList: React.FC<SummaryExerciseListProps> = memo(
             delay={startDelay + i * 0.06}
           />
         ))}
-        {hasMore && (
+        {moreCount > 0 && (
           <p
             style={{
               fontFamily: 'var(--font-body)',
@@ -180,7 +184,10 @@ export const SummaryExerciseList: React.FC<SummaryExerciseListProps> = memo(
               margin: 0,
             }}
           >
-            + {exercises.length - maxItems!} תרגילים נוספים
+            {/* Noun AND adjective agree at 1 — "תרגיל נוסף", never
+                "1 תרגילים נוספים". pluralizeHe can't carry the adjective, so
+                the singular is spelled out; the plural branch is unchanged. */}
+            {moreCount === 1 ? '+ תרגיל נוסף' : `+ ${moreCount} תרגילים נוספים`}
           </p>
         )}
       </div>

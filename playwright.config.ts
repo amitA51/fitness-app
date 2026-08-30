@@ -46,6 +46,14 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4173',
 
+    /* Per-action cap (click / fill / press / hover). Playwright's default is 0 =
+       NO TIMEOUT, so a click on an element that never becomes actionable hangs
+       the whole run in silence instead of failing. 15s is long enough for a cold
+       React.lazy overlay chunk plus its spring entrance on a throttled machine,
+       and half the 30s test timeout so the action fails FIRST — the error then
+       names the locator that was stuck instead of just "test timed out". */
+    actionTimeout: 15_000,
+
     /* Capture trace on the first retry (great for debugging failures). */
     trace: 'on-first-retry',
 

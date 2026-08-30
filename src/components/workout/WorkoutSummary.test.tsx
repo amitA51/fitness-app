@@ -83,6 +83,12 @@ const makeSession = (exercises: WorkoutExercise[]): Partial<WorkoutSession> => (
   exercises,
 });
 
+// Single-set exercise — the n = 1 shape that exposed the "1 סטים" defect.
+const makeSingleSetExercise = (id: string, name: string): WorkoutExercise => ({
+  ...makeExercise(id, name, 'Chest'),
+  sets: [makeSet(1, 8, 60)],
+});
+
 const renderSummary = (session: Partial<WorkoutSession>) =>
   render(
     <LazyMotion features={domAnimation}>
@@ -117,5 +123,62 @@ describe('WorkoutSummary — muscles-worked recap', () => {
     // Give the async summary effects a tick to settle, then assert absence.
     expect(await screen.findByText('איך היה האימון?')).toBeInTheDocument();
     expect(screen.queryByText('שרירים שעבדת')).not.toBeInTheDocument();
+  });
+});
+
+// ============================================================================
+// Hebrew count agreement at n = 1.
+// Hebrew keeps the noun SINGULAR for a cardinal of 1 — "דקה אחת", "סט אחד" —
+// never "1 דקות" / "1 סטים". This app has shipped that defect more than once,
+// so the summary's own count-plus-noun strings are pinned here.
+//
+// These assert the WORD only. The duration VALUE is whatever the session
+// reports: 69s → one minute is arithmetically right, and nothing here recomputes
+// or corrects it.
+// ============================================================================
+describe('WorkoutSummary — Hebrew count agreement', () => {
+  it('reads "דקה אחת" for a one-minute session, never "1 דקות"', async () => {
+    renderSummary({
+      ...makeSession([makeSingleSetExercise('bench', 'Bench Press')]),
+      // ~69 seconds — rounds to one minute.
+      duration: 69,
+    });
+
+    expect(await screen.findByText(/דקה אחת/)).toBeInTheDocument();
+    expect(screen.queryByText(/1 דקות/)).not.toBeInTheDocument();
+  });
+
+  it('reads "סט אחד" for a single completed set, never "1 סטים"', async () => {
+    renderSummary({
+      ...makeSession([makeSingleSetExercise('bench', 'Bench Press')]),
+      duration: 69,
+    });
+
+    expect(await screen.findByText('סט אחד')).toBeInTheDocument();
+    expect(screen.queryByText(/1 סטים/)).not.toBeInTheDocument();
+  });
+
+  it('reads "תרגיל אחד" for a single exercise, never "1 תרגילים"', async () => {
+    renderSummary({
+      ...makeSession([makeSingleSetExercise('bench', 'Bench Press')]),
+      duration: 69,
+    });
+
+    expect(await screen.findByText(/תרגיל אחד/)).toBeInTheDocument();
+    expect(screen.queryByText(/1 תרגילים/)).not.toBeInTheDocument();
+  });
+
+  it('keeps the plural for multi-minute, multi-set sessions', async () => {
+    renderSummary(
+      makeSession([
+        makeExercise('bench', 'Bench Press', 'Chest'),
+        makeExercise('squat', 'Squat', 'Legs'),
+      ])
+    );
+
+    // 1800s ⇒ "30 דקות"; 2 exercises × 2 sets ⇒ "4 סטים", "2 תרגילים".
+    const subtitle = await screen.findByText(/30 דקות/);
+    expect(subtitle).toHaveTextContent('2 תרגילים');
+    expect(subtitle).toHaveTextContent('4 סטים');
   });
 });

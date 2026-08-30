@@ -3,6 +3,11 @@
 // but a restored, unfinished draft already owns the active-workout slot.
 // Without this, the stale draft silently hijacked the requested template.
 // Backdrop/Escape resolve to "resume" — the safe, non-destructive choice.
+//
+// The copy must NAME THE COST: "התחל חדש" dispatches RESET_ACTIVE_WORKOUT, which
+// empties draft.exercises — every set the user already logged is gone — and
+// restarts the workout clock. The body text says so in both directions so the
+// safe answer is obvious without a second confirmation step.
 
 import { m } from 'framer-motion';
 import { Dumbbell as DumbbellIcon } from 'lucide-react';
@@ -12,9 +17,12 @@ import { ModalOverlay } from '../../ui/ModalOverlay';
 
 interface DraftConflictDialogProps {
   isOpen: boolean;
-  /** Keep the restored draft and ignore the requested template. */
+  /** Keep the restored draft and ignore the requested template. Non-destructive. */
   onResume: () => void;
-  /** Discard the draft and load the requested template fresh. */
+  /**
+   * Discard the draft and load the requested template fresh. DESTRUCTIVE: every
+   * logged set in the restored draft is deleted and the workout clock restarts.
+   */
   onStartNew: () => void;
 }
 
@@ -114,7 +122,8 @@ const DraftConflictDialog = memo<DraftConflictDialogProps>(({ isOpen, onResume, 
               color: 'var(--fs-muted)',
             }}
           >
-            יש אימון פעיל שלא הסתיים — להמשיך אותו או להתחיל את התוכנית החדשה?
+            יש אימון פעיל שלא הסתיים. המשך אימון — כל הסטים שרשמתם נשמרים. התחל חדש — הסטים שרשמתם
+            יימחקו וזמן האימון יתחיל מחדש.
           </p>
 
           <div className="flex flex-col gap-2">
