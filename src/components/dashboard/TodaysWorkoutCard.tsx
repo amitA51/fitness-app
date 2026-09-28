@@ -148,7 +148,20 @@ function ScheduledRow({ item, onStart, onSkip, isBusy }: RowProps) {
   );
 }
 
-export function TodaysWorkoutCard() {
+export interface TodaysWorkoutCardProps {
+  /**
+   * Reports whether a coach has actually scheduled something for today.
+   *
+   * WHY: this card and ProgramCard both answer "what is next". A trainee must
+   * never see two competing next-blocks, and only this card knows whether its
+   * online-only schedule resolved to anything. The Dashboard listens and hides
+   * the self-guided ProgramCard while a coach-scheduled workout exists — the
+   * coach's plan wins, since it is the one someone else is expecting today.
+   */
+  onHasScheduleChange?: (hasSchedule: boolean) => void;
+}
+
+export function TodaysWorkoutCard({ onHasScheduleChange }: TodaysWorkoutCardProps = {}) {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const [items, setItems] = useState<ScheduledWorkout[]>([]);
@@ -243,6 +256,13 @@ export function TodaysWorkoutCard() {
     },
     [load]
   );
+
+  // Only a RESOLVED, non-empty schedule counts as "the coach owns today" — a
+  // still-loading or failed fetch must not suppress the program card.
+  const hasSchedule = Boolean(userId) && !failed && !loading && items.length > 0;
+  useEffect(() => {
+    onHasScheduleChange?.(hasSchedule);
+  }, [hasSchedule, onHasScheduleChange]);
 
   // Invisible for guests and on error — never break the Dashboard.
   if (!userId || failed) return null;

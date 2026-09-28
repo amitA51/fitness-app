@@ -610,11 +610,13 @@ export interface WorkoutSettings {
   restTimerSound: boolean;
 
   // Reminders
+  // Workout reminders live in `NotificationConfig`
+  // (services/notificationService) — the config the Settings UI writes and the
+  // on-device scheduler reads. A second copy used to sit here
+  // (workoutRemindersEnabled / workoutReminderTime / reminderDays) with
+  // different defaults and no reader at all; it was deleted, not migrated.
   waterReminderEnabled: boolean;
   waterReminderInterval: number;
-  workoutRemindersEnabled: boolean;
-  workoutReminderTime?: string;
-  reminderDays?: number[];
   trackBodyWeight?: boolean;
 
   // Accessibility

@@ -32,6 +32,7 @@
     "@capacitor/android": "8.5.0",
     "@capacitor/cli": "8.5.0",
     "@capacitor/core": "8.5.0",
+    "@capacitor/local-notifications": "8.3.1",
     "@gsap/react": "^2.1.2",
     "@radix-ui/react-label": "^2.1.9",
     "@sentry/react": "^10.57.0",

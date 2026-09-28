@@ -11,14 +11,14 @@ import { type ReactNode, memo } from 'react';
 import { translateMuscle } from '../../constants/muscleNames';
 import { FadeIn } from '../motion/FadeIn';
 import { Card } from '../ui/Card';
+// One implementation of the bilingual "Hebrew | English" name rule for the whole
+// dashboard — it lives with the rest of the home-screen math.
+import { displayExerciseName } from './homeStats';
 import type { DashboardInsight } from './insightPicker';
 
 interface InsightCardProps {
   insight: DashboardInsight | null;
 }
-
-/** Drop a "|equipment" suffix from catalog exercise names for display. */
-const displayExerciseName = (raw: string): string => raw.split('|')[0]?.trim() || raw;
 
 export const InsightCard = memo(function InsightCard({ insight }: InsightCardProps) {
   if (!insight) return null;

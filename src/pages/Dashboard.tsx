@@ -18,12 +18,15 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { InsightCard } from '../components/dashboard/InsightCard';
+import { LastWorkoutCard } from '../components/dashboard/LastWorkoutCard';
 import { ProgramCard } from '../components/dashboard/ProgramCard';
 import { StartWorkoutSheet } from '../components/dashboard/StartWorkoutSheet';
 import { TemplateStrip } from '../components/dashboard/TemplateQuickStart';
 import { TodaysWorkoutCard } from '../components/dashboard/TodaysWorkoutCard';
+import { WeekHero } from '../components/dashboard/WeekHero';
 import { WeeklyGrid } from '../components/dashboard/WeeklyGrid';
 import { WorkoutStreak } from '../components/dashboard/WorkoutStreak';
+import { computeHomeStats, headerSubtitle } from '../components/dashboard/homeStats';
 import { pickDashboardInsight } from '../components/dashboard/insightPicker';
 import { CoachMark } from '../components/guidance/CoachMark';
 import { FadeIn } from '../components/motion/FadeIn';
@@ -35,6 +38,7 @@ import { useFitnessInsights } from '../hooks/fitness/useFitnessInsights';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { listMyCoaches } from '../services/coach/relationshipService';
 import { onWorkoutSaved } from '../services/dataEvents';
+import { TRAINING_DAYS, getProgress } from '../services/programProgressService';
 import { getCurrentUser } from '../services/supabaseAuth';
 import { getWorkoutTemplates } from '../services/workoutDb';
 import type { WorkoutTemplate } from '../types';
@@ -54,6 +58,7 @@ export default function Dashboard() {
     workoutSessions,
     weekOverWeekDeltas,
     muscleGroups,
+    allPRs,
     error: insightsError,
   } = useFitnessInsights(dataContextSessions);
 
@@ -171,6 +176,44 @@ export default function Dashboard() {
   const handleNavigate = useCallback((path: string) => navigate(path), [navigate]);
   const goToTemplates = useCallback(() => navigate('/templates'), [navigate]);
 
+  // ── The training numbers this screen used to hide ────────────────────────────
+  // One pure pass (src/components/dashboard/homeStats.ts) over sessions the page
+  // has ALREADY loaded: this week's count, an honest weekly target, the volume
+  // signal, and the last-session recap. Templates only name the last session;
+  // allPRs is the locally-aggregated PR list, so the PR mention costs no query.
+  // A stated plan beats an inferred habit: while the structured program is
+  // running, its own sessions/week is the weekly target. Synchronous localStorage
+  // read (the same one ProgramCard does) — no fetch, no catalog import.
+  const programSessionsPerWeek = useMemo(() => {
+    const progress = getProgress();
+    return progress && progress.status !== 'completed' ? TRAINING_DAYS.length : null;
+  }, []);
+
+  const homeStats = useMemo(
+    () =>
+      computeHomeStats({
+        sessions: completedSessions,
+        templates,
+        records: allPRs,
+        programSessionsPerWeek,
+      }),
+    [completedSessions, templates, allPRs, programSessionsPerWeek]
+  );
+
+  // A returning trainee reads a fact in the masthead ("אימון אחרון אתמול · 3
+  // אימונים השבוע"); first-run keeps the onboarding instruction.
+  const headerLine = hasAnySession ? headerSubtitle(homeStats) : null;
+
+  // ProgramCard vs TodaysWorkoutCard: exactly ONE "next workout" block. The
+  // coach-scheduled card reports when it actually has something for today, and
+  // the self-guided program card stands down for as long as it does.
+  const [hasCoachSchedule, setHasCoachSchedule] = useState(false);
+  const handleScheduleChange = useCallback((has: boolean) => setHasCoachSchedule(has), []);
+
+  // The novice hint is onboarding, not furniture — it retires once the trainee
+  // has clearly learned the flow.
+  const showNoviceHint = hasAnySession && completedSessions.length < 3;
+
   return (
     <div
       dir="rtl"
@@ -242,7 +285,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <DashboardHeader hasSessionToday={hasSessionToday} />
+      <DashboardHeader hasSessionToday={hasSessionToday} subtitle={headerLine} />
 
       <div className="page-shell" style={{ paddingTop: 8 }}>
         <div className="page-stack-loose">
@@ -306,13 +349,13 @@ export default function Dashboard() {
             </button>
           )}
 
-          {hasAnySession && (
+          {showNoviceHint && (
             <CoachMark hintKey="hintDashboard" dismissLabel="הבנתי" dismissAriaLabel="הבנתי, סגירה">
               לחצו על הכפתור למעלה — בחרו תבנית או אימון ריק, והאפליקציה תנחה אתכם בסטים.
             </CoachMark>
           )}
 
-          <TodaysWorkoutCard />
+          <TodaysWorkoutCard onHasScheduleChange={handleScheduleChange} />
 
           {showSkeleton ? (
             <DashboardSkeleton hasTemplatesSection={templatesError || sortedTemplates.length > 0} />
@@ -345,7 +388,20 @@ export default function Dashboard() {
       <>
         {insightsError && <InsightErrorChip message={insightsError} onRetry={refreshData} />}
 
-        <ProgramCard />
+        {/* 1. HOW IS MY WEEK — the largest numbers on the page. */}
+        <WeekHero
+          sessions={homeStats.thisWeek}
+          target={homeStats.target}
+          volumeDeltaPct={homeStats.volumeDeltaPct}
+        />
+
+        {/* 2. WHAT IS NEXT — one block only. The coach's schedule (rendered
+            above, outside this branch so a coached first-run user still sees it)
+            takes precedence over the self-guided program. */}
+        {!hasCoachSchedule && <ProgramCard />}
+
+        {/* 3. AM I PROGRESSING — the last session, one tap from its detail. */}
+        {homeStats.lastWorkout && <LastWorkoutCard recap={homeStats.lastWorkout} />}
 
         <WorkoutStreak sessions={workoutSessions} />
 
@@ -632,10 +688,11 @@ const FirstRunHero = memo(function FirstRunHero({
 });
 
 // ── DashboardSkeleton — first-load placeholder matching the page shape ────────
-// Mirrors renderPopulatedBody() block-for-block: program card → streak card →
-// templates (heading + strip, only when a templates section will actually
-// render) → workout calendar (heading + action, week card). Heights are the
-// measured heights of the real blocks so the page doesn't jump on hand-off.
+// Mirrors renderPopulatedBody() block-for-block: week hero → program card →
+// last-workout recap → streak card → templates (heading + strip, only when a
+// templates section will actually render) → workout calendar (heading + action,
+// week card). Heights are the measured heights of the real blocks so the page
+// doesn't jump on hand-off.
 // The old rings circle is gone because the weekly-rings card it stood in for was
 // deleted from this screen. Header + CTA + TodaysWorkoutCard stay visible above
 // this. Built only from SkeletonBox (premium-shimmer); reduced-motion is handled
@@ -654,8 +711,14 @@ const DashboardSkeleton = memo(function DashboardSkeleton({
       aria-label="טוען את מסך הבית"
       style={{ margin: 0, display: 'grid', gap: 28 }}
     >
+      {/* WeekHero — kicker + big numeral + caption + target bar */}
+      <SkeletonBox height={172} borderRadius="var(--radius-2xl)" />
+
       {/* ProgramCard */}
       <SkeletonBox height={117} borderRadius="var(--radius-2xl)" />
+
+      {/* LastWorkoutCard */}
+      <SkeletonBox height={90} borderRadius="var(--radius-2xl)" />
 
       {/* WorkoutStreak */}
       <SkeletonBox height={54} borderRadius="var(--radius-2xl)" />

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -38,4 +39,17 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+      @capacitor/local-notifications 8.3.1 declares SCHEDULE_EXACT_ALARM in its own
+      manifest. Workout reminders do not need minute precision, and every request
+      is built with isExactNotification: false (src/services/localReminders.ts), so
+      nothing here needs the permission. Removing it keeps the listing to the one
+      runtime permission the feature needs (POST_NOTIFICATIONS, which the plugin
+      also declares); boot-restore and wake-lock come from the plugin and are
+      install-time permissions with no prompt.
+    -->
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        tools:node="remove" />
 </manifest>

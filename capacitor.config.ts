@@ -20,8 +20,17 @@ const config = {
     SplashScreen: {
       launchShowDuration: 0,
     },
+    LocalNotifications: {
+      // android/app/src/main/res/drawable/ic_stat_notify.xml - referenced by
+      // resource NAME, without extension or @drawable/ prefix.
+      smallIcon: 'ic_stat_notify',
+      // --fs-accent from src/styles/tokens.css (light theme). Android tints the
+      // small icon's alpha mask with this, so it must be a literal hex here -
+      // the native layer cannot read a CSS custom property.
+      iconColor: '#43c7a5',
+    },
     // Added during native integration: Haptics, Browser, PushNotifications,
-    // LocalNotifications, Preferences, App, StatusBar, @revenuecat/purchases-capacitor.
+    // Preferences, App, StatusBar, @revenuecat/purchases-capacitor.
   },
 };
 

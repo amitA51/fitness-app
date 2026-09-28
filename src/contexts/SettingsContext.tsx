@@ -67,9 +67,6 @@ export const DEFAULT_WORKOUT_SETTINGS: WorkoutSettings = {
   restTimerSound: true,
   waterReminderEnabled: false,
   waterReminderInterval: 15,
-  workoutRemindersEnabled: false,
-  workoutReminderTime: '18:00',
-  reminderDays: [1, 2, 3, 4, 5], // Mon-Fri
   trackBodyWeight: false,
   reducedAnimations: false,
   largeText: false,

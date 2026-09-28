@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { EntitlementProvider } from './contexts/EntitlementContext';
 import { LocaleProvider } from './contexts/LocaleContext';
 import { SettingsProvider } from './contexts/SettingsContext';
+import { useLocalReminderSync } from './hooks/useLocalReminderSync';
 import { useMotionConfigMode } from './hooks/useReducedMotion';
 
 // ============================================================================
@@ -24,6 +25,8 @@ function MotionPreferenceProvider({ children }: { children: ReactNode }) {
 }
 
 function App() {
+  useLocalReminderSync();
+
   return (
     <LocaleProvider>
       <SettingsProvider>

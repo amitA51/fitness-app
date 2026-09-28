@@ -11,10 +11,16 @@ import { getTotalXp } from '../../utils/xpStore';
 
 interface DashboardHeaderProps {
   hasSessionToday?: boolean;
+  /**
+   * Factual one-line status for a trainee WITH history (last workout + this
+   * week's count). When omitted — first run — the onboarding instruction stays.
+   */
+  subtitle?: string | null;
 }
 
 export const DashboardHeader = memo(function DashboardHeader({
   hasSessionToday = false,
+  subtitle = null,
 }: DashboardHeaderProps) {
   const userName = useMemo(() => {
     const raw = safeJsonParse(localStorage.getItem('user_profile'));
@@ -131,9 +137,11 @@ export const DashboardHeader = memo(function DashboardHeader({
             margin: '6px 0 0',
           }}
         >
-          {hasSessionToday
-            ? 'יפה — אפשר להוסיף אימון נוסף אם בא לכם'
-            : 'היום: התחילו אימון מהכפתור למטה'}
+          {subtitle
+            ? subtitle
+            : hasSessionToday
+              ? 'יפה — אפשר להוסיף אימון נוסף אם בא לכם'
+              : 'היום: התחילו אימון מהכפתור למטה'}
         </p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0 mt-1">

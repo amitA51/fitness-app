@@ -77,13 +77,15 @@ describe('the collapsed object keeps the values that actually shipped', () => {
   });
 
   // The seven keys only the workout copy had. Its fallback supplied them, so
-  // these ARE their shipping values - dropping any would lose a setting.
+  // these ARE their shipping values - dropping any would lose a setting. Two of
+  // the seven (workoutReminderTime '18:00', reminderDays [1..5]) are gone: they
+  // were a SECOND workout-reminder config that nothing ever read, competing with
+  // the NotificationConfig the Settings UI writes and the on-device scheduler
+  // reads. Deleted rather than migrated - no reader existed, so no value moved.
   it('keeps every key that only the workout copy carried', () => {
     expect(fromContext.enableWarmup).toBe(true);
     expect(fromContext.enableCooldown).toBe(true);
     expect(fromContext.showSetHistory).toBe(true);
-    expect(fromContext.workoutReminderTime).toBe('18:00');
-    expect(fromContext.reminderDays).toEqual([1, 2, 3, 4, 5]);
     expect(fromContext.trackBodyWeight).toBe(false);
     expect(fromContext.autoAddSets).toBe(false);
   });

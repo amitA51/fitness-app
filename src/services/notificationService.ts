@@ -6,6 +6,12 @@ export interface NotificationConfig {
   workoutReminderTime: string; // HH:MM
   workoutReminderDays: number[]; // 0=Sunday, 6=Saturday
   missedWorkoutAlertDays: number; // alert after X days without workout
+  /**
+   * ISO instant of the missed-workout nudge most recently handed to the device,
+   * or null. Enforces the one-per-7-days cap in `services/localReminders`;
+   * without it a lapsed user got a fresh nudge on every app open.
+   */
+  lastNudgeScheduledAt: string | null;
   nutritionReminderEnabled: boolean;
   nutritionReminderTimes: string[]; // HH:MM for meal logging reminders
   prNotificationEnabled: boolean;
@@ -13,9 +19,12 @@ export interface NotificationConfig {
 
 const DEFAULT_CONFIG: NotificationConfig = {
   workoutReminderEnabled: false,
-  workoutReminderTime: '08:00',
+  // 18:00, not 08:00: the trainee this app is built for goes to the gym after
+  // work. A stored value always wins over this default.
+  workoutReminderTime: '18:00',
   workoutReminderDays: [0, 1, 2, 3, 4, 5, 6],
   missedWorkoutAlertDays: 3,
+  lastNudgeScheduledAt: null,
   nutritionReminderEnabled: false,
   nutritionReminderTimes: ['08:00', '13:00', '19:00'],
   prNotificationEnabled: true,
