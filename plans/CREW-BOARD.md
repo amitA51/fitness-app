@@ -8735,3 +8735,197 @@ Verified by me, not assumed. All three workers stopped before their first write:
 - Tree: only this board file. HEAD == origin == `e903223`. Swept a stale `playwright-report/`.
 **Nothing to recover and nothing to undo.** The three briefs above are intact and re-dispatchable as
 written. **Not re-dispatched — he stopped it without saying why, so the reason is his to give.**
+
+
+
+---
+
+# OVERHAUL PROGRAM — started 2026-09-28 18:30. Amit: "תשפר אותה ממש... שינויים גדולים ומשמעותיים... אל תשאל אותי שאלות... תעבוד ברצף"
+**Mandate:** full delegation, big user-visible changes across every area, no questions, continuous.
+Branch `overhaul/2026-09-28` cut from `0562244` (master == origin, tree clean). **One commit per
+batch on this branch; nothing is pushed or merged without Amit's in-the-moment word.**
+**Read on batch 44's stop:** he stopped a batch of three small items within 3 minutes and came back
+asking for "big and meaningful". So batch 44's small items are folded in as support work, and each
+batch now carries at least one change a user can SEE.
+
+### Verified baseline — 2026-09-28 18:33, MINE, on a static tree
+- `npm run verify` green (742 files) · `vitest run` **203 files / 1736 passed** (43s) · `npm run build` green (10s).
+- **Startup JS is ~870 KB raw eager**: index 245 + react-vendor 207 + **supabase 205** + **framer 143** + icons + immer,
+  CSS 103 KB. gsap is lazy. supabase and framer load for a GUEST who needs neither at t=0. → perf batch.
+
+### What I SAW as a returning user (seeded 18 sessions / 6 weeks, 390px, photos in `visual-qa/survey/`)
+- **Home shows ZERO training numbers.** Start CTA, a novice tip ("לחצו על הכפתור למעלה...") still shown
+  after 18 sessions, the program card, an empty week grid. `WorkoutStreak` and `InsightCard` both
+  self-hide (daily streak = 0 because a lifter rests between sessions). Header subtitle still says
+  "היום: התחילו אימון מהכפתור למטה". → **T-128.**
+- Progress › סקירה: 3 numbers and a collapsed "מתקדם"; 70% of the page empty. Progress › אימונים is rich
+  (heatmap, stats, history). Calendar month arrows BOTH render as `>` (RTL defect, noted for later).
+- Live set screen works well: prefill from last session (72.5×8), a "+2.5 ק״ג" progression chip, slide-to-finish.
+- **Daily streak is the wrong unit for strength training** (3x/week lifter shows "0 רצף ימים"). Not changed
+  yet — waiting for the research file's evidence, because it touches Progress too.
+
+### ⭐ MY RULINGS for batch 45
+- **Notifications = LOCAL only** (his privacy ruling of 08-31 stands). Plugin reached through
+  `getCapacitorPlugin('LocalNotifications')` (`src/utils/platform.ts:34`) so `src/` still imports ZERO
+  `@capacitor/*` and the PWA is untouched. **No exact-alarm permission** (Play restricts it; ±minutes is fine for a gym reminder).
+- The toggle "תזכורת אימון" is today **cosmetic**: its only reader is `checkMissedWorkouts`
+  (`notificationService.ts:171`), which can only fire while the app is OPEN. There is no time/day UI.
+- **Two competing reminder configs exist**: `NotificationConfig` (`notificationService.ts:4-22`, key
+  `sparkos_notification_config`, 08:00, every day) vs `SettingsContext.tsx:70-72` (18:00, Mon-Fri). The
+  Settings UI writes the first. One source of truth; the other goes if nothing reads it.
+- Split native from web so the two halves run in parallel without touching the same files.
+
+### Ownership map — disjoint
+- **T-125** (qa) → WRITES ONLY `plans/SILENT-WRITE-FINAL-SWEEP.md`. Read-only elsewhere. No gates.
+- **T-127a** (dev) → `src/services/notificationService.ts`, NEW `src/services/localReminders*.ts`, NEW hook(s) under
+  `src/hooks/`, `src/pages/settings/sections/NotificationsSection.tsx`, `src/pages/settings/hooks/useSettingsState.ts`
+  (+ its test), `src/contexts/SettingsContext.tsx` + `src/types/index.ts` ONLY for the dead reminder fields,
+  `src/App.tsx` ONLY for one mount line, tests. **No npm install, no build, no cap sync.**
+- **T-127b** (dev) → `package.json`, `package-lock.json`, `capacitor.config.ts`, `android/**`. **SOLE owner of
+  npm install, `npx cap sync android` and gradle.** Must NOT run `npm run build` (src/ is moving; it syncs my baseline `dist/`).
+- **T-128** (design) → `src/pages/Dashboard.tsx`, `src/components/dashboard/**` (new files allowed there). Must NOT
+  edit `src/styles/**`, `src/hooks/**`, `src/contexts/**`, or anything T-127a owns.
+
+## [T-125] The sweep that must come back EMPTY
+- status: DONE 2026-09-28 19:0x — **VERDICT: NOT EMPTY (6 defects)**, `plans/SILENT-WRITE-FINAL-SWEEP.md` (498 lines).
+  Read by me in full. The family is NOT closed — a fourth sweep found more, as the last three did:
+  #1 HIGH `ai/chat.ts:52` `if (!user) return;` — a chat written under null auth is never queued and the
+  sign-out wipe destroys it; #2 HIGH `ai/chat.ts:160,188` delete has no `else` → conversation resurrects
+  on the next pull; #3 MED the unsynced marker is NEVER cleared for nutrition / body_weight /
+  body_measurements / recovery_logs (no clear in `offlineQueue.ts` or `cloudMerge.ts:206-221`) →
+  permanent false "unsynced" warnings; #4 MED `importFullBackup` (`settingsService.ts:275,298`) schedules
+  nothing → a restore is wiped by the next sign-out while the guard says nothing is at risk; #5 MED 13
+  sites call a bare `await getCurrentUser()` AFTER the local write — a rejection skips marker + queue
+  (the codebase itself defends 3 sites against exactly this); #6 LOW `water_settings` not mirrored.
+  **One small error in it:** it names the notification key `notification_settings` / `updateConfig`;
+  the real key is `sparkos_notification_config` in `saveNotificationConfig`. Same class, right conclusion.
+  → **T-132 (batch 46) fixes all six**; the notification-config mirror waits until T-127a releases that file.
+- owner: fitness-qa
+
+## [T-127a] Reminders that are real: scheduler + Settings UI (web side)
+- status: PASS 1 RETURNED 19:2x; the research follow-up (14-day one-shot window, 18:00, nudge cap 1/7d,
+  channel) is QUEUED on the same run and not yet back. Not accepted until both are in and I have run gates.
+  Pass 1: `localReminders.ts` (pure plan, ids 7100-7106 + 7200), `localRemindersSync.ts` (plugin via
+  `getCapacitorPlugin`, cancel-then-schedule, web no-op), `useLocalReminderSync` mounted in `App.tsx`
+  (open + visibilitychange + onWorkoutSaved), `useWorkoutReminderSchedule`, day chips + time field in
+  `NotificationsSection.tsx`, permission only on turn-on, SettingsContext duplicate DELETED (no reader —
+  it grepped the whole repo), 31 new tests. I checked its one state risk myself: `toggleNotification`
+  writes a PARTIAL config merged over storage (`useSettingsState.ts:154`), so the day/time edits cannot be
+  clobbered by the stale copy. Open: no deep link (hook sits above the router); `nextWorkoutName` not
+  supplied; subagents have NO skill tools — briefs must paste skill guidance in, not ask them to search.
+- FOLLOW-UP RETURNED 19:2x — all five applied, verified by it against the real 8.3.1 `definitions.d.ts`
+  (`at` one-shots, `createChannel`, `channelId`, `Weekday.Sunday = 1`): 18:00 default, rolling 14-day
+  one-shot window (7100-7113) skipping planned rest days + trained days, nudge id 7200 capped 1/7 days via
+  `lastNudgeScheduledAt`, channel `workout-reminders`.
+- **⚠️ I CORRECTED ITS CAP RULE MYSELF (`localReminders.ts` `isNudgeWithinCooldown`).** It counted the
+  SCHEDULED instant, so a nudge the trainee never saw (replaced because they trained first) silenced the
+  next real nudge for up to a week — it flagged this itself. Now a recorded instant still in the FUTURE is
+  treated as pending/replaced and does not count; only a past (fired) one does. Two tests rewritten to the
+  corrected rule + one added per layer. `localReminders*.test.ts` 50/50, biome clean.
+- owner: fitness-dev
+- done when: turning "תזכורת אימון" ON asks permission at that moment, reveals day chips + a time field,
+  and (on native) schedules weekly repeats for the chosen days + a one-shot inactivity nudge; schedule is
+  re-synced on every app open and after every saved workout; web shows honest copy instead of a dead
+  toggle; one reminder config; verify green; new unit tests for the pure scheduler.
+
+## [T-127b] The native half: plugin, notification icon, sync, APK build
+- status: **⏹ STOPPED BY AMIT 2026-09-28 (the completion event reached me 20:45). NOT re-dispatched.** Verified by
+  me on disk, by name, not assumed: **nothing is half-applied — every done-when item below was already met by
+  18:59:02**, and nothing in its files moved after that (the daemon log holds ONE build: `BUILD SUCCESSFUL in 44s`).
+  - `@capacitor/local-notifications` `8.3.1` exact in `package.json`; `npm ls` resolves it clean.
+  - `ic_stat_notify.xml` (18:57:41): white-on-transparent 24dp vector of `public/brand/mark.svg`.
+  - `capacitor.config.ts` LocalNotifications `{ smallIcon: 'ic_stat_notify', iconColor: '#43c7a5' }` (18:57:54).
+  - `cap sync` complete at 18:58:04: both gradle files + the gitignored assets `capacitor.config.json` (carries the
+    block) and `capacitor.plugins.json` (lists the plugin).
+  - `app-debug.apk` 18:59:02, 8.5 MB. **Opened by me:** both json assets carry LocalNotifications, `classes7.dex`
+    holds `com/capacitorjs/plugins/localnotifications`, `res/drawable/ic_stat_notify.xml` is packed.
+    **Limitation:** its web bundle is my 18:33 baseline `dist/` (the brief forbade `npm run build`), so it proves the
+    native half builds and packs, NOT that a reminder fires.
+  - MERGED manifest, verbatim: INTERNET, RECEIVE_BOOT_COMPLETED, WAKE_LOCK, POST_NOTIFICATIONS,
+    **SCHEDULE_EXACT_ALARM**, `com.sparkos.fitness.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`. The exact-alarm line
+    comes from the PLUGIN's own manifest (8.3.1 declares it), not from the worker — and it contradicts my ruling.
+  - Cleanup by me: `gradlew --stop` on its orphaned daemon (pid 43312, parent process gone); its Kotlin daemon had
+    already exited on its own 2h idle timeout.
+- **⚠️ DEFECT FOUND BY ME reading the plugin's Kotlin source — a seam between T-127a and T-127b that no unit test
+  can see (the plugin is mocked there):** since 8.3.0 `isExactNotification` DEFAULTS TO `true`
+  (`LocalNotification.kt:43`), and `schedule()` on API 31+ without exact-alarm access calls
+  `startActivityForResult(ACTION_REQUEST_SCHEDULE_EXACT_ALARM)` (`LocalNotificationsPlugin.kt:126-133`) — it OPENS
+  the system "Alarms & reminders" screen. Android 14+ denies that access by default (targetSdk is 36 here). Our plan
+  (`localReminders.ts:181,222`) never sets the flag, and `useLocalReminderSync` re-syncs on EVERY return to visible.
+  Derived from the code, not seen on a device: reminders ON + Android 14+ = thrown into that settings screen on
+  every app open, and again on every return. **Fix, NOT applied because this area is stopped:**
+  `isExactNotification: false` on both requests + the `ReminderRequest` type + a regression test asserting it on
+  every planned request; then `tools:node="remove"` for SCHEDULE_EXACT_ALARM in
+  `android/app/src/main/AndroidManifest.xml`. With the flag false the plugin goes straight to
+  `setAndAllowWhileIdle(RTC_WAKEUP)` (`LocalNotificationManager.kt:357-369`) with no prompt and no warning — the
+  ±minutes behaviour I ruled for.
+- **▶ RESUMED by Amit 22:05** ("תמשיך ... בעיקר על העיצוב וחווית משתמש ופונקציות ואיכות קוד ... בלי הפסקה ובלי
+  אישור ממני"). **FIX APPLIED BY ME:** `isExactNotification: false` typed as a LITERAL on `ReminderRequest` (a builder
+  cannot forget it) + set on both builders; regression test on every planned request (window + nudge);
+  `tools:node="remove"` for SCHEDULE_EXACT_ALARM in `AndroidManifest.xml`. **Re-verified:** merged manifest is now
+  INTERNET, RECEIVE_BOOT_COMPLETED, WAKE_LOCK, POST_NOTIFICATIONS, DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION — no exact
+  alarm. APK rebuilt 22:13 from the CURRENT bundle (`npm run build` → `cap sync` → `assembleDebug --no-daemon`, 17s,
+  zero java left behind); the reminder code and the opt-out are inside `assets/public/assets/index-*.js`.
+  Still unproven: a reminder firing on a real phone.
+
+### ✅ BATCH 45 GATES — mine, on a static tree, 2026-09-28 22:1x
+- `npm run verify` green (753 files) · `vitest run` **207 files / 1824 passed** (baseline 203 / 1736) · `npm run build` green.
+- Screenshots `visual-qa/b45/settings-reminders-{light,dark}-{390,1280}.png`, **measured** by
+  `e2e/zz-lead-b45r.spec.ts` (deleted after): 7 day chips on ONE row, 44px tall (40px wide at 390), 3 pressed, time 18:00.
+- **Design debt seen in those photos → the design wave:** (1) dark mode: a selected day chip differs from an
+  unselected one almost only by LETTER HUE (`--fs-primary` is near-black in dark, on a near-black card) — the same
+  pair the rest-time chips use, so both are weak; (2) four identical bell icons in one card carry no information.
+- Test noise, not a failure: `[Analytics] Failed to load progress data TypeError: getWorkoutSessions is not a
+  function` (`useProgressData.ts:135`) — a Progress test's sessionDb mock lacks the function, so that test runs the
+  ERROR path. → the Progress task.
+- owner: fitness-dev
+- done when: `@capacitor/local-notifications` pinned EXACT (8.3.1 fits core 8.5.0 — checked by me);
+  a white-on-transparent small icon drawable + `capacitor.config.ts` LocalNotifications block; `npx cap sync
+  android` and `gradlew assembleDebug` both green; the MERGED manifest's permission list reported verbatim.
+
+## [T-128] Home that shows a returning trainee their training
+- status: RETURNED 19:3x — **PHOTOGRAPHED BY ME** (built to a scratch outDir so T-127b's `dist/` stayed
+  untouched; `visual-qa/b45/`, 390 + 1280, light + dark, 19 seeded sessions, one this week). What a
+  returning user now sees: subtitle `אימון אחרון אתמול · אימון אחד השבוע`; a "השבוע" hero `1 / 3` with a
+  target bar filling from the reading start (target = median of the last 4 complete weeks — no program
+  active); the last-workout card `לחיצת חזה · אתמול · 58 דקות · 2,820 ק״ג` → `/detail/:id`; the streak
+  card (now visible: 2 days); the novice tip gone. Reads correctly in dark. `homeStats.ts` + 27 tests.
+  ProgramCard vs TodaysWorkoutCard: the coach's schedule wins (TodaysWorkoutCard reports via
+  `onHasScheduleChange`; a failed fetch does NOT hide the program card). Zero-session branch intact
+  (`Dashboard.tsx:116`).
+- Its own open notes, all verified as real and NOT done here: `FirstRunHero` still promises "הטבעות"
+  (the rings card was deleted long ago — stale copy); ProgramCard hardcodes "5 אימונים בשבוע";
+  `insightsAggregator.workoutsThisWeek` is a ROLLING 7 days while home/WeeklyGrid use calendar weeks.
+- **I corrected T-127a's day chips** after the Settings photo: they wrapped 6+1 at 390px and wore the
+  MINT ACTION fill while the rest-time chips one card above wear the selection pair
+  (`WorkoutPrefsSection.tsx:63`: `--fs-primary` + `--fs-accent`). Now one 7-column row (Android Clock's
+  weekday pattern; ~40px wide × 44px tall, above the 24px WCAG 2.5.8 floor) with the same selection pair.
+  Test updated to assert the one-row grid. 10/10.
+- owner: fitness-design
+- done when: with history, home answers in two seconds "what's next / how is my week / am I progressing"
+  with numbers as the largest type; the novice tip and first-day subtitle retire once there is history;
+  one "next workout" block, not two; both themes via existing tokens; verify green; own tests.
+
+
+### Research landed — `plans/RESEARCH-2026-09-28.md` (fitness-qa, sourced). What I take from it:
+- **⭐ #1: a full progression engine exists and NO user has ever seen it.** `progressionService.ts`
+  `calculateProgression` (:219) emits increase / hold / DELOAD + suggested weight/reps (recovery- and
+  fatigue-aware); `calculateAllExercisesProgression` (:546) has zero callers; `ProgressionRecommendation.tsx`
+  is imported nowhere. **Verified by me:** the live set screen's "+2.5 ק״ג" is a naive always-add nudge
+  (`ExerciseDisplay.tsx:851-900`), not the engine. → **T-129, batch 46.**
+- **Rest-end + PR notifications cannot fire in the APK:** they use the Web Notification API through the
+  service worker, which Android's WebView does not provide, and JS timers freeze with the screen off. On
+  native they must be SCHEDULED through the plugin at rest start (at = end time) and cancelled on
+  return/skip. → **T-131, batch 46** (after T-127a releases `notificationService.ts`).
+- Widget spec (small 2x1 / medium 4x2 / large 4x3; tap starts today's session) → **T-130, batch 46**
+  (after T-127b releases `android/**`). Data bridge: extend `localStateMirror.ts`'s idea into SharedPreferences.
+- Equipment-aware loading: `plateCalculator.ts:9-12` accepts bar + plates, but `PlateCalculatorOverlay.tsx:23`
+  and `progressionService.ts:62-63` hardcode them → fold into T-129 or right after it.
+- **PROTECT (do not "simplify"):** the streak that forgives PLANNED rest days (`restDays.ts:114`) — my
+  "daily streak is wrong" note above is withdrawn; the defect is only that nothing tells a lifter to mark
+  rest days. Readiness/training-load, e1RM that explains itself, one volume rule, real Hebrew bidi, offline without an account.
+- Playbook refinements queued to T-127a as a FOLLOW-UP (not an interrupt): 18:00 default, rolling 14-day
+  one-shot window skipping planned rest days and trained days, nudge capped 1/7 days, a reminders channel.
+- Perf: supabase is imported by 45 files incl. AuthContext/sessionDb/syncEngine — lazy-loading it is a
+  cross-cutting refactor that collides with every batch. **Deprioritised** until a real startup trace
+  names the bottleneck.
