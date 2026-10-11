@@ -8929,3 +8929,77 @@ batch now carries at least one change a user can SEE.
 - Perf: supabase is imported by 45 files incl. AuthContext/sessionDb/syncEngine — lazy-loading it is a
   cross-cutting refactor that collides with every batch. **Deprioritised** until a real startup trace
   names the bottleneck.
+
+---
+
+## BATCH 46 — dispatched 2026-09-28 22:2x. Batch 45 committed first: `aa2200e` (code) + `4eca540` (docs).
+**Amit 22:05:** "תמשיך ואני רוצה בעיקר על העיצוב וחווית משתמש ופונקציות ואיכות קוד תמשיך בלי הפסקה ובלי אישור ממני".
+**My reading:** the weight moves to what a user sees and touches, and to the correctness of the code under it. Native
+plumbing (widget, rest-timer native) waits a batch. The six data-loss defects stay IN: losing a user's data is the
+worst UX there is, and it is squarely "איכות קוד".
+
+### Ownership map — disjoint
+- **T-129** (dev) → `progressionService.ts`, `ExerciseDisplay.tsx`, `ProgressionRecommendation.tsx`, NEW `useProgressionSuggestion.ts` (+ tests).
+- **T-132** (dev) → the sync services its brief lists + `BackupSection.tsx` + `src/services/__tests__/`.
+- **T-133** (design) → Progress overview + `progressMetrics.ts` + NEW `src/utils/trainingWeek.ts` + `homeStats.ts` (move only) + the two Progress page tests.
+- **Lead** → only this board while they run; gates and photographs after all three return.
+
+## [T-129] The app becomes a coach: the real progression engine on the set screen
+- status: BUILT BY LEAD, gates green, NOT committed (batch 46) — the T-129 spawn was refused by the host before it
+  ran ("no dashboard client connected to show the approval prompt"); `git status` confirmed none of its files were
+  touched, so the lead built it directly in parallel with T-132/T-133. Photographs + commit wait for T-132/T-133.
+- **Found while wiring — the engine could never have worked on real data:**
+  1. History matched on `exerciseId`, but live ids are minted per workout (`ex-<uuid>`, saved as `exerciseId`) → zero
+     history, always "new exercise". Now matched by normalized NAME (id as fallback), like prService + usePreviousData.
+  2. Saved sessions keep only completed sets → "consistency" reads 100% always → the long-term rule said +2.5 forever
+     from session 4, and RULE 3 said +5 kg (MEDIUM) for ANY lift after 4 sessions. Fix: new double-progression rule
+     (every set at the top weight reaches the bar → up; else hold + name the rep target); the long-term rule now needs
+     RPE and can no longer override "hold, effort rising"; +5 only for an easy squat/deadlift pattern (not split/goblet).
+  3. RPE ≥ 9.5 cut the load to 60% (100 → 60 kg after one hard day). Now 90% and only with ≥2 rated sets; reps met
+     with the rated set at the limit (last set to failure) = hold (`REP_TARGET_AT_LIMIT`).
+  4. INCREASE_REPS kept the raised weight. Fixed. Bodyweight/band/ball → reps only, never kg.
+- **Equipment table** (`getLoadingProfile`): barbell 2.5 (grid 2.5, big 5) · dumbbell 2 per hand (2.5 if already on a
+  2.5 rack) · kettlebell 4 · machine 5 (grid 2.5) · cable 2.5 · plate 5 · bodyweight/band/ball reps-only · unknown 2.5.
+  Template-loaded exercises carry no equipment → `ActiveWorkoutNew` resolves it from the library by name (also fixes
+  the tutorial's blank equipment badge for them).
+- **UI:** the fixed "+2.5 ק״ג" chip is gone. One tappable chip (↑ 62.5 ק״ג / = 62.5 ק״ג / ↑ 9 חזרות / ↓ 72.5 ק״ג),
+  44px target, one short reason line, fills the CURRENT set via `onUpdateSet` (never logs), ✓ when already applied,
+  hidden on warmups, hidden with <2 sessions or a no-evidence hold. "אימון קודם:" label moved to `--fs-link` (the
+  `--fs-accent` text was ~2:1 on the light tint); a 0×0 previous set no longer renders a stray "0".
+- **Not fed on purpose:** recovery/fatigue. A neutral recovery log (6h, 3/5 on every scale) scores 42 < 45 → the
+  engine would deload EVERY lift to 80% on an ordinary day. Calibration first → queued.
+- Dead code: `ProgressionRecommendation.tsx` DELETED (imported nowhere, hardcoded slate/green palette, dark-only) with
+  its three display helpers (only consumer). Shared session read: `loadRecentSessions()` in `usePreviousData.ts`
+  (in-flight dedupe + generation guard on clear) — one read for the strip and the chip, test-proven.
+- Gates (lead, tree still moving under T-132/T-133): tsc 0 errors · biome clean on 8 files · vitest workout suite +
+  progression 36 files / 378 tests green (new: 26 engine, 17 hook, 7 render; the 11 old engine tests unchanged).
+
+## [T-132] Close the silent-write family for real: the six defects
+- status: dispatched (batch 46) — T-132 · owner: fitness-dev · brief `plans/briefs/batch-46/T-132.md`
+
+## [T-133] Progress › סקירה answers "am I progressing?"
+- status: dispatched (batch 46) — T-133 · owner: fitness-design · brief `plans/briefs/batch-46/T-133.md`
+- headline defect: Home and Progress print different numbers under the same word "השבוע" (Sunday-based week +
+  completed-set volume vs trailing 7 days + stored `totalVolume`).
+
+### Queued for batch 47 — design/UX first
+- Dark-mode SELECTION pair is weak: day chips + rest-time chips are near-black on a near-black card; only the letter hue changes.
+- Four identical bell icons in the התראות card carry no information.
+- Calendar month arrows both render as `>` (RTL).
+- Startup: supabase (210 KB) + framer (146 KB) load eagerly for a guest; the build log names the static imports
+  (`supabaseAuth.ts`, `offlineQueue.ts` from `main.tsx`, `Dashboard.tsx`, `TodaysWorkoutCard.tsx`, ...) that pin them.
+- Rest-timer notifications inside the Android app (the plugin is in now), then the home-screen widget.
+
+### ✅ BATCH 46 CLOSED — 2026-10-11, by the main session (the crew never reported back)
+- The tree was left uncommitted since 2026-09-29. Gates on the static tree: `npm run verify` 0 ·
+  vitest 214 files / 1948 → **1949** (one new regression test).
+- An independent review of the whole batch found ONE real defect, fixed before the commit:
+  **T-133 compared a partial week with a whole one.** `summarizeTrainingWeek` measured "this week so far"
+  against the FULL previous week, so every Sunday-Tuesday a regular trainee read "כדאי להעלות הילוך" and red
+  −2 / −10,000 chips. The previous side is now cut at the same elapsed point (the rule `weeklyVolumeDeltaPct`
+  already used). Two small fixes rode along: backup restore marks rows unsynced only when a cloud is
+  configured (as every normal write path does), and "ב־7 שבועות" in the rhythm card's screen-reader line.
+- Left as-is on purpose: progression rule 5 suggests a raise after a uniform 5/5/5 — that is plain linear
+  progression for a 3×5, not a defect.
+- **Next topic (Amit, 2026-10-11): running + cardio end-to-end, then GPS in the Android app.** Strava/Garmin
+  wait until the app can show runs (Garmin's developer program is closed to new apps since spring 2026).
