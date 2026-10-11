@@ -1,8 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../supabaseAuth', () => ({
-  getCurrentUser: vi.fn(async () => null),
-}));
+vi.mock('../supabaseAuth', () => {
+  const getCurrentUser = vi.fn(async () => null);
+  return {
+    getCurrentUser,
+    // The write-path helper delegates to getCurrentUser, so a single mock knob
+    // still drives both reads — and a rejection takes the null path, exactly as
+    // the real helper does.
+    resolveCurrentUserOrNull: () => getCurrentUser().catch(() => null),
+  };
+});
 
 vi.mock('../supabaseSync', () => ({
   deleteCloudBodyWeight: vi.fn(),

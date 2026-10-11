@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PersonalRecord, WorkoutExercise, WorkoutSession, WorkoutSet } from '../../../types';
+import { sessionsThisWeek, trainingWeekTotals, weekStartAt } from '../../../utils/trainingWeek';
 import {
   DEFAULT_RANGE,
   RANGE_DAYS,
@@ -17,10 +18,12 @@ import {
   sliceByRangeDays,
   sortExerciseProgress,
   strengthFilterCount,
+  strengthSnapshot,
   summarizeStrength,
   summarizeWeeklyVolume,
   weekVerdict,
   weeklyCountDelta,
+  weeklyTimeDelta,
   weeklyVolumeDelta,
 } from '../progressMetrics';
 import type { ExerciseProgress, StrengthSessionPoint } from '../types';
@@ -130,8 +133,12 @@ describe('onlyCompleted', () => {
 });
 
 describe('summarizeWeeklyVolume', () => {
-  it('sums volume, count and time within the trailing 7 days', () => {
-    // Arrange — two sessions in the last week, one older
+  // NOW is Friday 2026-05-15, so the Sunday-based week runs 05-10 → 05-16 and
+  // the previous one 05-03 → 05-09. Volume comes from COMPLETED SETS (each
+  // fixture session is 100kg x 5 = 500kg), never the stored `totalVolume` —
+  // that field is the drift the shared definition removed.
+  it('sums volume, count and time inside the CURRENT Sunday-based week', () => {
+    // Arrange — two sessions in this week, one three weeks back
     const sessions = [
       mkSession('a', '2026-05-14T10:00:00.000Z', 5000, { duration: 1800 }),
       mkSession('b', '2026-05-12T10:00:00.000Z', 3000, { duration: 1800 }),
@@ -142,24 +149,40 @@ describe('summarizeWeeklyVolume', () => {
     const summary = summarizeWeeklyVolume(sessions, NOW);
 
     // Assert
-    expect(summary.volume).toBe(8000);
+    expect(summary.volume).toBe(1000);
     expect(summary.count).toBe(2);
     expect(summary.timeMin).toBe(60);
   });
 
-  it('computes week-over-week change against the prior 7-day window', () => {
-    // Arrange — this week 8000, previous week (days 7..14 ago) 4000 => +100%
+  it('ignores a session dated before Sunday even though it is inside 7 days', () => {
+    // Arrange — Saturday 05-09 is 6 days back but belongs to LAST week. The old
+    // trailing-7-day window counted it as "this week", which is exactly why Home
+    // and Progress disagreed on a Monday.
+    const sessions = [mkSession('lastweek', '2026-05-09T10:00:00.000Z', 5000)];
+
+    // Act
+    const summary = summarizeWeeklyVolume(sessions, NOW);
+
+    // Assert
+    expect(summary.count).toBe(0);
+    expect(trainingWeekTotals(sessions, weekStartAt(new Date(NOW), -1)).count).toBe(1);
+  });
+
+  it('computes week-over-week change against the previous Sunday week', () => {
+    // Arrange — this week: one session (500kg). Last week: two (1000kg) => −50%.
     const sessions = [
       mkSession('this', '2026-05-13T10:00:00.000Z', 8000),
-      mkSession('prev', '2026-05-06T10:00:00.000Z', 4000),
+      mkSession('prev1', '2026-05-06T10:00:00.000Z', 4000),
+      mkSession('prev2', '2026-05-04T10:00:00.000Z', 4000),
     ];
 
     // Act
     const summary = summarizeWeeklyVolume(sessions, NOW);
 
     // Assert
-    expect(summary.prevVolume).toBe(4000);
-    expect(summary.changePct).toBe(100);
+    expect(summary.prevVolume).toBe(1000);
+    expect(summary.prevCount).toBe(2);
+    expect(summary.changePct).toBe(-50);
   });
 
   it('returns null change when there is no prior-week data', () => {
@@ -171,6 +194,125 @@ describe('summarizeWeeklyVolume', () => {
 
     // Assert
     expect(summary.changePct).toBeNull();
+  });
+});
+
+describe('the overview and the home screen count the SAME week', () => {
+  it('summarizeWeeklyVolume().count === sessionsThisWeek() for the same input', () => {
+    // Arrange — the exact contradiction from the field report: a session on the
+    // Saturday that closed the previous week, plus two inside this one.
+    const sessions = [
+      mkSession('sat', '2026-05-09T18:00:00.000Z', 4000),
+      mkSession('mon', '2026-05-11T10:00:00.000Z', 4000),
+      mkSession('wed', '2026-05-13T10:00:00.000Z', 4000),
+    ];
+
+    // Act
+    const overviewCount = summarizeWeeklyVolume(sessions, NOW).count;
+    const homeCount = sessionsThisWeek(sessions, new Date(NOW));
+
+    // Assert
+    expect(overviewCount).toBe(homeCount);
+    expect(overviewCount).toBe(2);
+  });
+});
+
+describe('weeklyTimeDelta', () => {
+  it('renders no comparison when the previous week has no logged time', () => {
+    // Arrange
+    const sessions = [mkSession('this', '2026-05-13T10:00:00.000Z', 1000, { duration: 3600 })];
+
+    // Act
+    const delta = weeklyTimeDelta(summarizeWeeklyVolume(sessions, NOW));
+
+    // Assert
+    expect(delta.hasPrev).toBe(false);
+  });
+
+  it('grades more minutes than last week as good', () => {
+    // Arrange — 60 min this week vs 30 last week
+    const sessions = [
+      mkSession('this', '2026-05-13T10:00:00.000Z', 1000, { duration: 3600 }),
+      mkSession('prev', '2026-05-06T10:00:00.000Z', 1000, { duration: 1800 }),
+    ];
+
+    // Act
+    const delta = weeklyTimeDelta(summarizeWeeklyVolume(sessions, NOW));
+
+    // Assert
+    expect(delta.diff).toBe(30);
+    expect(delta.zone).toBe('good');
+  });
+});
+
+describe('strengthSnapshot', () => {
+  const heavy = (id: string, day: string, weight: number, name: string) =>
+    mkSession(id, `${day}T10:00:00.000Z`, 1000, {
+      exerciseName: name,
+      sets: [mkSet(`${id}-1`, weight, 5)],
+    });
+
+  it('drops an exercise with fewer than two training days in the window', () => {
+    // Arrange
+    const sessions = [heavy('a', '2026-05-13', 100, 'Bench Press')];
+
+    // Act
+    const snapshot = strengthSnapshot(sessions, 3, new Date(NOW));
+
+    // Assert
+    expect(snapshot).toHaveLength(0);
+  });
+
+  it('states no delta when there is no earlier 4-week window to compare', () => {
+    // Arrange — both days sit inside the recent window
+    const sessions = [
+      heavy('a', '2026-05-13', 100, 'Bench Press'),
+      heavy('b', '2026-05-11', 105, 'Bench Press'),
+    ];
+
+    // Act
+    const snapshot = strengthSnapshot(sessions, 3, new Date(NOW));
+
+    // Assert — null, not 0: "no data yet" is not "no progress"
+    expect(snapshot).toHaveLength(1);
+    expect(snapshot[0]?.delta).toBeNull();
+    expect(snapshot[0]?.e1RM).toBe(123);
+  });
+
+  it('compares the best recent e1RM against the 4 weeks before it', () => {
+    // Arrange — the recent 4 Sunday weeks start 2026-04-19, so 04-15 is earlier
+    // and still inside the 8-week window (which opens 2026-03-22).
+    const sessions = [
+      heavy('old', '2026-04-15', 100, 'Squat'),
+      heavy('new', '2026-05-13', 110, 'Squat'),
+    ];
+
+    // Act
+    const snapshot = strengthSnapshot(sessions, 3, new Date(NOW));
+
+    // Assert — Epley: 110x5 => 128, 100x5 => 117
+    expect(snapshot[0]?.delta).toBe(11);
+  });
+
+  it('orders by training frequency and honours the row limit', () => {
+    // Arrange — Bench 3 days, Squat 2 days, Row 2 days
+    const sessions = [
+      heavy('b1', '2026-05-13', 100, 'Bench Press'),
+      heavy('b2', '2026-05-12', 100, 'Bench Press'),
+      heavy('b3', '2026-05-11', 100, 'Bench Press'),
+      heavy('s1', '2026-05-13', 140, 'Squat'),
+      heavy('s2', '2026-05-11', 140, 'Squat'),
+      heavy('r1', '2026-05-13', 60, 'Row'),
+      heavy('r2', '2026-05-11', 60, 'Row'),
+    ];
+
+    // Act
+    const snapshot = strengthSnapshot(sessions, 2, new Date(NOW));
+
+    // Assert
+    expect(snapshot).toHaveLength(2);
+    expect(snapshot[0]?.exerciseName).toBe('Bench Press');
+    expect(snapshot[1]?.exerciseName).toBe('Squat');
   });
 });
 
@@ -360,7 +502,9 @@ describe('summarizeWeeklyVolume — prevCount', () => {
 
 describe('weeklyCountDelta / weeklyVolumeDelta', () => {
   it('grades an increase as good and a decrease as attention', () => {
-    // Arrange — this week 3 sessions / 8000kg, prev 1 session / 4000kg
+    // Arrange — this week 3 sessions (3 x 500kg of completed sets), prev 1 (500kg).
+    // The `totalVolume` numbers on the rows are deliberately left as-is and
+    // deliberately unread: volume comes from the sets.
     const sessions = [
       mkSession('t1', '2026-05-14T10:00:00.000Z', 3000),
       mkSession('t2', '2026-05-13T10:00:00.000Z', 3000),
@@ -376,7 +520,7 @@ describe('weeklyCountDelta / weeklyVolumeDelta', () => {
     // Assert
     expect(countDelta.diff).toBe(2);
     expect(countDelta.zone).toBe('good');
-    expect(volDelta.diff).toBe(4000);
+    expect(volDelta.diff).toBe(1000);
     expect(volDelta.zone).toBe('good');
   });
 

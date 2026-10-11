@@ -8,6 +8,7 @@ import type { ActiveExercise, PersonalItem, WorkoutSettings } from '../../types'
 import { getProgramDayMetadata } from '../../data/bbtProgramMetadata';
 import { syncTemplatesFromCloud } from '../../hooks/useCloudTemplateReflection';
 import { listMyAssignments } from '../../services/coach';
+import { normalizeExerciseName } from '../../services/prService';
 import { TRAINING_DAYS, getProgress } from '../../services/programProgressService';
 import { ensurePersistentStorage } from '../../services/storagePersistence';
 import { logger } from '../../utils/logger';
@@ -317,6 +318,20 @@ export const WorkoutContent: React.FC<{
 
   // Exercise name suggestions + personal exercise library (loaded once on mount).
   const { nameSuggestions, personalExerciseLibrary } = useExerciseSuggestions();
+
+  // Template-loaded exercises carry no equipment of their own. Resolve it from the
+  // library by NAME (live ids are minted fresh every workout), so the progression
+  // chip steps a dumbbell by 2 kg instead of a barbell's 2.5, and the tutorial's
+  // equipment badge is not blank for them.
+  const liveExerciseName = derived.currentExercise?.name;
+  const currentOwnEquipment = derived.currentExercise?.equipment;
+  const currentEquipment = useMemo(() => {
+    if (currentOwnEquipment) return currentOwnEquipment;
+    const key = normalizeExerciseName(liveExerciseName);
+    if (!key) return undefined;
+    const match = personalExerciseLibrary.find((pe) => normalizeExerciseName(pe.name) === key);
+    return match?.equipment || undefined;
+  }, [currentOwnEquipment, liveExerciseName, personalExerciseLibrary]);
 
   // PR tracking
   const { getPRForExercise } = usePersonalRecords(state.exercises, state.currentExerciseIndex);
@@ -761,6 +776,7 @@ export const WorkoutContent: React.FC<{
             onOpenPlateCalc={handleOpenPlateCalc}
             onSwapExercise={handleSwapExercise}
             onOpenAICoach={handleOpenTutorial}
+            equipment={currentEquipment}
           />
         </div>
 
@@ -848,7 +864,7 @@ export const WorkoutContent: React.FC<{
         tutorialMechanic={derived.currentExercise?.mechanic}
         tutorialForce={derived.currentExercise?.force}
         tutorialLevel={derived.currentExercise?.level}
-        tutorialEquipment={derived.currentExercise?.equipment}
+        tutorialEquipment={currentEquipment}
         tutorialInstructions={
           derived.currentExercise?.tutorialText ?? derived.currentExercise?.instructions
         }

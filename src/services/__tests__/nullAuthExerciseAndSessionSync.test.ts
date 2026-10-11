@@ -28,7 +28,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // Cloud must read as CONFIGURED: with no cloud there is nothing to sync to and
 // nothing at risk, which is the one case where not queueing is correct.
 vi.mock('../../lib/supabase', () => ({ isSupabaseConfigured: () => true, supabase: null }));
-vi.mock('../supabaseAuth', () => ({ getCurrentUser: vi.fn(async () => null) }));
+vi.mock('../supabaseAuth', () => {
+  const getCurrentUser = vi.fn(async () => null);
+  return {
+    getCurrentUser,
+    // The write-path helper delegates to getCurrentUser, so a single mock knob
+    // still drives both reads — and a rejection takes the null path, exactly as
+    // the real helper does.
+    resolveCurrentUserOrNull: () => getCurrentUser().catch(() => null),
+  };
+});
 vi.mock('../../components/ui/GlobalToast', () => ({ showToast: vi.fn() }));
 
 // A stand-in for the `workout_sessions` table, so the resurrection test can do

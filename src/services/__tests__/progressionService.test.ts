@@ -5,6 +5,8 @@ import {
   calculateProgression,
   calculateRPEDelta,
   getExerciseSnapshot,
+  getLoadingProfile,
+  snapToGrid,
 } from '../progressionService';
 
 const completedSet = (
@@ -363,5 +365,334 @@ describe('getExerciseSnapshot wasCompleted with zero completed working sets', ()
     const snapshot = getExerciseSnapshot(session, 'curl');
     expect(snapshot).not.toBeNull();
     expect(snapshot?.wasCompleted).toBe(false);
+  });
+});
+
+// ============================================================================
+// T-129: the engine the set screen now shows
+// ============================================================================
+
+interface SetSpec {
+  weight: number;
+  reps: number;
+  rpe?: number | null;
+  warmup?: boolean;
+}
+
+let uid = 0;
+// A saved session exactly as the live workout writes one: the exercise id is a
+// fresh random id every workout (WorkoutActions maps exerciseId from the live
+// exercise's minted `ex-<uuid>`), and only the sets that were done are kept.
+const savedSession = (date: string, name: string, sets: SetSpec[]): WorkoutSession => {
+  uid += 1;
+  const exerciseId = `ex-random-${uid}`;
+  return {
+    id: `session-${uid}`,
+    date,
+    startTime: `${date}T10:00:00.000Z`,
+    endTime: `${date}T11:00:00.000Z`,
+    exercises: [
+      {
+        id: exerciseId,
+        exerciseId,
+        exerciseName: name,
+        targetMuscle: 'Other',
+        sets: sets.map((s, i) => ({
+          id: `${exerciseId}-${i}`,
+          setNumber: i + 1,
+          reps: s.reps,
+          weight: s.weight,
+          rpe: s.rpe ?? null,
+          isWarmup: !!s.warmup,
+          isCompleted: true,
+          notes: '',
+          completedAt: `${date}T10:0${i}:00.000Z`,
+        })),
+        notes: '',
+        restSeconds: 90,
+        isCompleted: true,
+        order: 0,
+      },
+    ],
+    duration: 3600,
+    status: 'completed',
+    templateId: null,
+    notes: '',
+    rating: null,
+    totalVolume: 0,
+    caloriesBurned: null,
+    createdAt: `${date}T10:00:00.000Z`,
+    updatedAt: `${date}T11:00:00.000Z`,
+  };
+};
+
+const straight = (weight: number, reps: number[], rpe: number | null = null): SetSpec[] =>
+  reps.map((r) => ({ weight, reps: r, rpe }));
+
+const progress = (
+  name: string,
+  sessions: WorkoutSession[],
+  extra: Partial<Parameters<typeof calculateProgression>[0]> = {}
+) =>
+  calculateProgression({
+    exerciseId: '',
+    exerciseName: name,
+    targetReps: 8,
+    targetSets: 3,
+    sessions,
+    ...extra,
+  });
+
+describe('history identity: live exercise ids are random per workout', () => {
+  it('finds history by name, ignoring case and spacing, when every session has a new id', () => {
+    const result = progress('לחיצת חזה', [
+      savedSession('2026-09-01', 'לחיצת חזה ', straight(60, [8, 8, 8])),
+      savedSession('2026-09-04', '  לחיצת  חזה', straight(60, [8, 8, 8])),
+    ]);
+    expect(result.history).toHaveLength(2);
+    expect(result.recommendation).toBe('INCREASE_WEIGHT');
+  });
+
+  it('does not borrow another exercise that happens to share the session', () => {
+    const result = progress('Squat', [
+      savedSession('2026-09-01', 'Bench Press', straight(60, [8, 8, 8])),
+      savedSession('2026-09-04', 'Bench Press', straight(60, [8, 8, 8])),
+    ]);
+    expect(result.history).toHaveLength(0);
+    expect(result.reasons[0]?.code).toBe('NEW_EXERCISE');
+  });
+
+  it('still matches by id when no name is given (older callers)', () => {
+    const session = savedSession('2026-09-01', 'Row', straight(50, [10, 10]));
+    const id = session.exercises[0]?.exerciseId ?? '';
+    expect(getExerciseSnapshot(session, id)?.weight).toBe(50);
+  });
+});
+
+describe('rep bar (double progression) when no set was rated', () => {
+  it('raises the load once every set at the top weight matched the best set', () => {
+    const result = progress(
+      'Bench Press',
+      [
+        savedSession('2026-09-01', 'Bench Press', straight(60, [8, 8, 7])),
+        savedSession('2026-09-04', 'Bench Press', straight(60, [8, 8, 8])),
+      ],
+      { equipment: 'barbell' }
+    );
+    expect(result.recommendation).toBe('INCREASE_WEIGHT');
+    expect(result.suggestedWeight).toBe(62.5);
+    expect(result.reasons[0]?.code).toBe('REP_TARGET_MET');
+    expect(result.reasons[0]?.short).toContain('8');
+  });
+
+  it('holds the load and names the rep target while a set fell short', () => {
+    const result = progress(
+      'Bench Press',
+      [
+        savedSession('2026-09-01', 'Bench Press', straight(60, [8, 8, 8])),
+        savedSession('2026-09-04', 'Bench Press', straight(62.5, [8, 7, 6])),
+      ],
+      { equipment: 'barbell' }
+    );
+    expect(result.recommendation).toBe('MAINTAIN');
+    expect(result.suggestedWeight).toBe(62.5);
+    expect(result.suggestedReps).toBe(8);
+    expect(result.reasons[0]?.code).toBe('REP_TARGET_SHORT');
+  });
+
+  it('is not overridden to "increase" by the long-term rule after many sessions', () => {
+    const sessions = ['2026-09-01', '2026-09-03', '2026-09-05', '2026-09-08', '2026-09-10'].map(
+      (d) => savedSession(d, 'Bench Press', straight(62.5, [8, 7, 6]))
+    );
+    const result = progress('Bench Press', sessions, { equipment: 'barbell' });
+    expect(result.recommendation).toBe('MAINTAIN');
+    expect(result.reasons.map((r) => r.code)).not.toContain('CONSISTENT_LONG_TERM');
+  });
+
+  it('uses the prescribed top of the range as the bar when a program sets one', () => {
+    const history = [
+      savedSession('2026-09-01', 'Bench Press', straight(60, [8, 8, 8])),
+      savedSession('2026-09-04', 'Bench Press', straight(60, [8, 8, 8])),
+    ];
+    const short = progress('Bench Press', history, { equipment: 'barbell', prescribedReps: 10 });
+    expect(short.recommendation).toBe('MAINTAIN');
+    expect(short.suggestedReps).toBe(10);
+
+    const met = progress(
+      'Bench Press',
+      [
+        savedSession('2026-09-01', 'Bench Press', straight(60, [10, 9, 9])),
+        savedSession('2026-09-04', 'Bench Press', straight(60, [10, 10, 10])),
+      ],
+      { equipment: 'barbell', prescribedReps: 10 }
+    );
+    expect(met.recommendation).toBe('INCREASE_WEIGHT');
+  });
+
+  it('says nothing (plain hold) from a single top set with no prescription', () => {
+    const pyramid = (d: string) =>
+      savedSession(d, 'Bench Press', [
+        { weight: 50, reps: 12 },
+        { weight: 60, reps: 10 },
+        { weight: 70, reps: 8 },
+      ]);
+    const result = progress('Bench Press', [
+      pyramid('2026-09-01'),
+      pyramid('2026-09-03'),
+      pyramid('2026-09-05'),
+      pyramid('2026-09-08'),
+    ]);
+    expect(result.recommendation).toBe('MAINTAIN');
+    expect(result.reasons[0]?.code).toBe('GENERAL_MAINTAIN');
+  });
+});
+
+describe('loading profiles: the step and the grid follow the implement', () => {
+  const metTwice = (name: string, weight: number) => [
+    savedSession('2026-09-01', name, straight(weight, [10, 10, 10])),
+    savedSession('2026-09-04', name, straight(weight, [10, 10, 10])),
+  ];
+
+  it.each([
+    ['barbell', 60, 62.5],
+    ['dumbbell', 12, 14],
+    ['dumbbell', 12.5, 15],
+    ['machine', 45, 50],
+    ['cable', 17.5, 20],
+    ['kettlebell', 16, 20],
+    ['plate', 10, 15],
+    [undefined, 40, 42.5],
+    ['something-custom', 40, 42.5],
+  ])('%s at %s kg steps to %s kg', (equipment, weight, expected) => {
+    const result = progress('Lift', metTwice('Lift', weight), { equipment });
+    expect(result.recommendation).toBe('INCREASE_WEIGHT');
+    expect(result.suggestedWeight).toBe(expected);
+  });
+
+  it('never suggests added weight on a bodyweight movement: reps go up instead', () => {
+    const result = progress(
+      'Push-up',
+      [
+        savedSession('2026-09-01', 'Push-up', straight(0, [12, 12, 11])),
+        savedSession('2026-09-04', 'Push-up', straight(0, [12, 12, 12])),
+      ],
+      { equipment: 'bodyweight' }
+    );
+    expect(result.history).toHaveLength(2); // unloaded sessions count for reps-only work
+    expect(result.recommendation).toBe('INCREASE_REPS');
+    expect(result.suggestedWeight).toBe(0);
+    expect(result.suggestedReps).toBe(13);
+  });
+
+  it('snaps an off-grid barbell load to the next loadable weight', () => {
+    const result = progress('Bench Press', metTwice('Bench Press', 71), { equipment: 'barbell' });
+    expect(result.suggestedWeight).toBe(72.5);
+  });
+
+  it('takes the bigger barbell step only on a clearly easy squat, never on a split squat', () => {
+    const easy = (name: string) => [
+      savedSession('2026-09-01', name, straight(100, [5, 5, 5], 6)),
+      savedSession('2026-09-04', name, straight(100, [5, 5, 5], 6)),
+    ];
+    expect(
+      progress('Back Squat', easy('Back Squat'), { equipment: 'barbell' }).suggestedWeight
+    ).toBe(105);
+    expect(
+      progress('סקוואט אחורי', easy('סקוואט אחורי'), { equipment: 'barbell' }).suggestedWeight
+    ).toBe(105);
+    expect(
+      progress('Bulgarian Split Squat', easy('Bulgarian Split Squat'), { equipment: 'barbell' })
+        .suggestedWeight
+    ).toBe(102.5);
+    expect(
+      progress('Bench Press', easy('Bench Press'), { equipment: 'barbell' }).suggestedWeight
+    ).toBe(102.5);
+  });
+
+  it('exposes the table and the snapping for callers', () => {
+    expect(getLoadingProfile('dumbbell')).toMatchObject({ step: 2, grid: 2, repsOnly: false });
+    expect(getLoadingProfile('dumbbell', 17.5)).toMatchObject({ step: 2.5, grid: 2.5 });
+    expect(getLoadingProfile('BODYWEIGHT').repsOnly).toBe(true);
+    expect(getLoadingProfile('').equipment).toBe('');
+    expect(snapToGrid(73.4, 2.5, 'nearest')).toBe(72.5);
+    expect(snapToGrid(73.4, 2.5, 'up')).toBe(75);
+    expect(snapToGrid(73.4, 2.5, 'down')).toBe(72.5);
+    expect(snapToGrid(10.8, 2, 'nearest')).toBe(10);
+  });
+});
+
+describe('backing off', () => {
+  it('a hard session costs 10%, not 40%, and lands on a loadable weight', () => {
+    const result = progress(
+      'Bench Press',
+      [
+        savedSession('2026-09-01', 'Bench Press', straight(80, [5, 5, 5], 8)),
+        savedSession('2026-09-04', 'Bench Press', straight(80, [5, 4, 3], 10)),
+      ],
+      { equipment: 'barbell' }
+    );
+    expect(result.recommendation).toBe('DECREASE_WEIGHT');
+    expect(result.suggestedWeight).toBe(72.5);
+    expect(result.reasons[0]?.code).toBe('HIGH_RPE');
+  });
+
+  it('one set rated 10 (the last set, taken to failure) holds the weight, it does not cut it', () => {
+    const lastSetToFailure: SetSpec[] = [
+      { weight: 80, reps: 5 },
+      { weight: 80, reps: 5 },
+      { weight: 80, reps: 5, rpe: 10 },
+    ];
+    const result = progress(
+      'Bench Press',
+      [
+        savedSession('2026-09-01', 'Bench Press', lastSetToFailure),
+        savedSession('2026-09-04', 'Bench Press', lastSetToFailure),
+      ],
+      { equipment: 'barbell' }
+    );
+    expect(result.recommendation).toBe('MAINTAIN');
+    expect(result.suggestedWeight).toBe(80);
+    expect(result.reasons[0]?.code).toBe('REP_TARGET_AT_LIMIT');
+  });
+
+  it('rising effort holds the weight even after many sessions', () => {
+    const rpes = [7, 7, 8, 9, 9];
+    const sessions = rpes.map((rpe, i) =>
+      savedSession(`2026-09-0${i + 1}`, 'Bench Press', straight(80, [5, 5, 5], rpe))
+    );
+    const result = progress('Bench Press', sessions, { equipment: 'barbell' });
+    expect(result.recommendation).toBe('MAINTAIN');
+    expect(result.reasons[0]?.code).toBe('RPE_INCREASING');
+  });
+
+  it('a reps-only movement backs off in reps', () => {
+    const result = progress(
+      'Pull-up',
+      [
+        savedSession('2026-09-01', 'Pull-up', straight(0, [10, 10, 10], 9)),
+        savedSession('2026-09-04', 'Pull-up', straight(0, [10, 9, 8], 10)),
+      ],
+      { equipment: 'bodyweight' }
+    );
+    expect(result.recommendation).toBe('DECREASE_WEIGHT');
+    expect(result.suggestedWeight).toBe(0);
+    expect(result.suggestedReps).toBe(8);
+  });
+});
+
+describe('INCREASE_REPS keeps the load it asks more reps at', () => {
+  it('resets the suggested weight to the current one', () => {
+    // Easy (RPE 4) but far below the planned volume: 2 sets of 5 against 4 x 10.
+    const result = progress(
+      'Bench Press',
+      [
+        savedSession('2026-09-01', 'Bench Press', straight(60, [5, 5], 4)),
+        savedSession('2026-09-04', 'Bench Press', straight(60, [5, 5], 4)),
+      ],
+      { equipment: 'barbell', targetReps: 10, targetSets: 4 }
+    );
+    expect(result.recommendation).toBe('INCREASE_REPS');
+    expect(result.suggestedWeight).toBe(result.currentWeight);
+    expect(result.suggestedReps).toBe(6);
   });
 });

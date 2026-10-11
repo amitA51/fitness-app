@@ -63,6 +63,9 @@ export const MIRRORED_LOCAL_KEYS = [
   'appSettings',
   'warmup_routine_selections',
   'cooldown_routine_selections',
+  // Daily hydration goal + glass size. Written by waterService.saveWaterSettings
+  // and wiped by clearUserScopedLocalData, with no cloud copy until now.
+  'water_settings',
 ] as const;
 
 /** Cloud `user_settings.key` for a mirrored localStorage key. */

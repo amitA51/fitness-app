@@ -47,6 +47,56 @@ const sortSessionsByRecent = (sessions: WorkoutSession[]): WorkoutSession[] => {
   });
 };
 
+// One read shared by every concurrent caller: the "last time" strip and the
+// progression chip both ask when an exercise opens.
+let sessionsInFlight: Promise<WorkoutSession[]> | null = null;
+// Bumped by clearPreviousDataCache. A read that started before a clear (for
+// example while the finished workout was still being saved) must not write its
+// stale list back into the cache for the next minute.
+let sessionsCacheGeneration = 0;
+
+/** The cached recent-first session list while it is fresh; null otherwise. Never reads. */
+export function peekRecentSessions(): WorkoutSession[] | null {
+  return sessionsCache.data &&
+    sessionsCache.sorted &&
+    Date.now() - sessionsCache.timestamp < SESSIONS_CACHE_TTL
+    ? sessionsCache.data
+    : null;
+}
+
+/**
+ * Saved sessions, most recent first, from the one-minute cache behind every
+ * previous-data read on the set screen. Exported so the progression suggestion
+ * reads exactly the sessions the "last time" strip does, without a second fetch.
+ */
+export function loadRecentSessions(): Promise<WorkoutSession[]> {
+  const cached = peekRecentSessions();
+  if (cached) return Promise.resolve(cached);
+  if (!sessionsInFlight) {
+    const generation = sessionsCacheGeneration;
+    const read = getWorkoutSessions().then((fetched) => {
+      // Sort once when caching, not on every access. sortSessionsByRecent
+      // returns a NEW sorted array — use that result (the original `fetched`
+      // is unsorted), otherwise a `find` over it would scan in fetch order.
+      const sorted = sortSessionsByRecent(fetched);
+      if (generation === sessionsCacheGeneration) {
+        sessionsCache = { data: sorted, timestamp: Date.now(), sorted: true };
+      }
+      return sorted;
+    });
+    sessionsInFlight = read;
+    read.then(
+      () => {
+        if (sessionsInFlight === read) sessionsInFlight = null;
+      },
+      () => {
+        if (sessionsInFlight === read) sessionsInFlight = null;
+      }
+    );
+  }
+  return sessionsInFlight;
+}
+
 /**
  * Fetches previous workout data for ghost value display
  * Shows what weight/reps were used last time for this exercise
@@ -81,23 +131,8 @@ export function usePreviousData(exerciseName: string | undefined): UsePreviousDa
     }
 
     try {
-      let sessions: WorkoutSession[];
-
-      // Check sessions cache - sessions are pre-sorted
-      if (
-        sessionsCache.data &&
-        sessionsCache.sorted &&
-        Date.now() - sessionsCache.timestamp < SESSIONS_CACHE_TTL
-      ) {
-        sessions = sessionsCache.data;
-      } else {
-        const fetched = await getWorkoutSessions();
-        // Sort once when caching, not on every access. sortSessionsByRecent
-        // returns a NEW sorted array — use that result (the original `fetched`
-        // is unsorted), otherwise `find` below would scan in fetch order.
-        sessions = sortSessionsByRecent(fetched);
-        sessionsCache = { data: sessions, timestamp: Date.now(), sorted: true };
-      }
+      // Pre-sorted, shared with every other set-screen reader (see loadRecentSessions).
+      const sessions = await loadRecentSessions();
 
       if (isCancelled.current) return;
 
@@ -180,6 +215,8 @@ export function usePreviousData(exerciseName: string | undefined): UsePreviousDa
 export function clearPreviousDataCache(): void {
   exerciseCache.clear();
   sessionsCache = { data: null, timestamp: 0, sorted: false };
+  sessionsCacheGeneration++;
+  sessionsInFlight = null;
 }
 
 /**

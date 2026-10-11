@@ -12,7 +12,7 @@ import { safeTimestamp } from './cloudMerge';
 import { emitWorkoutSaved } from './dataEvents';
 import { STORES, dbDelete, dbGetAll, dbPut, initDB } from './indexedDBCore';
 import { queueMutation } from './offlineQueue';
-import { getCurrentUser } from './supabaseAuth';
+import { getCurrentUser, resolveCurrentUserOrNull } from './supabaseAuth';
 import { deleteCloudWorkoutSession, syncWorkoutSession } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
 
@@ -314,7 +314,7 @@ export const saveWorkoutSession = async (session: WorkoutSession): Promise<void>
   await dbPut(STORES.WORKOUT_SESSIONS, session);
 
   const payload = { ...session, endTime: session.endTime ?? undefined };
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
 
   // No cloud configured means nothing to sync to, and nothing at risk — mirrors
   // syncWithRetry, which returns early in that case rather than queueing.
@@ -506,7 +506,7 @@ export const deleteWorkoutSession = async (sessionId: string): Promise<void> => 
   // The local row is gone, so it is no longer a workout that can be lost.
   await clearUnsyncedSessionMarker(sessionId);
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
   // No cloud configured means nothing to sync to and nothing at risk — mirrors
   // syncWithRetry, which returns early in that case rather than queueing.
   if (isSupabaseConfigured()) {

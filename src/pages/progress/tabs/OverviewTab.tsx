@@ -8,11 +8,15 @@ import { VerdictLine, VerdictNumber } from '../../../components/insights/Verdict
 import { HeroStat } from '../../../components/ui/HeroStat';
 import { useCountUp } from '../../../hooks/useCountUp';
 import { useWorkoutStreak } from '../../../hooks/useWorkoutStreak';
+import { TRAINING_DAYS, getProgress } from '../../../services/programProgressService';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
 import { formatVolume } from '../../../utils/dateUtils';
+import { weeklyTarget } from '../../../utils/trainingWeek';
 import { zoneColor } from '../../../utils/zoneColor';
 import { LevelCard } from '../components/LevelCard';
 import { AdvancedSection, SectionCard } from '../components/SectionCard';
+import { StrengthSnapshotCard } from '../components/StrengthSnapshotCard';
+import { WeeklyRhythmCard } from '../components/WeeklyRhythmCard';
 import {
   type StatDelta,
   isRecentPR,
@@ -20,6 +24,7 @@ import {
   summarizeWeeklyVolume,
   weekVerdict,
   weeklyCountDelta,
+  weeklyTimeDelta,
   weeklyVolumeDelta,
 } from '../progressMetrics';
 
@@ -45,14 +50,16 @@ function CountUpValue({
 }
 
 // Mono "vs last week" delta chip. Color comes from the zone vocabulary
-// (up=good/accent, down=attention/warn, flat=neutral/muted) — never lime.
-// The chip owns the sign; `format` receives the absolute magnitude.
+// (up=good/accent, down=attention/warn) — never lime. The chip owns the sign;
+// `format` receives the absolute magnitude.
+//
+// A FLAT delta renders NOTHING. It used to print a bare muted "0" with no sign,
+// no icon and no baseline under "אימונים", which read as the week's second
+// number rather than as "same as last week".
 function DeltaChip({ delta, format }: { delta: StatDelta; format: (v: number) => string }) {
-  if (!delta.hasPrev) return null;
+  if (!delta.hasPrev || delta.diff === 0) return null;
   const color = zoneColor(delta.zone);
   const up = delta.diff > 0;
-  const flat = delta.diff === 0;
-  const sign = flat ? '' : up ? '+' : '−';
   return (
     <span
       className="mt-1 inline-flex items-center gap-1"
@@ -64,14 +71,13 @@ function DeltaChip({ delta, format }: { delta: StatDelta; format: (v: number) =>
         color,
       }}
     >
-      {!flat &&
-        (up ? (
-          <TrendingUp size={11} aria-hidden="true" />
-        ) : (
-          <TrendingDown size={11} aria-hidden="true" />
-        ))}
+      {up ? (
+        <TrendingUp size={11} aria-hidden="true" />
+      ) : (
+        <TrendingDown size={11} aria-hidden="true" />
+      )}
       <span dir="ltr">
-        {sign}
+        {up ? '+' : '−'}
         {format(Math.abs(delta.diff))}
       </span>
     </span>
@@ -86,10 +92,23 @@ export const OverviewTab = memo(function OverviewTab({
   prs: PersonalRecord[];
 }) {
   const navigate = useNavigate();
+  // ONE definition of "this week", shared with the home screen (utils/trainingWeek):
+  // Sunday-based, completed sessions, volume from completed sets.
   const weekly = useMemo(() => summarizeWeeklyVolume(sessions), [sessions]);
 
+  // Same target rule the home screen uses: a running program's stated
+  // sessions/week beats the inferred median, and `null` means "unknown" so the
+  // card prints a bare count instead of a made-up denominator. Synchronous
+  // localStorage read, exactly as Dashboard does it — no fetch.
+  const target = useMemo(() => {
+    const progress = getProgress();
+    const declared = progress && progress.status !== 'completed' ? TRAINING_DAYS.length : null;
+    return weeklyTarget(sessions, declared);
+  }, [sessions]);
+
   // Unified streak math — same hook the Dashboard chip uses, so the two surfaces
-  // can never drift apart. Replaces the local computeStreak wiring.
+  // can never drift apart. Read by the verdict line only: the week card no
+  // longer prints a streak.
   const streak = useWorkoutStreak(sessions);
 
   const latestPRs = useMemo(() => recentPRs(prs, 2), [prs]);
@@ -97,6 +116,10 @@ export const OverviewTab = memo(function OverviewTab({
   const verdict = useMemo(() => weekVerdict(weekly, streak.current), [weekly, streak.current]);
   const countDelta = useMemo(() => weeklyCountDelta(weekly), [weekly]);
   const volumeDelta = useMemo(() => weeklyVolumeDelta(weekly), [weekly]);
+  const timeDelta = useMemo(() => weeklyTimeDelta(weekly), [weekly]);
+  // The caption is only true if at least one chip actually rendered — a flat
+  // delta now renders nothing at all.
+  const hasAnyDelta = [countDelta, volumeDelta, timeDelta].some((d) => d.hasPrev && d.diff !== 0);
 
   if (sessions.length === 0) {
     return (
@@ -213,9 +236,11 @@ export const OverviewTab = memo(function OverviewTab({
         {verdict.tail}
       </VerdictLine>
 
-      {/* Weekly-review card: 3-up hero stats with WoW deltas. The verdict
-          headline that used to sit here said the same thing as the line above
-          it, 15px higher — one week gets one verdict. */}
+      {/* Weekly-review card: three numbers that answer "what did this week
+          actually contain" — sessions against the target, volume, and time on
+          the floor. The streak lived here and printed "0 רצף ימים" to anyone
+          training three times a week without declaring rest days; the home
+          screen's streak card owns that number. */}
       <SectionCard>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
           <Flame size={16} style={{ color: zoneColor(verdict.zone) }} aria-hidden="true" />
@@ -227,13 +252,31 @@ export const OverviewTab = memo(function OverviewTab({
               color: 'var(--fs-muted)',
             }}
           >
-            השבוע האחרון
+            השבוע
           </span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
           <div style={{ minWidth: 0 }}>
-            <HeroStat value={<CountUpValue value={weekly.count} />} label="אימונים" size={30} />
+            <HeroStat
+              value={
+                // "3 / 4" when a target is known, a bare "3" when it is not —
+                // an invented denominator is worse than no denominator.
+                target === null ? (
+                  <CountUpValue value={weekly.count} />
+                ) : (
+                  <span dir="ltr" style={{ whiteSpace: 'nowrap' }}>
+                    <CountUpValue value={weekly.count} />
+                    <span style={{ color: 'var(--fs-muted)', fontSize: '0.62em' }}>
+                      {' / '}
+                      {target}
+                    </span>
+                  </span>
+                )
+              }
+              label="אימונים"
+              size={30}
+            />
             <DeltaChip delta={countDelta} format={String} />
           </div>
           <div style={{ minWidth: 0 }}>
@@ -246,13 +289,37 @@ export const OverviewTab = memo(function OverviewTab({
           </div>
           <div style={{ minWidth: 0 }}>
             <HeroStat
-              value={<CountUpValue value={streak.current} delay={0.12} />}
-              label="רצף ימים"
+              value={<CountUpValue value={weekly.timeMin} delay={0.12} />}
+              label="דקות אימון"
               size={30}
             />
+            <DeltaChip delta={timeDelta} format={String} />
           </div>
         </div>
+
+        {/* One caption for the whole delta row. Three chips with no stated
+            baseline were three numbers nobody could interpret. */}
+        {hasAnyDelta && (
+          <p
+            style={{
+              margin: '12px 0 0',
+              fontFamily: 'var(--font-hebrew)',
+              fontSize: 11,
+              lineHeight: 1.4,
+              color: 'var(--fs-muted)',
+            }}
+          >
+            ההפרשים מול השבוע שעבר
+          </p>
+        )}
       </SectionCard>
+
+      {/* Eight weeks of rhythm — self-hides under two complete weeks. */}
+      <WeeklyRhythmCard sessions={sessions} target={target} />
+
+      {/* The lifts being trained, with their e1RM move — self-hides when no
+          exercise has two training days in the window. */}
+      <StrengthSnapshotCard sessions={sessions} />
 
       {/* Recent PRs — pulled from the same prService source as the Strength board */}
       {latestPRs.length > 0 && (

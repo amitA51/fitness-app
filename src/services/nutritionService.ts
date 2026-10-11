@@ -18,7 +18,7 @@ import { mirrorLocalKey } from './localStateMirror';
 import { FOOD_LIBRARY, MEAL_PRESETS, type MealPreset } from './nutritionData';
 import { queueMutation } from './offlineQueue';
 import { clearUnsyncedRecordMarker, markRecordUnsynced } from './sessionDb';
-import { getCurrentUser } from './supabaseAuth';
+import { resolveCurrentUserOrNull } from './supabaseAuth';
 import { deleteCloudNutritionLog, syncNutritionLog } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
 
@@ -181,8 +181,11 @@ export async function addFoodFromPreset(
     await markRecordUnsynced(STORES.NUTRITION_LOGS, mealEntry.id);
 
     // A THROW here is the same situation as a null user — auth cannot answer —
-    // so it must take the same path, not skip the queue.
-    const user = await getCurrentUser().catch(() => null);
+    // so it must take the same path, not skip the queue. That rule now lives in
+    // ONE place (supabaseAuth.resolveCurrentUserOrNull) instead of being
+    // hand-rolled here, in exerciseDb and in offlineQueue while thirteen other
+    // write paths went without it.
+    const user = await resolveCurrentUserOrNull();
 
     if (user) {
       const synced = await syncWithRetry(
@@ -209,7 +212,7 @@ export async function addMealEntry(entry: Omit<MealEntry, 'id' | 'createdAt'>): 
   };
   await dbPut(STORES.NUTRITION_LOGS, newEntry);
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
   const syncPayload = {
     id: newEntry.id,
     date: newEntry.date,
@@ -256,7 +259,7 @@ export async function addMealEntry(entry: Omit<MealEntry, 'id' | 'createdAt'>): 
 export async function updateMealEntry(entry: MealEntry): Promise<void> {
   await dbPut(STORES.NUTRITION_LOGS, entry);
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
   const syncPayload = {
     id: entry.id,
     date: entry.date,
@@ -300,7 +303,7 @@ export async function deleteMealEntry(id: string): Promise<void> {
   // The local row is gone, so it is no longer a meal that can be lost.
   await clearUnsyncedRecordMarker(STORES.NUTRITION_LOGS, id);
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
 
   if (isSupabaseConfigured()) {
     if (user) {

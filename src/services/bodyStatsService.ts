@@ -4,7 +4,7 @@ import { generateId } from '../utils/id';
 import { STORES, dbDelete, dbGetAll, dbGetByRange, dbPut } from './indexedDBCore';
 import { queueMutation } from './offlineQueue';
 import { clearUnsyncedRecordMarker, markRecordUnsynced } from './sessionDb';
-import { getCurrentUser } from './supabaseAuth';
+import { resolveCurrentUserOrNull } from './supabaseAuth';
 import {
   deleteCloudBodyWeight,
   deleteCloudRecoveryLog,
@@ -112,7 +112,7 @@ export async function addBodyWeight(
   };
   await dbPut(STORES.BODY_WEIGHT, newEntry);
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
   if (isSupabaseConfigured()) {
     // Ledger FIRST (services/sessionDb) — see saveWorkoutSession for the full
     // reasoning. Until the cloud confirms, this row exists in exactly one place.
@@ -158,7 +158,7 @@ export async function updateBodyWeight(entry: BodyWeightEntry): Promise<void> {
   const updated: BodyWeightEntry = { ...entry, updatedAt: new Date().toISOString() };
   await dbPut(STORES.BODY_WEIGHT, updated);
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
   if (isSupabaseConfigured()) {
     await markRecordUnsynced(STORES.BODY_WEIGHT, updated.id);
 
@@ -182,7 +182,7 @@ export async function deleteBodyWeight(id: string): Promise<void> {
   // The local row is gone, so it can no longer be lost.
   await clearUnsyncedRecordMarker(STORES.BODY_WEIGHT, id);
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
   if (isSupabaseConfigured()) {
     if (user) {
       // Targeted soft-delete UPDATE (house pattern) — the previous tombstone
@@ -265,7 +265,7 @@ export async function addBodyMeasurement(
   };
   await dbPut(BODY_MEASUREMENTS_STORE, newEntry);
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
   // The queue replays the payload straight into syncBodyMeasurement, so the
   // descriptor must carry the mapper shape (nested `measurements`), not the
   // flat local entry — a flat payload replayed as `measurements: undefined`.
@@ -356,7 +356,7 @@ export async function addRecoveryLog(
     duplicateLogs.map((log) => clearUnsyncedRecordMarker(STORES.RECOVERY_LOGS, log.id))
   );
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
   const syncPayload = {
     id: newEntry.id,
     date: newEntry.date,
@@ -417,7 +417,7 @@ export async function updateRecoveryLog(entry: RecoveryLog): Promise<void> {
   const updated: RecoveryLog = { ...entry, updatedAt: new Date().toISOString() };
   await dbPut(STORES.RECOVERY_LOGS, updated);
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
   const syncPayload = {
     id: updated.id,
     date: updated.date,
@@ -456,7 +456,7 @@ export async function deleteRecoveryLog(id: string): Promise<void> {
   await dbDelete(STORES.RECOVERY_LOGS, id);
   await clearUnsyncedRecordMarker(STORES.RECOVERY_LOGS, id);
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
   if (isSupabaseConfigured()) {
     if (user) {
       // Targeted soft-delete UPDATE (house pattern) — the previous tombstone

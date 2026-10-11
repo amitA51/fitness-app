@@ -11,7 +11,13 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../supabaseAuth', () => ({ getCurrentUser: vi.fn(async () => null) }));
+vi.mock('../supabaseAuth', () => {
+  const getCurrentUser = vi.fn(async () => null);
+  return {
+    getCurrentUser,
+    resolveCurrentUserOrNull: () => getCurrentUser().catch(() => null),
+  };
+});
 vi.mock('../supabaseSync', () => ({ syncWorkoutTemplate: vi.fn() }));
 vi.mock('../syncEngine', () => ({ syncWithRetry: vi.fn() }));
 

@@ -14,6 +14,7 @@ import {
 } from './bodyStatsService';
 import { mergeGenericRecords } from './cloudMerge';
 import { STORES, dbPut, initDB } from './indexedDBCore';
+import { clearUnsyncedRecordMarker } from './sessionDb';
 
 /**
  * Save a body weight entry (delegates to bodyStatsService.addBodyWeight).
@@ -77,6 +78,16 @@ export const deleteBodyWeight = async (id: string): Promise<void> => {
   await deleteBodyWeightCanonical(id);
 };
 
-export const mergeBodyWeightFromCloud = (
+export const mergeBodyWeightFromCloud = async (
   entries: { id: string; createdAt?: string; updatedAt?: string }[]
-) => mergeGenericRecords(STORES.BODY_WEIGHT, entries);
+) => {
+  const result = await mergeGenericRecords(STORES.BODY_WEIGHT, entries);
+  // Markers were written by addBodyWeight/updateBodyWeight and nothing cleared
+  // them on pull, so the sign-out guard warned about rows that are safely in the
+  // cloud, forever. `confirmed` holds only the keys whose cloud copy is at or
+  // ahead of local (see cloudMerge) — a locally-newer row keeps its marker.
+  for (const id of result.confirmed) {
+    await clearUnsyncedRecordMarker(STORES.BODY_WEIGHT, id);
+  }
+  return result;
+};

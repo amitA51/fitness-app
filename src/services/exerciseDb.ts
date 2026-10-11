@@ -15,7 +15,7 @@ import { STORES, dbDelete, dbGetAll, dbGetByIndex, dbPut, initDB } from './index
 import { type MutationType, queueMutation } from './offlineQueue';
 // prService does NOT import this module, so there is no cycle here.
 import { deletePR } from './prService';
-import { getCurrentUser } from './supabaseAuth';
+import { resolveCurrentUserOrNull } from './supabaseAuth';
 import { syncPersonalExercise } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
 
@@ -170,12 +170,7 @@ const pushExerciseMutation = async (
   // syncWithRetry, which returns early in that case rather than queueing.
   if (!isSupabaseConfigured()) return;
 
-  let user: Awaited<ReturnType<typeof getCurrentUser>> = null;
-  try {
-    user = await getCurrentUser();
-  } catch (err) {
-    logger.sync.warn('Auth lookup failed while pushing an exercise; queueing instead', err);
-  }
+  const user = await resolveCurrentUserOrNull();
 
   try {
     if (user) {

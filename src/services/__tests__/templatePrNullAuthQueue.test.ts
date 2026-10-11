@@ -30,7 +30,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // Cloud must read as CONFIGURED: with no cloud there is nothing to sync to and
 // nothing at risk, which is the one case where NOT queueing is correct.
 vi.mock('../../lib/supabase', () => ({ isSupabaseConfigured: () => true, supabase: null }));
-vi.mock('../supabaseAuth', () => ({ getCurrentUser: vi.fn(async () => null) }));
+vi.mock('../supabaseAuth', () => {
+  const getCurrentUser = vi.fn(async () => null);
+  return {
+    getCurrentUser,
+    // T-132: the write paths now read auth through `resolveCurrentUserOrNull`,
+    // which delegates to `getCurrentUser` and maps a REJECTION to null. Mocking
+    // it the same way keeps one knob for both reads.
+    resolveCurrentUserOrNull: () => getCurrentUser().catch(() => null),
+  };
+});
 vi.mock('../../components/ui/GlobalToast', () => ({ showToast: vi.fn() }));
 vi.mock('../localStateMirror', () => ({ mirrorLocalKey: vi.fn() }));
 

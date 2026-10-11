@@ -15,8 +15,19 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ProgressPage from '../Progress';
+
+// `services/dataService` only re-exports `getWorkoutSessions` from `workoutDb`,
+// and that re-export resolves to `undefined` under Vitest's SSR transform — so
+// rendering this page threw inside `useProgressData` and every case below ran
+// against the load-failure branch while logging "[Analytics] Failed to load
+// progress data". The tablist itself renders either way; an empty session list
+// is enough here, and it keeps the log honest.
+vi.mock('../../services/dataService', () => ({
+  getWorkoutSessions: vi.fn(async () => []),
+  getAllWorkoutSessions: vi.fn(async () => []),
+}));
 
 /** Visual order of the tablist, right-to-left in Hebrew. */
 const TAB_KEYS = ['overview', 'workouts', 'body', 'recovery'] as const;

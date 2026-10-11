@@ -43,6 +43,11 @@ import type {
 } from '../../../types';
 import type { SupersetGroup, SwapLibraryMeta } from '../core/workoutTypes';
 import { usePreviousSetData } from '../hooks/usePreviousSetData';
+import {
+  type ProgressionSuggestion,
+  type SuggestionKind,
+  useProgressionSuggestion,
+} from '../hooks/useProgressionSuggestion';
 import ActionChip from './ActionChip';
 import AlternativesSheet from './AlternativesSheet';
 import DropSetSheet from './DropSetSheet';
@@ -97,6 +102,12 @@ interface ExerciseDisplayProps {
   onSwapExercise?: (exerciseId: string, newName: string, libraryMeta?: SwapLibraryMeta) => void;
   /** Open the AI coach / exercise guide (surfaced beside the note at the top). */
   onOpenAICoach?: () => void;
+  /**
+   * Catalogue equipment key for the exercise, resolved by the parent from the
+   * exercise library when the live exercise carries none (template-loaded
+   * exercises do not). Sets the progression chip's step and loadable grid.
+   */
+  equipment?: string;
 }
 
 // The per-set action chip row is a horizontal scroller (the row itself carries
@@ -209,6 +220,107 @@ function PrescriptionBlock({ extras }: { extras: ProgramExtras }) {
 }
 
 // ============================================================
+// PROGRESSION CHIP
+// The engine's next target as one tappable chip: an arrow, a loadable number.
+// A tap fills the CURRENT set through the same onUpdateSet path the steppers and
+// the numpad use — it never logs a set, so a suggestion the lifter disagrees
+// with costs a glance, not a bad set. The visible pill is compact; the button
+// around it is the 44px target. The number is always --fs-ink (never a tinted
+// ink that loses contrast on a tint); the arrow carries the tone.
+// ============================================================
+
+const CHIP_TONE: Record<
+  SuggestionKind,
+  { glyph: string; glyphColor: string; background: string; border: string }
+> = {
+  increase: {
+    glyph: '↑',
+    // --fs-link is the text-safe accent ink in every theme.
+    glyphColor: 'var(--fs-link)',
+    background: 'color-mix(in srgb, var(--fs-accent) 16%, var(--fs-surface))',
+    border: '1px solid color-mix(in srgb, var(--fs-accent) 45%, transparent)',
+  },
+  hold: {
+    glyph: '=',
+    glyphColor: 'var(--fs-muted)',
+    background: 'var(--fs-surface)',
+    border: '1px solid var(--fs-steel)',
+  },
+  decrease: {
+    glyph: '↓',
+    glyphColor: 'var(--fs-warn)',
+    background: 'var(--color-warning-muted)',
+    border: '1px solid color-mix(in srgb, var(--fs-warn) 45%, transparent)',
+  },
+};
+
+function ProgressionChip({
+  suggestion,
+  applied,
+  onApply,
+}: {
+  suggestion: ProgressionSuggestion;
+  applied: boolean;
+  onApply: () => void;
+}) {
+  const tone = CHIP_TONE[suggestion.kind];
+  return (
+    <button
+      type="button"
+      onClick={onApply}
+      aria-label={
+        applied ? `כבר בסט הנוכחי: ${suggestion.value}. ${suggestion.reason}` : suggestion.ariaLabel
+      }
+      data-testid="progression-chip"
+      data-kind={suggestion.kind}
+      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-95 transition-transform"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 44,
+        minWidth: 44,
+        padding: '0 2px',
+        background: 'transparent',
+        border: 'none',
+        borderRadius: 999,
+        cursor: 'pointer',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      <span
+        dir="ltr"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 5,
+          padding: '4px 11px',
+          borderRadius: 999,
+          background: tone.background,
+          border: tone.border,
+          fontFamily: 'var(--font-display)',
+          fontSize: 13,
+          fontWeight: 700,
+          color: 'var(--fs-ink)',
+          fontVariantNumeric: 'tabular-nums',
+          letterSpacing: '-0.01em',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {applied ? (
+          <Check size={13} strokeWidth={3} aria-hidden style={{ color: tone.glyphColor }} />
+        ) : (
+          <span aria-hidden style={{ color: tone.glyphColor, fontWeight: 800 }}>
+            {tone.glyph}
+          </span>
+        )}
+        {suggestion.value}
+      </span>
+    </button>
+  );
+}
+
+// ============================================================
 // MAIN COMPONENT
 // ============================================================
 
@@ -241,6 +353,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     onAddWarmupRamp,
     onSwapExercise,
     onOpenAICoach,
+    equipment,
   }) => {
     const [showSetEditor, setShowSetEditor] = useState(false);
     const [showRPEPicker, setShowRPEPicker] = useState(false);
@@ -311,6 +424,29 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     }, [exercise.sets]);
 
     const activeIsWarmup = exercise.sets?.[displaySetIndex]?.isWarmup ?? false;
+
+    // The progression engine's target for today's working sets. Warmups are a
+    // ramp, not the target, so the chip steps aside while one is open.
+    const suggestion = useProgressionSuggestion({
+      exerciseName: exercise.name,
+      equipment: equipment ?? exercise.equipment,
+      repRange: exercise.programExtras?.repRange,
+      workingSets: workingTotal,
+    });
+    const showSuggestion = suggestion !== null && !activeIsWarmup;
+    const suggestionApplied =
+      suggestion !== null &&
+      (suggestion.weight == null || currentSet.weight === suggestion.weight) &&
+      (suggestion.reps == null || currentSet.reps === suggestion.reps);
+    const handleApplySuggestion = useCallback(() => {
+      if (!suggestion) return;
+      haptics.impact('light');
+      if (suggestion.weight != null) onUpdateSet('weight', suggestion.weight);
+      if (suggestion.reps != null) onUpdateSet('reps', suggestion.reps);
+    }, [suggestion, onUpdateSet, haptics]);
+
+    // A strip of zeros (a skipped warmup saved as 0 × 0) has nothing to say.
+    const hasPreviousValue = !!previousSet && !!(previousSet.weight || previousSet.reps);
 
     // Exercise is "done" when it has planned sets and every one is completed.
     // In this state there is no real active set (displaySetIndex points at the
@@ -849,78 +985,100 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             </>
           )}
 
-          {/* 5C: Previous set badge — Strong/Hevy convention: show what you did
-              last time, plus a progressive-overload nudge (+2.5 ק״ג on barbell
-              lifts) so the next target is glanceable without mental math. */}
-          {!isExerciseComplete && previousSet && (previousSet.weight || previousSet.reps) && (
+          {/* 5C: Last time + the next target. "אימון קודם" is what this set was
+              last session (Strong/Hevy convention). The chip is the progression
+              engine's verdict for today, from the lifter's own history, with one
+              short reason under it. It replaced a fixed "+2.5 ק״ג" that showed
+              the same nudge after a failed set, a deload week or a dumbbell curl. */}
+          {!isExerciseComplete && (hasPreviousValue || showSuggestion) && (
             <>
               <div
                 style={{
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  padding: '7px 14px',
+                  padding: showSuggestion ? '0 12px 8px' : '7px 14px',
                   background: 'color-mix(in srgb, var(--fs-accent) 8%, var(--fs-surface))',
                   border: '1px solid color-mix(in srgb, var(--fs-accent) 20%, transparent)',
                   borderRadius: 10,
                 }}
               >
-                <span
+                <div
                   style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: 'var(--fs-accent)',
-                    letterSpacing: '-0.01em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexWrap: 'wrap',
+                    columnGap: 8,
+                    minHeight: showSuggestion ? 44 : undefined,
                   }}
                 >
-                  אימון קודם:
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: 'var(--fs-ink)',
-                    direction: 'ltr',
-                  }}
-                >
-                  {previousSet.weight ? `${previousSet.weight} ק״ג` : ''}
-                  {previousSet.weight && previousSet.reps ? ' × ' : ''}
-                  {previousSet.reps ? `${previousSet.reps}` : ''}
-                </span>
-                {previousSet.rpe && (
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 10,
-                      fontWeight: 600,
-                      color: 'var(--fs-muted)',
-                      letterSpacing: '-0.01em',
-                    }}
-                  >
-                    RPE {previousSet.rpe}
-                  </span>
-                )}
-                {previousSet.weight ? (
+                  {hasPreviousValue && previousSet && (
+                    <>
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-body)',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          // Text-safe accent ink: --fs-accent itself is ~2:1 on
+                          // this light tint.
+                          color: 'var(--fs-link)',
+                          letterSpacing: '-0.01em',
+                        }}
+                      >
+                        אימון קודם:
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: 'var(--fs-ink)',
+                          direction: 'ltr',
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                      >
+                        {previousSet.weight ? `${previousSet.weight} ק״ג` : ''}
+                        {previousSet.weight && previousSet.reps ? ' × ' : ''}
+                        {previousSet.reps ? `${previousSet.reps}` : ''}
+                      </span>
+                      {previousSet.rpe != null && previousSet.rpe > 0 && (
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-body)',
+                            fontSize: 10,
+                            fontWeight: 600,
+                            color: 'var(--fs-muted)',
+                            letterSpacing: '-0.01em',
+                          }}
+                        >
+                          RPE {previousSet.rpe}
+                        </span>
+                      )}
+                    </>
+                  )}
+                  {showSuggestion && suggestion && (
+                    <ProgressionChip
+                      suggestion={suggestion}
+                      applied={suggestionApplied}
+                      onApply={handleApplySuggestion}
+                    />
+                  )}
+                </div>
+                {showSuggestion && suggestion && (
                   <span
                     style={{
                       fontFamily: 'var(--font-body)',
                       fontSize: 11,
-                      fontWeight: 700,
-                      color: 'var(--fs-accent)',
-                      letterSpacing: '-0.01em',
-                      padding: '1px 8px',
-                      background: 'color-mix(in srgb, var(--fs-accent) 14%, transparent)',
-                      borderRadius: 999,
-                      whiteSpace: 'nowrap',
+                      fontWeight: 500,
+                      lineHeight: 1.35,
+                      color: 'var(--fs-muted)',
+                      textAlign: 'center',
                     }}
-                    title="יעד מוצע לסט זה (עליית עומס)"
                   >
-                    +{weightIncrement} ק״ג
+                    {suggestion.reason}
                   </span>
-                ) : null}
+                )}
               </div>
               <div style={{ height: 12, flexShrink: 0 }} />
             </>

@@ -14,7 +14,7 @@ import { STORES, dbDelete, dbGet, dbGetAll, dbPut, initDB } from './indexedDBCor
 import { queueMutation } from './offlineQueue';
 import { addPersonalItem } from './personalItemsDb';
 import { clearUnsyncedRecordMarker, markRecordUnsynced } from './sessionDb';
-import { getCurrentUser } from './supabaseAuth';
+import { resolveCurrentUserOrNull } from './supabaseAuth';
 import { syncWorkoutTemplate } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
 
@@ -100,7 +100,7 @@ export const createWorkoutTemplate = async (
 
   await dbPut(STORES.WORKOUT_TEMPLATES, newTemplate);
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
 
   // No cloud configured means nothing to sync to and nothing at risk — mirrors
   // syncWithRetry, which returns early in that case rather than queueing.
@@ -162,7 +162,7 @@ export const updateWorkoutTemplate = async (
   };
   await dbPut(STORES.WORKOUT_TEMPLATES, updatedTemplate);
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
 
   if (isSupabaseConfigured()) {
     await markRecordUnsynced(STORES.WORKOUT_TEMPLATES, updatedTemplate.id);
@@ -198,7 +198,7 @@ export const deleteWorkoutTemplate = async (id: string): Promise<void> => {
   // The local row is gone, so it is no longer a template that can be lost.
   await clearUnsyncedRecordMarker(STORES.WORKOUT_TEMPLATES, id);
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
 
   if (isSupabaseConfigured()) {
     if (user) {

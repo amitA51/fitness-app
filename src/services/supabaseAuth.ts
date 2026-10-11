@@ -148,6 +148,30 @@ export const getCurrentUser = async (): Promise<User | null> => {
   return user;
 };
 
+/**
+ * `getCurrentUser()` for WRITE PATHS: a rejection is reported as `null`.
+ *
+ * Every offline-capable write in this app has the same shape — local write,
+ * then `const user = await getCurrentUser()`, then either a direct push or
+ * `queueMutation` in the `else`. A REJECTION there is the same situation as a
+ * null user (auth cannot answer), but a bare `await` turns it into a throw that
+ * escapes BEFORE the enqueue, leaving the row in IndexedDB, in no queue and in
+ * no ledger — the exact silent-write shape this family keeps reproducing.
+ *
+ * That conclusion had already been reached three separate times and
+ * hand-implemented three different ways (`nutritionService.addFoodFromPreset`,
+ * `exerciseDb.pushExerciseMutation`, `offlineQueue.queueMutation`), while
+ * thirteen other write paths still had the bare `await`. Divergent copies of one
+ * rule are the defect; this is the single copy. Use it at every write-path auth
+ * read. Read paths should keep using `getCurrentUser()` directly, where a
+ * genuine auth failure must stay visible.
+ */
+export const resolveCurrentUserOrNull = async (): Promise<User | null> =>
+  getCurrentUser().catch((err) => {
+    logger.auth.warn('Auth lookup failed on a write path — treating it as no user', err);
+    return null;
+  });
+
 export const getSession = async (): Promise<Session | null> => {
   if (!isSupabaseConfigured() || !supabase) return null;
 

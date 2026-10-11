@@ -9,6 +9,7 @@ import { logger } from '../utils/logger';
 import { calculateTDEE, getMacroGoalsForGoal } from '../utils/tdee';
 import { exportWorkoutHistoryCSV } from './exportService';
 import { STORES, dbGetAll, dbPut } from './indexedDBCore';
+import { markRecordUnsynced } from './sessionDb';
 import { getCurrentUser } from './supabaseAuth';
 import { clearUserScopedLocalData } from './userScopedLocalData';
 
@@ -221,7 +222,34 @@ export interface RestoreResult {
   records: number;
   /** localStorage settings keys restored. */
   settings: number;
+  /**
+   * Every restored row that lives in a store carrying an unsynced-ledger marker,
+   * each of which was marked unsynced by the restore. The caller uses this to
+   * decide whether a cloud push is worth attempting, and the markers keep the
+   * restore countable by the sign-out guard until the push confirms it.
+   *
+   * Only the seven ledgered stores appear here: personal records, personal
+   * exercises, personal items, AI conversations and user settings are
+   * marker-less by design (no clear-on-pull exists for them, so a marker would
+   * stick forever).
+   */
+  written: { store: string; id: string }[];
 }
+
+/**
+ * The stores whose write paths keep an unsynced-ledger marker (services/sessionDb).
+ * A restore into any other store is not marked, for the same reason its normal
+ * write path does not mark it.
+ */
+const LEDGERED_BACKUP_STORES = new Set<string>([
+  STORES.WORKOUT_SESSIONS,
+  STORES.WORKOUT_TEMPLATES,
+  STORES.NUTRITION_LOGS,
+  STORES.BODY_WEIGHT,
+  STORES.BODY_MEASUREMENTS,
+  STORES.RECOVERY_LOGS,
+  STORES.WATER_LOGS,
+]);
 
 interface BackupShape {
   version?: string;
@@ -259,6 +287,16 @@ export async function importFullBackup(text: string): Promise<RestoreResult> {
   const MAX_SETTING_BYTES = 256 * 1024;
 
   let records = 0;
+  // Every row written into a store that carries an unsynced-ledger marker.
+  //
+  // A restore is the one moment the user has explicitly said "this data matters",
+  // and it used to schedule NOTHING: no queue row, no marker, no push. The
+  // restored rows were local-only and uncounted, so the sign-out guard reported
+  // nothing to lose and the wipe destroyed the whole restore. Markers (not 50,000
+  // individual queue rows — that is what the bulk push is for) make the restore
+  // visible to the sign-out guard and the offline indicator immediately, and make
+  // a failed push honest instead of silent.
+  const written: { store: string; id: string }[] = [];
   for (const [key, store] of Object.entries(BACKUP_DATA_TO_STORE)) {
     const rows = backup.data[key];
     if (!Array.isArray(rows)) continue;
@@ -274,10 +312,22 @@ export async function importFullBackup(text: string): Promise<RestoreResult> {
         try {
           await dbPut(store, row as object);
           records++;
+          const id = (row as { id?: unknown }).id;
+          if (LEDGERED_BACKUP_STORES.has(store) && typeof id === 'string' && id.length > 0) {
+            written.push({ store, id });
+          }
         } catch (err) {
           logger.app.warn(`restore: failed to write a row to "${store}"`, err);
         }
       }
+    }
+  }
+
+  // Same gate as every normal write path: with no cloud there is nothing to
+  // push, and a marker nothing ever clears would warn on sign-out forever.
+  if (isSupabaseConfigured()) {
+    for (const { store, id } of written) {
+      await markRecordUnsynced(store, id);
     }
   }
 
@@ -303,5 +353,5 @@ export async function importFullBackup(text: string): Promise<RestoreResult> {
     }
   }
 
-  return { records, settings };
+  return { records, settings, written };
 }

@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Prevent cloud/auth side effects from running in tests.
-vi.mock('../supabaseAuth', () => ({
-  getCurrentUser: vi.fn(async () => null),
-}));
+vi.mock('../supabaseAuth', () => {
+  const getCurrentUser = vi.fn(async () => null);
+  return {
+    getCurrentUser,
+    resolveCurrentUserOrNull: () => getCurrentUser().catch(() => null),
+  };
+});
 vi.mock('../supabaseSync', () => ({
   deleteCloudBodyWeight: vi.fn(),
   deleteCloudPersonalExercise: vi.fn(),

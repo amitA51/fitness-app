@@ -7,19 +7,31 @@
 // ever prints a number the data does not support (every uncertain value is
 // `null`, and the UI then omits that line entirely).
 //
-// Week boundaries are SUNDAY-based, taken from the same `getWeekStart` helper
-// WeeklyGrid uses — the hero numeral and the day grid must never disagree.
+// Week boundaries are SUNDAY-based and now live in `utils/trainingWeek` — the
+// neutral module the Progress overview reads too, so "השבוע" means exactly one
+// thing app-wide. The names this file used to define are re-exported below, so
+// every existing import of `homeStats` keeps working unchanged.
 // No data fetching: every function is a pure read over sessions the Dashboard
 // has already loaded.
 
 import type { WorkoutSession } from '../../types';
-import { getWeekStart } from '../../utils/dateUtils';
-import { completedSetsVolume } from '../../utils/workoutMath';
+import {
+  completedOnly,
+  sessionVolume,
+  sessionsThisWeek,
+  weeklyTarget,
+  weeklyVolumeDeltaPct,
+} from '../../utils/trainingWeek';
 
-/** Number of complete past weeks sampled when inferring a weekly target. */
-const TARGET_LOOKBACK_WEEKS = 4;
-/** A target inferred from fewer complete weeks than this is a guess, not data. */
-const TARGET_MIN_WEEKS = 2;
+// The week math is defined ONCE in utils/trainingWeek and surfaced here under
+// the names the dashboard already imports.
+export {
+  medianSessionsPerWeek,
+  sessionVolume,
+  sessionsThisWeek,
+  weekStartAt,
+  weeklyVolumeDeltaPct,
+} from '../../utils/trainingWeek';
 
 /**
  * Catalog exercise names are stored bilingual — `'לחיצת חזה | Bench Press'`.
@@ -28,13 +40,6 @@ const TARGET_MIN_WEEKS = 2;
  * both dashboard surfaces import one implementation.
  */
 export const displayExerciseName = (raw: string): string => raw.split('|')[0]?.trim() || raw;
-
-/** Sunday 00:00 of the week containing `now`, shifted by `offsetWeeks`. */
-export function weekStartAt(now: Date, offsetWeeks = 0): Date {
-  const start = getWeekStart(now);
-  if (offsetWeeks !== 0) start.setDate(start.getDate() + offsetWeeks * 7);
-  return start;
-}
 
 /** Local midnight of `date` — day comparisons must not use raw 24h windows. */
 function startOfDay(date: Date): Date {
@@ -53,19 +58,6 @@ function parseLocal(dateLike: string): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-/** Completed sessions only — an abandoned session is not training done. */
-const completedOnly = (sessions: readonly WorkoutSession[]): WorkoutSession[] =>
-  sessions.filter((s) => s.status === 'completed');
-
-/**
- * Working volume of one session, summed from its completed sets (the same rule
- * `insightsAggregator` uses for `lastWorkout.totalVolume`) rather than the
- * stored `totalVolume` field, which older rows may not carry.
- */
-export function sessionVolume(session: WorkoutSession): number {
-  return (session.exercises ?? []).reduce((sum, ex) => sum + completedSetsVolume(ex.sets), 0);
-}
-
 /**
  * Hebrew relative day label: היום / אתמול / שלשום / לפני N ימים (under a week),
  * then an absolute short date. Future dates fall through to the absolute form
@@ -82,92 +74,6 @@ export function relativeDayLabel(dateLike: string, now: Date = new Date()): stri
   if (diff === 2) return 'שלשום';
   if (diff > 2 && diff < 7) return `לפני ${diff} ימים`;
   return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
-}
-
-/** Completed sessions whose start falls inside the week beginning `start`. */
-function sessionsInWeek(sessions: readonly WorkoutSession[], start: Date): WorkoutSession[] {
-  const from = start.getTime();
-  const to = from + 7 * 24 * 60 * 60 * 1000;
-  return completedOnly(sessions).filter((s) => {
-    const t = new Date(s.startTime).getTime();
-    return !Number.isNaN(t) && t >= from && t < to;
-  });
-}
-
-/** Sessions completed in the week that contains `now` (offset 0 = this week). */
-export function sessionsThisWeek(
-  sessions: readonly WorkoutSession[],
-  now: Date = new Date(),
-  offsetWeeks = 0
-): number {
-  return sessionsInWeek(sessions, weekStartAt(now, offsetWeeks)).length;
-}
-
-/**
- * Median sessions/week over the last `TARGET_LOOKBACK_WEEKS` COMPLETE weeks —
- * the honest fallback target when no program declares one.
- *
- * Returns `null` rather than inventing a goal when the history is too short
- * (fewer than two complete weeks since the first session) or when the median
- * rounds to zero, which would print an unreachable "0 אימונים בשבוע".
- */
-export function medianSessionsPerWeek(
-  sessions: readonly WorkoutSession[],
-  now: Date = new Date()
-): number | null {
-  const completed = completedOnly(sessions);
-  if (completed.length === 0) return null;
-
-  const firstStart = Math.min(...completed.map((s) => new Date(s.startTime).getTime()));
-  if (!Number.isFinite(firstStart)) return null;
-  const firstWeek = getWeekStart(new Date(firstStart)).getTime();
-
-  const counts: number[] = [];
-  for (let offset = -1; offset >= -TARGET_LOOKBACK_WEEKS; offset--) {
-    const start = weekStartAt(now, offset);
-    // Only weeks the trainee was actually using the app count — padding the
-    // sample with pre-history zeros would drag every target down to 0.
-    if (start.getTime() < firstWeek) break;
-    counts.push(sessionsInWeek(completed, start).length);
-  }
-  if (counts.length < TARGET_MIN_WEEKS) return null;
-
-  counts.sort((a, b) => a - b);
-  const mid = Math.floor(counts.length / 2);
-  const median =
-    counts.length % 2 === 1
-      ? (counts[mid] as number)
-      : ((counts[mid - 1] as number) + (counts[mid] as number)) / 2;
-  const target = Math.round(median);
-  return target >= 1 ? target : null;
-}
-
-/**
- * Signed % change in volume so far THIS week against the SAME point of last
- * week (same elapsed time from Sunday 00:00), or `null` when the comparison
- * would be fiction: no volume logged yet this week, or nothing to compare
- * against at that point last week.
- */
-export function weeklyVolumeDeltaPct(
-  sessions: readonly WorkoutSession[],
-  now: Date = new Date()
-): number | null {
-  const thisStart = weekStartAt(now);
-  const elapsed = now.getTime() - thisStart.getTime();
-  if (elapsed <= 0) return null;
-  const lastStart = weekStartAt(now, -1).getTime();
-
-  let current = 0;
-  let previous = 0;
-  for (const session of completedOnly(sessions)) {
-    const t = new Date(session.startTime).getTime();
-    if (Number.isNaN(t)) continue;
-    if (t >= thisStart.getTime() && t <= now.getTime()) current += sessionVolume(session);
-    else if (t >= lastStart && t <= lastStart + elapsed) previous += sessionVolume(session);
-  }
-
-  if (current <= 0 || previous <= 0) return null;
-  return Math.round(((current - previous) / previous) * 100);
 }
 
 /** Minimal template shape needed to name a session — id plus display name. */
@@ -282,14 +188,9 @@ export function computeHomeStats({
     };
   }
 
-  const declared =
-    programSessionsPerWeek && programSessionsPerWeek > 0
-      ? Math.round(programSessionsPerWeek)
-      : null;
-
   return {
     thisWeek: sessionsThisWeek(completed, now),
-    target: declared ?? medianSessionsPerWeek(completed, now),
+    target: weeklyTarget(completed, programSessionsPerWeek, now),
     volumeDeltaPct: weeklyVolumeDeltaPct(completed, now),
     lastWorkout,
   };

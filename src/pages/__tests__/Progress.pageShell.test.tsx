@@ -32,8 +32,66 @@
 
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import type { WorkoutSession } from '../../types';
 import ProgressPage from '../Progress';
+
+// ── Why this mock exists ────────────────────────────────────────────────────
+// `useProgressData` loads sessions through `services/dataService`, which only
+// re-exports `getWorkoutSessions` from `workoutDb`. Under Vitest's SSR transform
+// that re-export resolves to `undefined`, so every render of this page threw
+// "getWorkoutSessions is not a function", the hook's catch ran, and these tests
+// were silently asserting against the LOAD-FAILURE branch while printing
+// "[Analytics] Failed to load progress data" four times per file.
+//
+// Mocking the module with one completed session puts the page on the path a real
+// trainee sees, and the last test below asserts a success-path element so the
+// error branch can never come back unnoticed.
+const SESSION: WorkoutSession = {
+  id: 's1',
+  date: new Date().toISOString().slice(0, 10),
+  startTime: new Date().toISOString(),
+  endTime: new Date().toISOString(),
+  exercises: [
+    {
+      id: 'we1',
+      exerciseId: 'bench',
+      exerciseName: 'לחיצת חזה | Bench Press',
+      targetMuscle: 'Chest',
+      sets: [
+        {
+          id: 'set1',
+          setNumber: 1,
+          reps: 5,
+          weight: 80,
+          rpe: 8,
+          isWarmup: false,
+          isCompleted: true,
+          notes: '',
+          completedAt: new Date().toISOString(),
+        },
+      ],
+      notes: '',
+      restSeconds: 120,
+      isCompleted: true,
+      order: 0,
+    },
+  ],
+  duration: 3600,
+  status: 'completed',
+  templateId: null,
+  notes: '',
+  rating: null,
+  totalVolume: 400,
+  caloriesBurned: null,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+vi.mock('../../services/dataService', () => ({
+  getWorkoutSessions: vi.fn(async () => [SESSION]),
+  getAllWorkoutSessions: vi.fn(async () => [SESSION]),
+}));
 
 /**
  * Renders the page and hands back the two layers under test:
@@ -100,5 +158,15 @@ describe('Progress caps its content column with the house .page-shell container'
     // …and the wash must not keep the old hand-rolled bottom padding either;
     // `.page-shell` owns that now, so leaving it here would double it up.
     expect(wash?.className ?? '').not.toMatch(/\bpb-\[/);
+  });
+
+  it('renders the overview on the SUCCESS path, not the load-failure card', async () => {
+    // The guard for the defect the mock above documents. With sessions loaded the
+    // overview prints its weekly verdict; the error branch prints
+    // "טעינת נתוני ההתקדמות נכשלה" instead, and nothing else here would notice.
+    renderPage();
+
+    expect(await screen.findByText('סיכום השבוע')).toBeInTheDocument();
+    expect(screen.queryByText('טעינת נתוני ההתקדמות נכשלה')).not.toBeInTheDocument();
   });
 });

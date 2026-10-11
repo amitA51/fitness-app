@@ -9,7 +9,7 @@ import { safeJsonParseOr } from '../utils/safeJson';
 import { oneRepMax, setVolume } from '../utils/workoutMath';
 import { STORES, dbDelete, dbGet, dbGetAll, dbPut, initDB } from './indexedDBCore';
 import { queueMutation } from './offlineQueue';
-import { getCurrentUser } from './supabaseAuth';
+import { resolveCurrentUserOrNull } from './supabaseAuth';
 import { syncPersonalRecord } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
 
@@ -127,7 +127,7 @@ export const savePR = async (pr: PersonalRecord): Promise<void> => {
     recordType: pr.type,
   };
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
 
   // No cloud configured means nothing to sync to and nothing at risk — mirrors
   // syncWithRetry, which returns early in that case rather than queueing.
@@ -184,7 +184,7 @@ export const deletePR = async (prId: string): Promise<void> => {
 
   await dbDelete(STORES.PERSONAL_RECORDS, prId);
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
 
   const deletedAt = new Date().toISOString();
   const tombstone = {

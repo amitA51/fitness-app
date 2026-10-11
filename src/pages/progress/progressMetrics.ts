@@ -6,6 +6,7 @@
 // definition and lets vitest cover the logic without rendering React.
 
 import type { PersonalRecord, WorkoutSession } from '../../types';
+import { summarizeTrainingWeek, weekStartAt } from '../../utils/trainingWeek';
 import { completedSetsVolume, oneRepMax, setVolume } from '../../utils/workoutMath';
 import type { Zone } from '../../utils/zoneColor';
 import type {
@@ -51,16 +52,18 @@ export function sliceByRangeDays<T>(
 }
 
 export interface WeeklyVolumeSummary {
-  /** Completed-session volume in the trailing 7 days. */
+  /** Completed-set volume of the current SUNDAY-based week. */
   volume: number;
-  /** Completed-session count in the trailing 7 days. */
+  /** Completed-session count in the current SUNDAY-based week. */
   count: number;
-  /** Total training minutes in the trailing 7 days. */
+  /** Total training minutes in the current SUNDAY-based week. */
   timeMin: number;
-  /** Volume in the previous 7-day window (days 7..14 ago). */
+  /** Completed-set volume of the PREVIOUS Sunday-based week. */
   prevVolume: number;
-  /** Completed-session count in the previous 7-day window (days 7..14 ago). */
+  /** Completed-session count in the previous Sunday-based week. */
   prevCount: number;
+  /** Training minutes in the previous Sunday-based week. */
+  prevTimeMin: number;
   /** Week-over-week volume change as a whole-number percent, or null when no prior data. */
   changePct: number | null;
 }
@@ -88,38 +91,21 @@ export const onlyCompleted = (sessions: WorkoutSession[]): WorkoutSession[] =>
   sessions.filter((s) => s.status === 'completed');
 
 /**
- * Trailing-7-day volume summary with a week-over-week comparison.
- * `now` is injectable for deterministic tests.
+ * This week's totals + the week-over-week comparison, read from the app-wide
+ * week definition in `utils/trainingWeek`.
+ *
+ * It used to count a TRAILING 7-day window and sum the stored `totalVolume`
+ * field, while the home screen counted the SUNDAY-based calendar week and summed
+ * completed sets — so on a Monday the same trainee read a different "השבוע" on
+ * each screen, and any session row without `totalVolume` contributed 0 kg here.
+ * Both surfaces now call the same functions. `now` stays a timestamp for the
+ * existing call sites.
  */
 export function summarizeWeeklyVolume(
   completedSessions: WorkoutSession[],
   now: number = Date.now()
 ): WeeklyVolumeSummary {
-  const weekAgo = now - 7 * DAY_MS;
-  const twoWeeksAgo = now - 14 * DAY_MS;
-
-  let volume = 0;
-  let count = 0;
-  let durationSec = 0;
-  let prevVolume = 0;
-  let prevCount = 0;
-
-  for (const s of completedSessions) {
-    const t = new Date(s.startTime).getTime();
-    if (Number.isNaN(t)) continue;
-    if (t >= weekAgo) {
-      volume += s.totalVolume || 0;
-      durationSec += s.duration || 0;
-      count += 1;
-    } else if (t >= twoWeeksAgo) {
-      prevVolume += s.totalVolume || 0;
-      prevCount += 1;
-    }
-  }
-
-  const changePct = prevVolume > 0 ? Math.round(((volume - prevVolume) / prevVolume) * 100) : null;
-
-  return { volume, count, timeMin: Math.round(durationSec / 60), prevVolume, prevCount, changePct };
+  return summarizeTrainingWeek(completedSessions, new Date(now));
 }
 
 /**
@@ -556,6 +542,13 @@ export function weeklyVolumeDelta(weekly: WeeklyVolumeSummary): StatDelta {
   return { diff, zone: gradeDelta(diff, hasPrev), hasPrev };
 }
 
+/** Week-over-week training-time delta, whole minutes. */
+export function weeklyTimeDelta(weekly: WeeklyVolumeSummary): StatDelta {
+  const hasPrev = weekly.prevTimeMin > 0;
+  const diff = weekly.timeMin - weekly.prevTimeMin;
+  return { diff, zone: gradeDelta(diff, hasPrev), hasPrev };
+}
+
 export interface WeekVerdict {
   /** The protagonist figure for the verdict line (workout count this week). */
   count: number;
@@ -563,7 +556,7 @@ export interface WeekVerdict {
   zone: Zone;
   /** Short Bricolage headline for the weekly-review card (e.g. "שבוע חזק"). */
   headline: string;
-  /** Hebrew text BEFORE the inline count number (e.g. "השלמת "). */
+  /** Hebrew text BEFORE the inline count number (e.g. "השלמתם "). */
   lead: string;
   /** Hebrew text AFTER the count number — carries the actual takeaway. */
   tail: string;
@@ -581,7 +574,7 @@ export function weekVerdict(weekly: WeeklyVolumeSummary, streakDays: number): We
   const { count } = weekly;
 
   if (count === 0) {
-    const tail = ' אימונים השבוע — אימון אחד מחזיר אותך למסלול.';
+    const tail = ' אימונים השבוע — אימון אחד מחזיר אותכם למסלול.';
     return {
       count,
       zone: 'attention',
@@ -620,7 +613,9 @@ export function weekVerdict(weekly: WeeklyVolumeSummary, streakDays: number): We
     tail += ` רצף של ${streakDays} ימים פעיל.`;
   }
 
-  const lead = 'השלמת ';
+  // Plural address, like the rest of the app ("בחרו", "התחילו"). This line said
+  // "השלמת" — the only singular verb on the screen.
+  const lead = 'השלמתם ';
   return { count, zone, headline, lead, tail, sentence: `${lead}${count}${tail}` };
 }
 
@@ -629,4 +624,98 @@ export function isRecentPR(pr: PersonalRecord, days = 7, now: number = Date.now(
   const t = new Date(pr.date).getTime();
   if (Number.isNaN(t)) return false;
   return now - t <= days * DAY_MS;
+}
+
+// ============================================================================
+// Strength snapshot — "are my main lifts moving?" in three rows.
+// ============================================================================
+// The overview should answer that without sending anyone to the strength board.
+// So: the exercises trained in the MOST sessions over the last 8 Sunday-based
+// weeks (what the trainee is actually doing), each with its best e1RM of the
+// last 4 weeks and the change against the 4 weeks BEFORE that — a like-for-like
+// window comparison, not first-point-vs-last-point.
+//
+// `delta` is null, not 0, when there is no earlier window to compare against:
+// a `0` there would claim "no progress" where the honest answer is "no data
+// yet". The 8-week bound is deliberate — a lift last touched in March is not
+// part of this week's picture.
+
+/** Weeks of history the snapshot considers at all. */
+const SNAPSHOT_WEEKS = 8;
+/** Length of each comparison window, in weeks (recent vs the one before it). */
+const SNAPSHOT_WINDOW_WEEKS = 4;
+/** Training days an exercise needs inside the window before it is shown. */
+const SNAPSHOT_MIN_SESSIONS = 2;
+
+export interface StrengthSnapshotEntry {
+  /** Raw stored name — pass through `exerciseLabel` for display. */
+  exerciseName: string;
+  /** Best e1RM of the last 4 weeks, kg (rounded). */
+  e1RM: number;
+  /** Signed e1RM change vs the previous 4 weeks, or null with no earlier data. */
+  delta: number | null;
+  /** Distinct training days inside the 8-week window. */
+  sessionCount: number;
+}
+
+/**
+ * Top exercises by training frequency over the last `SNAPSHOT_WEEKS` weeks, each
+ * with its recent best e1RM and the like-for-like change. Exercises trained fewer
+ * than `SNAPSHOT_MIN_SESSIONS` times in the window are dropped — two points is
+ * the floor for saying anything at all.
+ */
+export function strengthSnapshot(
+  completedSessions: WorkoutSession[],
+  limit = 3,
+  now: Date = new Date()
+): StrengthSnapshotEntry[] {
+  const windowStart = weekStartAt(now, -(SNAPSHOT_WEEKS - 1)).getTime();
+  const recentStart = weekStartAt(now, -(SNAPSHOT_WINDOW_WEEKS - 1)).getTime();
+
+  // exercise → training day → best e1RM that day (a day, not a session: two
+  // sessions on one day are one data point, as on the strength board).
+  const byExercise = new Map<string, Map<string, { e1RM: number; time: number }>>();
+
+  for (const session of completedSessions) {
+    const time = new Date(session.startTime).getTime();
+    if (Number.isNaN(time) || time < windowStart) continue;
+    const day = session.date || session.startTime?.slice(0, 10);
+    if (!day) continue;
+    for (const exercise of session.exercises ?? []) {
+      const name = exercise.exerciseName || exercise.name;
+      if (!name) continue;
+      const best = bestWorkingSet(exercise.sets);
+      if (!best) continue;
+      const days = byExercise.get(name) ?? new Map<string, { e1RM: number; time: number }>();
+      const existing = days.get(day);
+      const e1RM = Math.round(best.e1RM);
+      if (!existing || e1RM > existing.e1RM) days.set(day, { e1RM, time });
+      byExercise.set(name, days);
+    }
+  }
+
+  const entries: StrengthSnapshotEntry[] = [];
+  for (const [exerciseName, days] of byExercise) {
+    const points = [...days.values()];
+    if (points.length < SNAPSHOT_MIN_SESSIONS) continue;
+
+    let recentBest = 0;
+    let earlierBest = 0;
+    for (const p of points) {
+      if (p.time >= recentStart) recentBest = Math.max(recentBest, p.e1RM);
+      else earlierBest = Math.max(earlierBest, p.e1RM);
+    }
+    // Nothing in the recent window means the lift is not part of the current
+    // picture, however strong it once was.
+    if (recentBest <= 0) continue;
+
+    entries.push({
+      exerciseName,
+      e1RM: recentBest,
+      delta: earlierBest > 0 ? recentBest - earlierBest : null,
+      sessionCount: points.length,
+    });
+  }
+
+  return entries.sort((a, b) => b.sessionCount - a.sessionCount || b.e1RM - a.e1RM).slice(0, limit);
 }

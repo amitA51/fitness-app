@@ -600,6 +600,70 @@ function getDedupKey(type: MutationType, payload: unknown): string | null {
   return `${type}::${recordId}`;
 }
 
+/**
+ * The IndexedDB store a mutation type writes to, for the seven stores that carry
+ * unsynced-ledger markers.
+ *
+ * `null` for everything else, and that is deliberate rather than an omission:
+ * personal records, personal exercises, AI conversations and mirrored settings
+ * are marker-less by design, because none of them has a clear-on-pull path — a
+ * marker there would stick forever and turn the sign-out warning into noise.
+ */
+function markerStoreFor(type: MutationType): string | null {
+  switch (type) {
+    case 'session:create':
+    case 'session:update':
+    case 'session:delete':
+      return 'workout_sessions';
+    case 'template:create':
+    case 'template:update':
+    case 'template:delete':
+      return 'workout_templates';
+    case 'nutrition:create':
+    case 'nutrition:update':
+    case 'nutrition:delete':
+      return 'nutrition_logs';
+    case 'bodyweight:create':
+    case 'bodyweight:delete':
+      return 'body_weight';
+    case 'measurement:create':
+    case 'measurement:delete':
+      return 'body_measurements';
+    case 'recovery:create':
+    case 'recovery:delete':
+      return 'recovery_logs';
+    case 'water:create':
+    case 'water:delete':
+      return 'water_logs';
+    default:
+      return null;
+  }
+}
+
+/**
+ * Drop the unsynced-ledger marker for a mutation the cloud has just confirmed.
+ *
+ * Imported lazily because `sessionDb` imports `queueMutation` from here; a static
+ * import would close the cycle. Best-effort by design — a stale marker is a false
+ * warning, so it must never fail a replay that actually succeeded.
+ */
+async function clearMarkerForMutation(type: MutationType, payload: unknown): Promise<void> {
+  const store = markerStoreFor(type);
+  if (!store) return;
+  const recordId = getRecordId(type, payload);
+  if (!recordId) return;
+  try {
+    const { clearUnsyncedRecordMarker } = await import('./sessionDb');
+    await clearUnsyncedRecordMarker(store, recordId);
+  } catch (err) {
+    logger.sync.warn('Could not clear the unsynced marker for a confirmed mutation', {
+      type,
+      recordId,
+      err,
+    });
+  }
+}
+
 // ── Public API ──────────────────────────────────────────────────────────────
 
 /**
@@ -831,6 +895,17 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
 
     try {
       await syncFn();
+      // The cloud has CONFIRMED this record, so the unsynced-ledger marker its
+      // write path left behind must go. Nothing used to clear a marker on the
+      // REPLAY path — only a same-call sync success, a local delete or a cloud
+      // pull did, and the pull only covers three of the seven ledgered stores.
+      // So "log a meal offline → queue replays fine" left a marker that
+      // `getUnsyncedRecords` kept counting forever (the row IS live, so it is not
+      // pruned as stale), and the sign-out dialog and the offline indicator
+      // warned about data that was safely in the cloud, with no user action able
+      // to clear it. This is the single point of leverage: one call site covers
+      // all seven stores and the replay path the merges cannot see.
+      await clearMarkerForMutation(mutation.type, mutation.payload);
       // Revision-guarded: if the user re-edited this record while the request was
       // in flight, `queueMutation` has already replaced this row with a newer
       // payload under the SAME id. Deleting by id would silently discard that

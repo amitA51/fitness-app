@@ -260,7 +260,13 @@ vi.mock('../indexedDBCore', () => ({
 }));
 
 // Mock supabaseAuth and supabaseSync to avoid side-effects
-vi.mock('../supabaseAuth', () => ({ getCurrentUser: vi.fn().mockResolvedValue(null) }));
+vi.mock('../supabaseAuth', () => {
+  const getCurrentUser = vi.fn().mockResolvedValue(null);
+  return {
+    getCurrentUser,
+    resolveCurrentUserOrNull: () => getCurrentUser().catch(() => null),
+  };
+});
 vi.mock('../supabaseSync', () => ({
   syncPersonalRecord: vi.fn().mockResolvedValue(undefined),
   deleteCloudPersonalRecord: vi.fn(),

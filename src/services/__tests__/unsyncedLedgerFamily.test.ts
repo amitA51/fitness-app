@@ -28,7 +28,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // `supabase: null` makes the direct water upsert a no-op success without a
 // network stub, which is what the "marker is cleared on confirm" test needs.
 vi.mock('../../lib/supabase', () => ({ isSupabaseConfigured: () => true, supabase: null }));
-vi.mock('../supabaseAuth', () => ({ getCurrentUser: vi.fn(async () => null) }));
+vi.mock('../supabaseAuth', () => {
+  const getCurrentUser = vi.fn(async () => null);
+  return {
+    getCurrentUser,
+    resolveCurrentUserOrNull: () => getCurrentUser().catch(() => null),
+  };
+});
 vi.mock('../../components/ui/GlobalToast', () => ({ showToast: vi.fn() }));
 vi.mock('../localStateMirror', () => ({ mirrorLocalKey: vi.fn() }));
 

@@ -130,6 +130,19 @@ export async function mergeGenericRecords<T extends TimestampedRecord>(
    * instead of invisible.
    */
   conflictedDeletes: number;
+  /**
+   * Keys whose CLOUD copy is at or ahead of the local one after this merge, so
+   * an unsynced-ledger marker for them is now provably stale.
+   *
+   * Three of the seven ledgered stores already cleared markers on pull; the four
+   * that go through this function did not, which left a permanent false "you have
+   * unsynced data" warning with no user action able to clear it. The revision
+   * rule is the one `mergeWorkoutTemplatesFromCloud` documents: clear when the
+   * cloud copy is at or ahead of local, KEEP the marker when the cloud copy is
+   * older, because these rows are mutable and an older cloud copy means the local
+   * edit really has not been pushed.
+   */
+  confirmed: string[];
 }> {
   const localRecords = await dbGetAll<T>(storeName);
   const localMap = new Map(
@@ -144,6 +157,7 @@ export async function mergeGenericRecords<T extends TimestampedRecord>(
   const writes: T[] = [];
   const deletes: string[] = [];
   const conflictedDeletes: string[] = [];
+  const confirmed: string[] = [];
 
   for (const cloud of cloudRecords) {
     const cloudKey = String((keyField === 'key' ? cloud.key : cloud.id) ?? '');
@@ -178,6 +192,9 @@ export async function mergeGenericRecords<T extends TimestampedRecord>(
           });
         }
         deletes.push(cloudKey);
+        // The local row is going away, so any marker for it is stale by
+        // definition — a record that no longer exists cannot be unsynced data.
+        confirmed.push(cloudKey);
         deleted++;
       }
       continue;
@@ -186,6 +203,7 @@ export async function mergeGenericRecords<T extends TimestampedRecord>(
     const local = localMap.get(cloudKey);
     if (!local) {
       writes.push(cloud);
+      confirmed.push(cloudKey);
       added++;
     } else {
       const localTime = safeTimestamp(local.updatedAt) || safeTimestamp(local.createdAt);
@@ -193,8 +211,13 @@ export async function mergeGenericRecords<T extends TimestampedRecord>(
       // Cloud wins on strictly newer; on tie or both-zero, keep local (no-op).
       if (cloudTime > localTime) {
         writes.push(cloud);
+        confirmed.push(cloudKey);
         updated++;
       } else {
+        // A TIE means the cloud already holds this exact revision, so the marker
+        // is stale. A cloud copy that is OLDER means the local edit has genuinely
+        // not been pushed — keep warning about it.
+        if (cloudTime === localTime) confirmed.push(cloudKey);
         kept++;
       }
     }
@@ -218,21 +241,61 @@ export async function mergeGenericRecords<T extends TimestampedRecord>(
     });
   }
 
-  return { added, updated, kept, deleted, conflictedDeletes: conflictedDeletes.length };
+  return {
+    added,
+    updated,
+    kept,
+    deleted,
+    conflictedDeletes: conflictedDeletes.length,
+    confirmed,
+  };
 }
+
+/**
+ * Drop the unsynced-ledger markers a pull has just proved stale.
+ *
+ * Imported lazily: `sessionDb` imports `safeTimestamp` from this module, so a
+ * static import would close the cycle. Best-effort — a leftover marker is a false
+ * warning, never a reason to fail a merge that already wrote its rows.
+ */
+const clearConfirmedMarkers = async (storeName: string, confirmed: string[]): Promise<void> => {
+  if (confirmed.length === 0) return;
+  try {
+    const { clearUnsyncedRecordMarker } = await import('./sessionDb');
+    for (const key of confirmed) {
+      await clearUnsyncedRecordMarker(storeName, key);
+    }
+  } catch (err) {
+    logger.sync.warn('Could not clear unsynced markers after a pull', { store: storeName, err });
+  }
+};
+
+/**
+ * Merge plus marker hygiene, for the stores that carry unsynced-ledger markers.
+ * `workout_sessions`, `water_logs` and `workout_templates` already did this in
+ * their own merge functions; these four were the ones warning forever.
+ */
+const mergeLedgeredRecords = async <T extends TimestampedRecord>(
+  storeName: string,
+  cloudRecords: T[]
+) => {
+  const result = await mergeGenericRecords(storeName, cloudRecords);
+  await clearConfirmedMarkers(storeName, result.confirmed);
+  return result;
+};
 
 export const mergeBodyMeasurementsFromCloud = (
   measurements: { id: string; createdAt?: string; updatedAt?: string }[]
-) => mergeGenericRecords(STORES.BODY_MEASUREMENTS, measurements);
+) => mergeLedgeredRecords(STORES.BODY_MEASUREMENTS, measurements);
 export const mergePersonalRecordsFromCloud = (
   records: { id: string; createdAt?: string; updatedAt?: string }[]
 ) => mergeGenericRecords(STORES.PERSONAL_RECORDS, records);
 export const mergeRecoveryLogsFromCloud = (
   logs: { id: string; createdAt?: string; updatedAt?: string }[]
-) => mergeGenericRecords(STORES.RECOVERY_LOGS, logs);
+) => mergeLedgeredRecords(STORES.RECOVERY_LOGS, logs);
 export const mergeNutritionLogsFromCloud = (
   logs: { id: string; createdAt?: string; updatedAt?: string }[]
-) => mergeGenericRecords(STORES.NUTRITION_LOGS, logs);
+) => mergeLedgeredRecords(STORES.NUTRITION_LOGS, logs);
 export const mergeUserSettingsFromCloud = (
   settings: { id?: string; key?: string; createdAt?: string; updatedAt?: string }[]
 ) => mergeGenericRecords(STORES.USER_SETTINGS, settings, 'key');

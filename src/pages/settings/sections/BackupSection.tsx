@@ -48,7 +48,36 @@ export function BackupSection() {
     try {
       const text = await file.text();
       const result = await importFullBackup(text);
-      showToast(`השחזור הושלם · ${result.records} רשומות`);
+
+      // A restore used to schedule nothing: the rows were local-only, uncounted
+      // by the sign-out guard, and the next account switch destroyed them while
+      // the dialog said there was nothing to lose. One bulk push (the same one
+      // the "העלאה לענן" button uses) covers the whole restore; per-row queue
+      // entries are the wrong tool for 50,000 rows. `syncAllData` self-guards on
+      // the signed-in user, so a guest restore just stays local and keeps its
+      // markers.
+      let pushFailed = false;
+      if (result.written.length > 0) {
+        try {
+          const { syncAllData } = await import('../../../services/supabaseSync');
+          const sync = await syncAllData();
+          // 'Not authenticated' is a guest restore, not a failure to report.
+          pushFailed = !sync.success && sync.error !== 'Not authenticated';
+          if (pushFailed) logger.sync.error('Restore push to cloud failed', sync.error);
+        } catch (syncErr) {
+          pushFailed = true;
+          logger.sync.error('Restore push to cloud threw', syncErr);
+        }
+      }
+
+      if (pushFailed) {
+        showToast(
+          `השחזור הושלם · ${result.records} רשומות — אבל ההעלאה לענן נכשלה. נסו "העלאה לענן" בהגדרות`,
+          'error'
+        );
+      } else {
+        showToast(`השחזור הושלם · ${result.records} רשומות`);
+      }
       // Reload so the restored records + settings hydrate everywhere.
       setTimeout(() => window.location.reload(), 1200);
     } catch (e) {

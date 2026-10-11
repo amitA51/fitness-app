@@ -15,9 +15,20 @@ vi.mock('../../indexedDBCore', () => ({
   dbPut: vi.fn(),
 }));
 
-vi.mock('../../supabaseAuth', () => ({
-  getCurrentUser: vi.fn(async () => ({ id: 'user-1' })),
-}));
+// The cloud leg is now gated on `isSupabaseConfigured()` (no cloud means nothing
+// to sync to and nothing at risk), so it has to read as configured here.
+vi.mock('../../../lib/supabase', () => ({ isSupabaseConfigured: () => true, supabase: null }));
+
+vi.mock('../../supabaseAuth', () => {
+  const getCurrentUser = vi.fn(async () => ({ id: 'user-1' }));
+  return {
+    getCurrentUser,
+    resolveCurrentUserOrNull: () => getCurrentUser().catch(() => null),
+  };
+});
+
+// Only reached when auth resolves NO user; with a user the direct push is used.
+vi.mock('../../offlineQueue', () => ({ queueMutation: vi.fn() }));
 
 vi.mock('../../supabaseSync', () => ({
   softDeleteCloudAIConversation: (...args: unknown[]) => softDeleteSpy(...args),

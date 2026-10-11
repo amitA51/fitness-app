@@ -10,9 +10,10 @@ import { isSupabaseConfigured } from '../lib/supabase';
 import { todayStr } from '../utils/dateUtils';
 import { safeJsonParse, writeJsonStorage } from '../utils/safeJson';
 import { STORES, dbGetAll, dbPut, initDB } from './indexedDBCore';
+import { mirrorLocalKey } from './localStateMirror';
 import { queueMutation } from './offlineQueue';
 import { clearUnsyncedRecordMarker, markRecordUnsynced } from './sessionDb';
-import { getCurrentUser } from './supabaseAuth';
+import { resolveCurrentUserOrNull } from './supabaseAuth';
 import { fetchAllPages } from './supabaseSyncPagination';
 
 export interface WaterEntry {
@@ -76,6 +77,12 @@ export function saveWaterSettings(settings: WaterSettings): void {
     glassMl: clamp(settings.glassMl, GLASS_SIZE_BOUNDS.min, GLASS_SIZE_BOUNDS.max),
   };
   writeJsonStorage(WATER_SETTINGS_KEY, clamped);
+  // Back the hydration goal and glass size up to the cloud. They were
+  // localStorage-only AND listed in USER_SCOPED_STORAGE_REGISTRY, so
+  // `clearUserScopedLocalData` deleted them on an account switch with no copy
+  // anywhere — the user's custom goal silently reverted to DEFAULT_WATER_GOAL_ML.
+  // Same mechanism `saveNutritionGoals` uses. See services/localStateMirror.
+  mirrorLocalKey(WATER_SETTINGS_KEY);
   broadcastWaterUpdated();
 }
 
@@ -97,7 +104,7 @@ export async function addWaterEntry(amountMl: number): Promise<WaterEntry> {
   await dbPut(STORES.WATER_LOGS, entry);
   broadcastWaterUpdated();
 
-  const user = await getCurrentUser();
+  const user = await resolveCurrentUserOrNull();
 
   // No cloud configured means nothing to sync to and nothing at risk — mirrors
   // syncWithRetry, which returns early in that case rather than queueing.
