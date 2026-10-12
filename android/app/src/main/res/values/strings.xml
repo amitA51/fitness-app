@@ -4,4 +4,9 @@
     <string name="title_activity_main">SparkOS Fitness</string>
     <string name="package_name">com.sparkos.fitness</string>
     <string name="custom_url_scheme">com.sparkos.fitness</string>
+    <!-- @capacitor-community/background-geolocation: the run-tracking notification.
+         The icon is the white-on-transparent status-bar mark the reminders use. -->
+    <string name="capacitor_background_geolocation_notification_channel_name">מדידת אימון</string>
+    <string name="capacitor_background_geolocation_notification_icon">drawable/ic_stat_notify</string>
+    <string name="capacitor_background_geolocation_notification_color">#43c7a5</string>
 </resources>

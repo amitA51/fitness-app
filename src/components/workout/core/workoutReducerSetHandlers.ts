@@ -427,6 +427,13 @@ export const setReducer = (draft: WorkoutState, action: WorkoutAction): void => 
       const targetSet = targetSets[setIndex]!;
       if (updates.weight !== undefined) targetSet.weight = updates.weight;
       if (updates.reps !== undefined) targetSet.reps = updates.reps;
+      // Cardio fields: present-but-undefined clears the field (emptied input).
+      for (const key of ['duration', 'distanceKm', 'inclinePct', 'avgHr'] as const) {
+        if (!(key in updates)) continue;
+        const value = updates[key];
+        if (value === undefined || !Number.isFinite(value) || value <= 0) delete targetSet[key];
+        else targetSet[key] = value;
+      }
       break;
     }
 

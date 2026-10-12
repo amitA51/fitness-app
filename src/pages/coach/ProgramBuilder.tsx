@@ -27,6 +27,7 @@ import {
 import { getPersonalExercises } from '../../services/exerciseDb';
 import type { PersonalExercise, WorkoutTemplate, WorkoutTemplateExercise } from '../../types';
 import type { CoachProgramTemplate, ProgramTemplateDay } from '../../types/coach';
+import { cardioActivityConfig, resolveCardioActivity } from '../../utils/cardio';
 
 interface ProgramExercise {
   exerciseName: string;
@@ -36,6 +37,9 @@ interface ProgramExercise {
   /** Raw string while editing — empties are allowed mid-edit; coerced in buildTemplate/validation. */
   sets: string;
   reps: string;
+  /** Cardio rows (treadmill, run…): target minutes / km replace sets × reps. */
+  minutes?: string;
+  km?: string;
 }
 
 interface ProgramDay {
@@ -82,6 +86,34 @@ const nextSundayStr = (now: Date = new Date()): string => {
 const toCount = (raw: string): number => {
   const n = Math.floor(Number(raw));
   return Number.isFinite(n) && n > 0 ? n : MIN_COUNT;
+};
+
+/** A cardio row's optional target: positive number, else undefined. */
+const toTarget = (raw: string | undefined): number | undefined => {
+  const n = Number((raw ?? '').replace(',', '.'));
+  return Number.isFinite(n) && n > 0 ? n : undefined;
+};
+
+const isCardioRow = (ex: { exerciseName: string }): boolean =>
+  resolveCardioActivity({ exerciseName: ex.exerciseName.trim() }) !== null;
+
+/** Swim and row distances are typed in metres, everything else in km. */
+const rowInMetres = (exerciseName: string): boolean => {
+  const activity = resolveCardioActivity({ exerciseName: exerciseName.trim() });
+  return activity !== null && cardioActivityConfig(activity).distanceUnit === 'm';
+};
+
+/** The row's typed distance (km or m) → km. */
+const rowDistanceKm = (ex: { exerciseName: string; km?: string }): number | undefined => {
+  const typed = toTarget(ex.km);
+  if (typed === undefined) return undefined;
+  return rowInMetres(ex.exerciseName) ? typed / 1000 : typed;
+};
+
+/** Stored km → the text the row shows (metres for swim / row). */
+const rowDistanceText = (exerciseName: string, km: number | undefined): string => {
+  if (!km) return '';
+  return rowInMetres(exerciseName) ? String(Math.round(km * 1000)) : String(km);
 };
 
 /** Immutably swap two items in an array; returns the same array reference when out of range. */
@@ -345,6 +377,25 @@ export default function ProgramBuilder({
     // Drop blank-name rows so empty, unstartable exercises never reach the trainee.
     const named = (day.exercises ?? []).filter((ex) => ex.exerciseName.trim().length > 0);
     const exercises: WorkoutTemplateExercise[] = named.map((ex, i) => {
+      if (isCardioRow(ex)) {
+        const minutes = toTarget(ex.minutes);
+        const km = rowDistanceKm(ex);
+        return {
+          id: crypto.randomUUID(),
+          exerciseId: ex.exerciseId ?? '',
+          exerciseName: ex.exerciseName.trim(),
+          targetMuscle: ex.targetMuscle ?? '',
+          targetSets: 1,
+          targetReps: 0,
+          targetWeight: null,
+          restSeconds: 0,
+          order: i,
+          notes: '',
+          sets: [{ reps: 0, weight: 0 }],
+          ...(minutes ? { targetDurationSec: Math.round(minutes * 60) } : {}),
+          ...(km ? { targetDistanceKm: km } : {}),
+        };
+      }
       const setCount = toCount(ex.sets);
       const repCount = toCount(ex.reps);
       return {
@@ -481,6 +532,8 @@ export default function ProgramBuilder({
           targetMuscle: ex.targetMuscle,
           sets: toCount(ex.sets),
           reps: toCount(ex.reps),
+          ...(isCardioRow(ex) && toTarget(ex.minutes) ? { minutes: toTarget(ex.minutes) } : {}),
+          ...(isCardioRow(ex) && rowDistanceKm(ex) ? { km: rowDistanceKm(ex) } : {}),
         })),
     }));
 
@@ -523,6 +576,8 @@ export default function ProgramBuilder({
           targetMuscle: ex.targetMuscle,
           sets: String(ex.sets),
           reps: String(ex.reps),
+          minutes: ex.minutes ? String(ex.minutes) : '',
+          km: rowDistanceText(ex.exerciseName, ex.km),
         })),
       }))
     );
@@ -930,32 +985,59 @@ export default function ProgramBuilder({
                     aria-label="שם תרגיל"
                   />
                 </div>
-                <div style={{ width: 64, minHeight: 44 }} className="shrink-0">
-                  <Input
-                    label="סטים"
-                    type="number"
-                    inputMode="numeric"
-                    dir="ltr"
-                    value={ex.sets}
-                    onChange={(e) => updateExercise(dayIdx, exIdx, { sets: e.target.value })}
-                  />
-                </div>
-                <span
-                  style={{ color: 'var(--fs-muted)', fontSize: 12, paddingBottom: 14 }}
-                  aria-hidden="true"
-                >
-                  ×
-                </span>
-                <div style={{ width: 64, minHeight: 44 }} className="shrink-0">
-                  <Input
-                    label="חזרות"
-                    type="number"
-                    inputMode="numeric"
-                    dir="ltr"
-                    value={ex.reps}
-                    onChange={(e) => updateExercise(dayIdx, exIdx, { reps: e.target.value })}
-                  />
-                </div>
+                {isCardioRow(ex) ? (
+                  <>
+                    <div style={{ width: 64, minHeight: 44 }} className="shrink-0">
+                      <Input
+                        label="דקות"
+                        type="number"
+                        inputMode="numeric"
+                        dir="ltr"
+                        value={ex.minutes ?? ''}
+                        onChange={(e) => updateExercise(dayIdx, exIdx, { minutes: e.target.value })}
+                      />
+                    </div>
+                    <div style={{ width: 64, minHeight: 44 }} className="shrink-0">
+                      <Input
+                        label={rowInMetres(ex.exerciseName) ? 'מטרים' : 'ק״מ'}
+                        type="number"
+                        inputMode="decimal"
+                        dir="ltr"
+                        value={ex.km ?? ''}
+                        onChange={(e) => updateExercise(dayIdx, exIdx, { km: e.target.value })}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ width: 64, minHeight: 44 }} className="shrink-0">
+                      <Input
+                        label="סטים"
+                        type="number"
+                        inputMode="numeric"
+                        dir="ltr"
+                        value={ex.sets}
+                        onChange={(e) => updateExercise(dayIdx, exIdx, { sets: e.target.value })}
+                      />
+                    </div>
+                    <span
+                      style={{ color: 'var(--fs-muted)', fontSize: 12, paddingBottom: 14 }}
+                      aria-hidden="true"
+                    >
+                      ×
+                    </span>
+                    <div style={{ width: 64, minHeight: 44 }} className="shrink-0">
+                      <Input
+                        label="חזרות"
+                        type="number"
+                        inputMode="numeric"
+                        dir="ltr"
+                        value={ex.reps}
+                        onChange={(e) => updateExercise(dayIdx, exIdx, { reps: e.target.value })}
+                      />
+                    </div>
+                  </>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"

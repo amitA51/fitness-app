@@ -19,6 +19,7 @@ import {
   type WorkoutTemplate,
   createWorkoutSet,
 } from '../../../types';
+import { cardioSnapshot, isCardioExercise } from '../../../utils/cardio';
 import { triggerHaptic } from '../../../utils/haptics';
 import { HE_NOUNS, pluralizeHe } from '../../../utils/pluralizeHe';
 import { EmbeddedTemplatePicker } from '../../templates/EmbeddedTemplatePicker';
@@ -56,7 +57,10 @@ const fromLibraryExercise = (pe: PersonalExercise, sets: Exercise['sets']): Exer
   mechanic: pe.mechanic,
   force: pe.force,
   level: pe.level,
-  targetRestTime: pe.defaultRestTime || 90,
+  // Steady cardio carries 0 rest on purpose (no countdown after a treadmill
+  // block); `|| 90` would turn that 0 into a 90-second timer.
+  targetRestTime: isCardioExercise(pe) ? (pe.defaultRestTime ?? 0) : pe.defaultRestTime || 90,
+  ...cardioSnapshot(pe),
   sets,
 });
 

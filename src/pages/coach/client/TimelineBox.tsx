@@ -5,11 +5,13 @@
 // ============================================================================
 
 import { ClipboardCheck, Dumbbell, Send } from 'lucide-react';
+import { ActivityIcon } from '../../../components/cardio/ActivityIcon';
 import type { CheckIn } from '../../../services/coach/checkInService';
-import type { WorkoutSession } from '../../../types';
+import type { CardioActivity, WorkoutSession } from '../../../types';
 import type { Assignment } from '../../../types/coach';
 import { HE_NOUNS, pluralizeHe } from '../../../utils/pluralizeHe';
 import { InlineEmpty, formatDate } from '../_shared';
+import { type CardioPiece, SessionCardioLine, sessionCardioView } from './sessionCardio';
 
 const MAX_ITEMS = 15;
 
@@ -20,7 +22,12 @@ type SessionEvent = {
   ts: number;
   id: string;
   title: string;
+  /** Lifting summary ("4200 ק״ג נפח · 5 תרגילים"); empty for a cardio-only session. */
   meta: string;
+  /** Time/distance of the session's cardio — the whole line for a run. */
+  cardio: CardioPiece[];
+  /** Activity of a cardio-only session (drives the icon), else null. */
+  activity: CardioActivity | null;
 };
 
 type CheckInEvent = {
@@ -51,18 +58,24 @@ function buildTimeline(
   for (const s of sessions) {
     const ts = s.startTime ? new Date(s.startTime).getTime() : new Date(s.createdAt).getTime();
     if (!Number.isFinite(ts)) continue;
+    const cardio = sessionCardioView(s);
     const volume = Math.round(s.totalVolume);
     const parts: string[] = [];
     // The coach note becomes the row heading (see EventRow), so keep it OUT of the
-    // meta line to avoid showing the same text twice.
-    if (volume > 0) parts.push(`${volume} ק"ג נפח`);
-    if (s.exercises.length > 0) parts.push(pluralizeHe(s.exercises.length, HE_NOUNS.exercise));
+    // meta line to avoid showing the same text twice. A run has no lifting line:
+    // its time/distance is the whole meta.
+    if (!cardio.cardioOnly) {
+      if (volume > 0) parts.push(`${volume} ק״ג נפח`);
+      if (s.exercises.length > 0) parts.push(pluralizeHe(s.exercises.length, HE_NOUNS.exercise));
+    }
     events.push({
       kind: 'session',
       ts,
       id: s.id,
-      title: s.notes?.trim() || 'אימון הושלם',
-      meta: parts.join(' · ') || '—',
+      title: s.notes?.trim() || cardio.title || 'אימון הושלם',
+      meta: parts.join(' · ') || (cardio.pieces.length > 0 ? '' : '—'),
+      cardio: cardio.pieces,
+      activity: cardio.activity,
     });
   }
 
@@ -134,7 +147,11 @@ function EventRow({ event }: { event: TimelineEvent }) {
         }}
       >
         <IconCell>
-          <Dumbbell size={16} />
+          {event.activity ? (
+            <ActivityIcon activity={event.activity} size={16} />
+          ) : (
+            <Dumbbell size={16} />
+          )}
         </IconCell>
         <div className="flex-1 min-w-0">
           <div
@@ -154,7 +171,8 @@ function EventRow({ event }: { event: TimelineEvent }) {
               color: 'var(--fs-muted)',
             }}
           >
-            <bdi>{event.meta}</bdi>
+            {event.meta && <bdi>{event.meta}</bdi>}
+            <SessionCardioLine pieces={event.cardio} leadingDot={event.meta !== ''} />
           </div>
         </div>
         <span

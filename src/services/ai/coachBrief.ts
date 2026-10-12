@@ -20,6 +20,7 @@
 
 import type { MacroNutrients, WorkoutSession } from '../../types';
 import type { RecoveryLog } from '../bodyStatsService';
+import { type CardioTotals, cardioTotalsText } from './cardioContext';
 import { type AIContext, buildContext, buildSystemPrompt } from './contextBuilder';
 import { type ChatMessage, getAIProvider } from './core';
 
@@ -40,6 +41,8 @@ export interface CoachBriefFacts {
   weakMuscles: string[];
   neglectedMuscles: string[];
   nutritionSummary: string | null;
+  /** Cardio of the last 7 days (the week `weeklyVolume` covers); null when none. */
+  cardioLast7Days: CardioTotals | null;
   confidence: BriefConfidence;
 }
 
@@ -99,6 +102,8 @@ function factsFromContext(context: AIContext): CoachBriefFacts {
     weakMuscles: context.weakMuscles,
     neglectedMuscles: context.neglectedMuscles,
     nutritionSummary: context.nutrition ? context.nutrition.summary : null,
+    cardioLast7Days:
+      context.cardio && context.cardio.last7Days.efforts > 0 ? context.cardio.last7Days : null,
     confidence: deriveConfidence(context.dataSufficiency),
   };
 }
@@ -123,10 +128,16 @@ export function deterministicProse(
   headline: string;
   detail: string;
 } {
+  const cardio = f.cardioLast7Days;
   if (kind === 'weekly-review') {
     const sign = f.volumeChangePercent >= 0 ? '+' : '';
-    const headline = `נפח שבועי ${f.weeklyVolume.toLocaleString()} ק"ג · ${sign}${f.volumeChangePercent}% מהשבוע שעבר`;
+    // A cardio-only week is not "0 kg": lead with what was actually trained.
+    const headline =
+      f.weeklyVolume === 0 && cardio
+        ? `אירובי השבוע: ${cardioTotalsText(cardio)}`
+        : `נפח שבועי ${f.weeklyVolume.toLocaleString()} ק"ג · ${sign}${f.volumeChangePercent}% מהשבוע שעבר`;
     const bits: string[] = [];
+    if (cardio && f.weeklyVolume > 0) bits.push(`אירובי השבוע: ${cardioTotalsText(cardio)}`);
     // Streak is intentionally NOT restated here — the dedicated WorkoutStreak
     // chip on the home owns that number; this caption stays qualitative.
     if (f.weakMuscles.length > 0)
@@ -141,7 +152,11 @@ export function deterministicProse(
 
   // daily-readiness
   const headline = `מוכנות ${f.readinessScore}/100 · ${REC_HEADLINE[f.recommendation]}`;
-  const reason = CONSTRAINT_REASON[f.primaryConstraint];
+  // "No training volume" is false for a week of runs — say what it really was.
+  const reason =
+    f.primaryConstraint === 'low_volume' && cardio
+      ? 'השבוע היו אימוני אירובי בלבד, בלי אימוני כוח'
+      : CONSTRAINT_REASON[f.primaryConstraint];
   let detail: string;
   switch (f.recommendation) {
     case 'rest':

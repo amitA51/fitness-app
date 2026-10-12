@@ -41,6 +41,7 @@ import type {
   SetTechnique,
   WorkoutSet,
 } from '../../../types';
+import { resolveCardioActivity } from '../../../utils/cardio';
 import type { SupersetGroup, SwapLibraryMeta } from '../core/workoutTypes';
 import { usePreviousSetData } from '../hooks/usePreviousSetData';
 import {
@@ -50,6 +51,7 @@ import {
 } from '../hooks/useProgressionSuggestion';
 import ActionChip from './ActionChip';
 import AlternativesSheet from './AlternativesSheet';
+import CardioSetInputs from './CardioSetInputs';
 import DropSetSheet from './DropSetSheet';
 import RPEPicker from './RPEPicker';
 import SetEditBottomSheet from './SetEditBottomSheet';
@@ -424,6 +426,9 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     }, [exercise.sets]);
 
     const activeIsWarmup = exercise.sets?.[displaySetIndex]?.isWarmup ?? false;
+    // A cardio exercise (treadmill, rower, a run) is logged as time + distance;
+    // every weight-only aid below steps aside for it.
+    const cardioActivity = resolveCardioActivity(exercise);
 
     // The progression engine's target for today's working sets. Warmups are a
     // ramp, not the target, so the chip steps aside while one is open.
@@ -433,7 +438,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
       repRange: exercise.programExtras?.repRange,
       workingSets: workingTotal,
     });
-    const showSuggestion = suggestion !== null && !activeIsWarmup;
+    const showSuggestion = suggestion !== null && !activeIsWarmup && !cardioActivity;
     const suggestionApplied =
       suggestion !== null &&
       (suggestion.weight == null || currentSet.weight === suggestion.weight) &&
@@ -446,7 +451,8 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     }, [suggestion, onUpdateSet, haptics]);
 
     // A strip of zeros (a skipped warmup saved as 0 × 0) has nothing to say.
-    const hasPreviousValue = !!previousSet && !!(previousSet.weight || previousSet.reps);
+    const hasPreviousValue =
+      !cardioActivity && !!previousSet && !!(previousSet.weight || previousSet.reps);
 
     // Exercise is "done" when it has planned sets and every one is completed.
     // In this state there is no real active set (displaySetIndex points at the
@@ -491,7 +497,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     // Set type — these used to be an always-on pill row under the exercise card
     // (חימום · דרופ · כשל · מנוחה-קצרה). They are marked once in a while, not
     // every set, so they moved in here as toggles that keep the sheet open.
-    if (onToggleTechnique && !isExerciseComplete) {
+    if (onToggleTechnique && !isExerciseComplete && !cardioActivity) {
       const TECHNIQUES: {
         id: SetTechnique;
         label: string;
@@ -571,7 +577,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
         dot: !!(currentSet.segments && currentSet.segments.length > 0),
       });
     }
-    if (completedSetsCount > 0 && onEditSet) {
+    if (completedSetsCount > 0 && onEditSet && !cardioActivity) {
       tools.push({
         id: 'edit-sets',
         group: 'רישום הסט',
@@ -599,7 +605,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
         onSelect: () => onAddWarmupRamp(currentSet.weight ?? 0),
       });
     }
-    if (onOpenPlateCalc) {
+    if (onOpenPlateCalc && !cardioActivity) {
       tools.push({
         id: 'plates',
         group: 'התרגיל',
@@ -951,34 +957,48 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   sits above them; otherwise the scroll padding already spaces it. */}
               {activeIsWarmup && onSkipSet && <div style={{ height: 12, flexShrink: 0 }} />}
 
-              {/* Input cards grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <SetInputCard
-                  label="משקל"
-                  value={currentSet.weight || 0}
-                  ghostValue={previousSet?.weight}
-                  showGhost={showGhostWeight}
-                  unit="ק״ג"
-                  incrementAmount={weightIncrement}
-                  onTap={handleWeightTap}
-                  onIncrement={handleIncrementWeight}
-                  onDecrement={handleDecrementWeight}
-                  onCommitGhost={handleCommitGhostWeight}
-                  showButtons={enableQuickWeightButtons}
+              {/* Input cards — time + distance for cardio, weight × reps otherwise */}
+              {cardioActivity ? (
+                <CardioSetInputs
+                  key={currentSet.id}
+                  activity={cardioActivity}
+                  set={currentSet}
+                  previousSet={previousSet}
+                  target={{
+                    durationSec: exercise.targetDurationSec,
+                    distanceKm: exercise.targetDistanceKm,
+                  }}
+                  onChange={(updates) => onEditSet?.(displaySetIndex, updates)}
                 />
-                <SetInputCard
-                  label="חזרות"
-                  value={currentSet.reps || 0}
-                  ghostValue={previousSet?.reps}
-                  showGhost={showGhostReps}
-                  incrementAmount={1}
-                  onTap={handleRepsTap}
-                  onIncrement={handleIncrementReps}
-                  onDecrement={handleDecrementReps}
-                  onCommitGhost={handleCommitGhostReps}
-                  showButtons={enableQuickRepsButtons}
-                />
-              </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <SetInputCard
+                    label="משקל"
+                    value={currentSet.weight || 0}
+                    ghostValue={previousSet?.weight}
+                    showGhost={showGhostWeight}
+                    unit="ק״ג"
+                    incrementAmount={weightIncrement}
+                    onTap={handleWeightTap}
+                    onIncrement={handleIncrementWeight}
+                    onDecrement={handleDecrementWeight}
+                    onCommitGhost={handleCommitGhostWeight}
+                    showButtons={enableQuickWeightButtons}
+                  />
+                  <SetInputCard
+                    label="חזרות"
+                    value={currentSet.reps || 0}
+                    ghostValue={previousSet?.reps}
+                    showGhost={showGhostReps}
+                    incrementAmount={1}
+                    onTap={handleRepsTap}
+                    onIncrement={handleIncrementReps}
+                    onDecrement={handleDecrementReps}
+                    onCommitGhost={handleCommitGhostReps}
+                    showButtons={enableQuickRepsButtons}
+                  />
+                </div>
+              )}
 
               {/* Gap */}
               <div style={{ height: 8, flexShrink: 0 }} />

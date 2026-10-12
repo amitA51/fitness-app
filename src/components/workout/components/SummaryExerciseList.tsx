@@ -13,6 +13,8 @@ export interface ExerciseSummaryItemData {
   totalVolume: number;
   bestSet?: { weight: number; reps: number };
   isPR?: boolean;
+  /** Cardio exercise: "20:00 · 3.2 ק״מ" replaces the sets / best-set line. */
+  cardioLine?: string;
 }
 
 interface ExerciseSummaryItemProps {
@@ -21,11 +23,12 @@ interface ExerciseSummaryItemProps {
   totalVolume: number;
   bestSet?: { weight: number; reps: number };
   isPR?: boolean;
+  cardioLine?: string;
   delay?: number;
 }
 
 const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
-  ({ name, setsCompleted, totalVolume: _totalVolume, bestSet, isPR, delay = 0 }) => {
+  ({ name, setsCompleted, totalVolume: _totalVolume, bestSet, isPR, cardioLine, delay = 0 }) => {
     const reduced = useReducedMotion();
     return (
       <m.div
@@ -98,37 +101,52 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
           </span>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        {cardioLine ? (
           <span
             style={{
+              flexShrink: 0,
               fontFamily: 'var(--font-body)',
               fontSize: 13,
-              letterSpacing: '-0.01em',
-              color: 'var(--fs-muted)',
-              fontWeight: 500,
+              fontWeight: 600,
+              color: 'var(--fs-ink)',
+              unicodeBidi: 'isolate',
             }}
           >
-            {/* Hebrew keeps the noun SINGULAR for a cardinal of 1 — "סט אחד",
-                never "1 סטים". pluralizeHe owns that agreement; the digit path
-                (n ≠ 1) renders exactly as before. */}
-            {pluralizeHe(setsCompleted, HE_NOUNS.set)}
+            {cardioLine}
           </span>
-          {bestSet && (
+        ) : (
+          <div className="flex items-center gap-3 shrink-0">
             <span
               style={{
                 fontFamily: 'var(--font-body)',
                 fontSize: 13,
                 letterSpacing: '-0.01em',
-                color: 'var(--fs-ink)',
-                fontWeight: 600,
-                fontVariantNumeric: 'tabular-nums',
-                direction: 'ltr',
+                color: 'var(--fs-muted)',
+                fontWeight: 500,
               }}
             >
-              {bestSet.weight} ק״ג × {bestSet.reps}
+              {/* Hebrew keeps the noun SINGULAR for a cardinal of 1 — "סט אחד",
+                never "1 סטים". pluralizeHe owns that agreement; the digit path
+                (n ≠ 1) renders exactly as before. */}
+              {pluralizeHe(setsCompleted, HE_NOUNS.set)}
             </span>
-          )}
-        </div>
+            {bestSet && (
+              <span
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 13,
+                  letterSpacing: '-0.01em',
+                  color: 'var(--fs-ink)',
+                  fontWeight: 600,
+                  fontVariantNumeric: 'tabular-nums',
+                  direction: 'ltr',
+                }}
+              >
+                {bestSet.weight} ק״ג × {bestSet.reps}
+              </span>
+            )}
+          </div>
+        )}
       </m.div>
     );
   }
@@ -168,6 +186,7 @@ export const SummaryExerciseList: React.FC<SummaryExerciseListProps> = memo(
             setsCompleted={ex.setsCompleted}
             totalVolume={ex.totalVolume}
             bestSet={ex.bestSet}
+            cardioLine={ex.cardioLine}
             isPR={prExercises.has(ex.name ?? '')}
             delay={startDelay + i * 0.06}
           />

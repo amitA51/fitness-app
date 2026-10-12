@@ -21,11 +21,12 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { WorkoutComparison } from '../components/fitness/WorkoutComparison';
 import { Card } from '../components/ui/Card';
 import EmptyState from '../components/ui/EmptyState';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { isCardioSession } from '../utils/cardio';
 import {
   formatDuration,
   formatHebrewDate,
@@ -34,6 +35,7 @@ import {
 } from '../utils/dateUtils';
 import { logger } from '../utils/logger';
 import { computeSessionStats } from '../utils/workoutMath';
+import CardioDetail from './cardio/CardioDetail';
 import { SectionCard } from './progress/components/SectionCard';
 import { DetailSkeleton } from './workout-detail/DetailSkeleton';
 import { ExerciseCard } from './workout-detail/ExerciseCard';
@@ -45,6 +47,8 @@ import { useWorkoutDetail } from './workout-detail/useWorkoutDetail';
 export default function WorkoutDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const justSaved = !!(location.state as { justSaved?: boolean } | null)?.justSaved;
   const reduceMotion = useReducedMotion() ?? false;
 
   const { session, previousSession, loading, error } = useWorkoutDetail(id);
@@ -102,6 +106,11 @@ export default function WorkoutDetail() {
         />
       </div>
     );
+  }
+
+  // A run / ride / swim has its own screen: distance, pace, splits, route.
+  if (isCardioSession(session)) {
+    return <CardioDetail session={session} justSaved={justSaved} onBack={handleBack} />;
   }
 
   // Exclude warmups from the displayed set/rep tally — warmups are ramp-ups,

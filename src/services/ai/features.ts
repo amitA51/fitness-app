@@ -4,6 +4,7 @@
 
 import type { WorkoutSession } from '../../types';
 import type { MacroNutrients } from '../../types';
+import { UNIT_KM, cardioEffortOf, formatKm } from '../../utils/cardio';
 import { exerciseVolume, sessionVolume } from '../../utils/workoutMath';
 import type { RecoveryLog } from '../bodyStatsService';
 import { buildContext, buildSystemPrompt } from './contextBuilder';
@@ -114,6 +115,12 @@ export async function generateWorkoutSummary(session: WorkoutSession): Promise<s
 
   const exerciseSummary = exercises
     .map((ex) => {
+      // A run is distance and time, not "0 kg of volume".
+      const effort = cardioEffortOf(ex);
+      if (effort) {
+        const km = effort.distanceKm > 0 ? `${formatKm(effort.distanceKm)} ${UNIT_KM} · ` : '';
+        return `${ex.exerciseName}: ${km}${Math.round(effort.durationSec / 60)} דק׳`;
+      }
       const vol = exerciseVolume(ex);
       return `${ex.exerciseName}: ${vol.toLocaleString()} ק"ג נפח`;
     })

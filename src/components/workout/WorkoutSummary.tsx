@@ -22,12 +22,20 @@ import {
 import { exportWorkoutHistoryCSV } from '../../services/exportService';
 import { calculatePRsFromHistory, countSessionPRs } from '../../services/prService';
 import type { WorkoutSession } from '../../types';
+import {
+  type CardioEffort,
+  cardioActivityConfig,
+  cardioDistance,
+  cardioEffortsOf,
+  cardioPace,
+} from '../../utils/cardio';
 import { triggerHapticEffect, vibratePattern } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
 import { HE_NOUNS, pluralizeHe } from '../../utils/pluralizeHe';
 import { formatDuration } from '../../utils/workoutFormatters';
 import { computeSessionStats, setVolume } from '../../utils/workoutMath';
-import { shareWorkoutCard } from '../../utils/workoutShareCard';
+import { type WorkoutShareStats, shareWorkoutCard } from '../../utils/workoutShareCard';
+import { cardioEffortText } from '../cardio/CardioEffortLine';
 import { MuscleMap } from '../fitness/MuscleMap';
 import { showToast } from '../ui/GlobalToast';
 import { ModalOverlay } from '../ui/ModalOverlay';
@@ -74,7 +82,12 @@ interface ComputedStats {
     setsCompleted: number;
     totalVolume: number;
     bestSet?: { weight: number; reps: number };
+    cardioLine?: string;
   }[];
+  /** "הליכון 20:00 · 3.2 ק״מ" for the share receipt; empty without cardio. */
+  cardioReceipt: string;
+  /** Share-card hero for a cardio-only workout (distance + pace). */
+  cardioHero: WorkoutShareStats['hero'] | null;
 }
 
 const computeStats = (session: Partial<WorkoutSession>): ComputedStats => {
@@ -92,7 +105,34 @@ const computeStats = (session: Partial<WorkoutSession>): ComputedStats => {
   const durationSec = session.duration && session.duration > 0 ? session.duration : 0;
   const duration = Math.round(durationSec / 60);
 
-  return { totalVolume, totalSets, totalReps, duration, durationSec, exerciseCount, exerciseStats };
+  // Cardio exercises read "20:00 · 3.2 ק״מ", not "1 סט · 0 ק״ג × 0".
+  const cardio = cardioEffortsOf({ exercises: session.exercises ?? [] });
+  const cardioByName = new Map(cardio.map((e) => [e.exerciseName, cardioEffortText(e)]));
+  const cardioReceipt = cardio
+    .map((e) => `${cardioActivityConfig(e.activity).label} ${cardioEffortText(e)}`)
+    .join(' · ');
+  const first = cardio[0];
+  const firstDist = first ? cardioDistance(first.activity, first.distanceKm) : null;
+  const firstPace = first ? cardioPace(first.activity, first.distanceKm, first.durationSec) : null;
+  const cardioHero = firstDist
+    ? {
+        value: firstDist.value,
+        label: `${firstDist.unit} ${cardioActivityConfig((first as CardioEffort).activity).label}`,
+        secondary: firstPace ? { value: firstPace.value, label: firstPace.unit } : undefined,
+      }
+    : null;
+
+  return {
+    totalVolume,
+    totalSets,
+    totalReps,
+    duration,
+    durationSec,
+    exerciseCount,
+    exerciseStats: exerciseStats.map((e) => ({ ...e, cardioLine: cardioByName.get(e.name ?? '') })),
+    cardioReceipt,
+    cardioHero,
+  };
 };
 
 // ============================================================
@@ -433,7 +473,13 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
     // the session's standout best-set — instead of a bare receipt line. The
     // receipt (duration · volume · sets) always follows so the share still
     // carries the full numbers.
-    const receipt = `אימון · ${formatDuration(stats.durationSec)} · ${stats.totalVolume.toLocaleString()} ק"ג · ${pluralizeHe(stats.totalSets, HE_NOUNS.set)}`;
+    const liftReceipt =
+      stats.totalVolume > 0
+        ? ` · ${stats.totalVolume.toLocaleString()} ק"ג · ${pluralizeHe(stats.totalSets, HE_NOUNS.set)}`
+        : '';
+    const receipt = `אימון · ${formatDuration(stats.durationSec)}${liftReceipt}${
+      stats.cardioReceipt ? ` · ${stats.cardioReceipt}` : ''
+    }`;
 
     let headline: string | null = null;
     if (prsCount > 0) {
@@ -470,6 +516,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
       totalSets: stats.totalSets,
       durationSec: stats.durationSec,
       prsCount,
+      hero: stats.totalVolume > 0 ? undefined : (stats.cardioHero ?? undefined),
     });
     if (result === 'unsupported') {
       await handleShare();

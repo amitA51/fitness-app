@@ -5,7 +5,9 @@
 // workout sessions (read via coachApi, RLS-gated to an active link). Pure
 // `computeClientAnalytics` is unit-testable; `getClientAnalytics` fetches first.
 
+import type { WorkoutSession } from '../../types';
 import type { CoachClient } from '../../types/coach';
+import { type CardioDiscipline, type DatedEffort, datedEfforts } from '../../utils/cardio';
 import { logger } from '../../utils/logger';
 import { listCoachAssignments } from './assignmentService';
 import { getClientNutrition, getClientSessions, getClientsActivity } from './coachApi';
@@ -29,6 +31,71 @@ export interface ClientAnalytics {
   /** Total volume per week for the last 4 weeks, oldest → newest. */
   volumeByWeek: number[];
   level: ClientStatusLevel;
+  /**
+   * Cardio of the last 4 weeks per discipline (runs, walks, rides…). Only the
+   * per-client read fills it — the roster read carries no exercises.
+   */
+  cardioLast4Weeks?: CardioPeriodTotal[];
+}
+
+// ---- Cardio totals ----------------------------------------------------------
+// A run is stored as an ordinary session with zero lifting volume. Volume
+// sums stay lifting-only (a 0 adds nothing to a sum); the cardio side of the
+// same period is reported here as distance + time instead.
+
+/** Cardio of one discipline over a period. */
+export interface CardioPeriodTotal {
+  discipline: CardioDiscipline;
+  /** Recorded efforts (a run, a ride, a treadmill block inside a gym session). */
+  count: number;
+  distanceKm: number;
+  durationSec: number;
+}
+
+/** Display order: the disciplines a coach asks about most come first. */
+const DISCIPLINE_ORDER: readonly CardioDiscipline[] = [
+  'running',
+  'walking',
+  'cycling',
+  'rowing',
+  'swimming',
+  'other',
+];
+
+/**
+ * Sum the completed cardio efforts that pass `include`, one row per discipline
+ * that has any, in DISCIPLINE_ORDER. Pure.
+ */
+export function summarizeCardio(
+  sessions: readonly WorkoutSession[],
+  include: (effort: DatedEffort) => boolean
+): CardioPeriodTotal[] {
+  const totals = new Map<CardioDiscipline, CardioPeriodTotal>();
+  for (const e of datedEfforts(sessions)) {
+    if (!include(e)) continue;
+    const t = totals.get(e.discipline) ?? {
+      discipline: e.discipline,
+      count: 0,
+      distanceKm: 0,
+      durationSec: 0,
+    };
+    totals.set(e.discipline, {
+      ...t,
+      count: t.count + 1,
+      distanceKm: t.distanceKm + e.distanceKm,
+      durationSec: t.durationSec + e.durationSec,
+    });
+  }
+  return DISCIPLINE_ORDER.flatMap((d) => totals.get(d) ?? []);
+}
+
+/** Cardio of the trailing `weeks` × 7 days — the same window as `volumeByWeek`. */
+export function cardioLastWeeks(
+  sessions: readonly WorkoutSession[],
+  weeks = 4,
+  now: number = Date.now()
+): CardioPeriodTotal[] {
+  return summarizeCardio(sessions, (e) => e.at <= now && now - e.at < weeks * 7 * DAY);
 }
 
 // ---- Week adherence (per-day breakdown for the trailing 7 days) ------------
@@ -213,7 +280,11 @@ export async function getClientAnalytics(
   inactiveDays = 7
 ): Promise<ClientAnalytics> {
   const sessions = await getClientSessions(clientId, 100);
-  return computeClientAnalytics(sessions, inactiveDays);
+  const now = Date.now();
+  return {
+    ...computeClientAnalytics(sessions, inactiveDays, now),
+    cardioLast4Weeks: cardioLastWeeks(sessions, 4, now),
+  };
 }
 
 /**

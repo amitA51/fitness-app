@@ -52,4 +52,18 @@
     <uses-permission
         android:name="android.permission.SCHEDULE_EXACT_ALARM"
         tools:node="remove" />
+
+    <!--
+      @capacitor-community/background-geolocation (live run tracking) declares
+      fine/coarse location, FOREGROUND_SERVICE(_LOCATION) and POST_NOTIFICATIONS,
+      and a "location" foreground service with a visible notification. It never
+      asks for ACCESS_BACKGROUND_LOCATION: tracking runs only while that
+      notification is showing. Its gps <uses-feature> would hide the app from
+      devices without GPS in Play; the app works without it (time-only cardio),
+      so it is made optional.
+    -->
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false"
+        tools:replace="android:required" />
 </manifest>

@@ -13,7 +13,7 @@
 // ============================================================================
 
 import { logger } from '../utils/logger';
-import { getCapacitorPlugin, getPlatform, isNativePlatform } from '../utils/platform';
+import { getPlatform, isNativePlatform, loadCapacitorPlugin } from '../utils/platform';
 import { getRestDays } from '../utils/restDays';
 import {
   INACTIVITY_NUDGE_ID,
@@ -55,9 +55,10 @@ export type ReminderPermission = 'granted' | 'denied' | 'unsupported';
  */
 const SESSION_SCAN_LIMIT = 30;
 
-function reminderPlugin(): LocalNotificationsLike | undefined {
+/** Boxed — a plugin proxy is thenable, so it must never be a promise's value. */
+async function reminderPlugin(): Promise<{ plugin: LocalNotificationsLike } | undefined> {
   if (!isNativePlatform()) return undefined;
-  return getCapacitorPlugin<LocalNotificationsLike>('LocalNotifications');
+  return loadCapacitorPlugin<LocalNotificationsLike>('LocalNotifications');
 }
 
 /**
@@ -68,7 +69,7 @@ function reminderPlugin(): LocalNotificationsLike | undefined {
  * still save the choice (it applies in the Android app).
  */
 export async function requestReminderPermission(): Promise<ReminderPermission> {
-  const plugin = reminderPlugin();
+  const plugin = (await reminderPlugin())?.plugin;
   if (!plugin) return 'unsupported';
   try {
     const current = await plugin.checkPermissions();
@@ -143,7 +144,7 @@ function rememberNudge(plan: ReminderRequest[], previous: string | null): void {
  * Never throws — a failed resync must not break an app open or a workout save.
  */
 export async function syncReminders(): Promise<void> {
-  const plugin = reminderPlugin();
+  const plugin = (await reminderPlugin())?.plugin;
   if (!plugin) return; // Web/PWA: nothing on the device can hold a schedule.
 
   try {

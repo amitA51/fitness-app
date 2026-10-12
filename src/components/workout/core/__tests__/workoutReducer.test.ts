@@ -982,6 +982,33 @@ describe('workoutReducer', () => {
       expect(next.exercises[1]!.sets![0]!.weight).toBe(50);
     });
 
+    it('writes and clears cardio fields (time, distance, incline) on a set', () => {
+      // Arrange — a treadmill set gets 20:00 and 3.2 km, then the distance is emptied
+      const withCardio = apply(baseState, {
+        type: 'EDIT_SPECIFIC_SET',
+        payload: {
+          exerciseIndex: 0,
+          setIndex: 0,
+          updates: { duration: 1200, distanceKm: 3.2, inclinePct: 5 },
+        },
+      });
+
+      // Act
+      const cleared = apply(withCardio, {
+        type: 'EDIT_SPECIFIC_SET',
+        payload: { exerciseIndex: 0, setIndex: 0, updates: { distanceKm: undefined } },
+      });
+
+      // Assert
+      expect(withCardio.exercises[0]!.sets![0]).toMatchObject({
+        duration: 1200,
+        distanceKm: 3.2,
+        inclinePct: 5,
+      });
+      expect(cleared.exercises[0]!.sets![0]!.distanceKm).toBeUndefined();
+      expect(cleared.exercises[0]!.sets![0]!.duration).toBe(1200);
+    });
+
     it('is a no-op when the target exercise does not exist', () => {
       const next = apply(baseState, {
         type: 'EDIT_SPECIFIC_SET',

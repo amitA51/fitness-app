@@ -79,6 +79,8 @@ export function useTemplates() {
         restSeconds: ex.restSeconds,
         order: i,
         notes: '',
+        ...(ex.targetDurationSec ? { targetDurationSec: ex.targetDurationSec } : {}),
+        ...(ex.targetDistanceKm ? { targetDistanceKm: ex.targetDistanceKm } : {}),
       })),
     []
   );
@@ -174,6 +176,8 @@ export function useTemplates() {
       restSeconds: ex.restSeconds,
       order: i,
       notes: ex.notes,
+      ...(ex.targetDurationSec ? { targetDurationSec: ex.targetDurationSec } : {}),
+      ...(ex.targetDistanceKm ? { targetDistanceKm: ex.targetDistanceKm } : {}),
     }));
     const newTemplate = await createWorkoutTemplate({
       name: `העתק של ${template.name}`,

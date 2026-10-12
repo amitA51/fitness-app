@@ -9,6 +9,7 @@
 
 import type { BodyWeightEntry, WorkoutSession, WorkoutTemplate } from '../../types';
 import { logger } from '../../utils/logger';
+import { completedSetsVolume } from '../../utils/workoutMath';
 import { getCurrentUser } from '../supabaseAuth';
 import type { BodyMeasurement, NutritionLog, PersonalRecordRow } from '../supabaseSyncMappers';
 import {
@@ -19,18 +20,13 @@ import {
 import { writeAudit } from './auditService';
 import { requireClient } from './mappers';
 
-/** Sum reps×weight across all sets of all exercises — the canonical totalVolume. */
-const computeTotalVolume = (exercises: WorkoutSession['exercises']): number => {
-  let total = 0;
-  for (const ex of exercises ?? []) {
-    for (const set of ex.sets ?? []) {
-      const reps = typeof set.reps === 'number' ? set.reps : 0;
-      const weight = typeof set.weight === 'number' ? set.weight : 0;
-      total += reps * weight;
-    }
-  }
-  return total;
-};
+/**
+ * Working volume of completed sets — the same rule every other screen uses
+ * (warm-ups, unfinished sets and cardio count 0), so the stored total_volume
+ * agrees with what the trainee and the coach see.
+ */
+const computeTotalVolume = (exercises: WorkoutSession['exercises']): number =>
+  (exercises ?? []).reduce((sum, ex) => sum + completedSetsVolume(ex.sets), 0);
 
 // ---- READS -----------------------------------------------------------------
 
@@ -40,6 +36,9 @@ export const getClientSessions = async (
   opts?: { throwOnError?: boolean }
 ): Promise<WorkoutSession[]> => {
   const supabase = requireClient();
+  // `exercises` carries cardio too (time/distance per set). `status` is NOT
+  // selected: its column ships in 20260728120000_workout_sessions_status_template,
+  // which may not be live yet — toCanonicalSession derives it from end_time.
   const { data, error } = await supabase
     .from('workout_sessions')
     .select(

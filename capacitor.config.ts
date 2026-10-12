@@ -15,7 +15,13 @@ const config = {
   ios: {
     contentInset: 'always',
   },
-  android: {},
+  android: {
+    // @capacitor-community/background-geolocation (live run tracking): the
+    // modern WebMessage bridge stops delivering location callbacks after ~5
+    // minutes with the screen off, which would freeze a run's distance. The
+    // plugin's documented fix is the legacy bridge.
+    useLegacyBridge: true,
+  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 0,

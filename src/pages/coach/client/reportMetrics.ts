@@ -5,9 +5,17 @@
 // (ClientReport.tsx). Pure functions only — no fetching, no clock side
 // effects beyond the injectable `now` — so they stay unit-testable.
 
+import { type CardioPeriodTotal, summarizeCardio } from '../../../services/coach/coachAnalytics';
 import type { NutritionLog, PersonalRecordRow } from '../../../services/supabaseSyncMappers';
-import type { BodyWeightEntry, WorkoutSession } from '../../../types';
+import type { BodyWeightEntry, CardioActivity, WorkoutSession } from '../../../types';
 import type { Assignment } from '../../../types/coach';
+import {
+  type CardioDiscipline,
+  type ValueWithUnit,
+  cardioDistance,
+  formatClock,
+} from '../../../utils/cardio';
+import { HE_NOUNS, pluralizeHe } from '../../../utils/pluralizeHe';
 
 /** Inclusive local-date window; both ends are YYYY-MM-DD strings. */
 export interface ReportRange {
@@ -55,6 +63,72 @@ export function computeTrainingSummary(
     totalVolume += Number.isFinite(s.totalVolume) ? s.totalVolume : 0;
   }
   return { sessionCount, totalVolume };
+}
+
+// ---- Cardio -------------------------------------------------------------------
+
+/** Cardio per discipline inside the range — runs, walks, rides, treadmill blocks. */
+export function computeCardioSummary(
+  sessions: readonly WorkoutSession[],
+  range: ReportRange
+): CardioPeriodTotal[] {
+  return summarizeCardio(sessions, (e) => isInRange(e.date, range));
+}
+
+interface DisciplineCopy {
+  label: string;
+  /** Activity whose distance unit the discipline reports in (km, or m in the pool). */
+  unitOf: CardioActivity;
+  /** What one effort is called when counted: "3 ריצות", "2 אימונים". */
+  noun: { one: string; many: string; oneWord: string };
+}
+
+const DISCIPLINE_COPY: Record<CardioDiscipline, DisciplineCopy> = {
+  running: { label: 'ריצה', unitOf: 'run', noun: { one: 'ריצה', many: 'ריצות', oneWord: 'אחת' } },
+  walking: {
+    label: 'הליכה',
+    unitOf: 'walk',
+    noun: { one: 'הליכה', many: 'הליכות', oneWord: 'אחת' },
+  },
+  cycling: {
+    label: 'רכיבה',
+    unitOf: 'cycle',
+    noun: { one: 'רכיבה', many: 'רכיבות', oneWord: 'אחת' },
+  },
+  rowing: { label: 'חתירה', unitOf: 'row', noun: HE_NOUNS.workout },
+  swimming: { label: 'שחייה', unitOf: 'swim', noun: HE_NOUNS.workout },
+  other: { label: 'אירובי אחר', unitOf: 'other', noun: HE_NOUNS.workout },
+};
+
+/** One discipline's period total, split so the numbers can render LTR. */
+export interface CardioTotalParts {
+  label: string;
+  distance: ValueWithUnit | null;
+  /** "ב־3 ריצות" / "בריצה אחת". */
+  countText: string;
+  /** Total moving time "1:42:10", or null when only distance was logged. */
+  clock: string | null;
+}
+
+export function cardioTotalParts(total: CardioPeriodTotal): CardioTotalParts {
+  const copy = DISCIPLINE_COPY[total.discipline];
+  const counted = pluralizeHe(total.count, copy.noun);
+  return {
+    label: copy.label,
+    distance: cardioDistance(copy.unitOf, total.distanceKm),
+    // The prefix joins a word directly ("בריצה") and a numeral with a maqaf ("ב־3").
+    countText: total.count === 1 ? `ב${counted}` : `ב־${counted}`,
+    clock: total.durationSec > 0 ? formatClock(total.durationSec) : null,
+  };
+}
+
+/** "ריצה: 18.4 ק״מ ב־3 ריצות · 1:42:10"; without distance "אירובי אחר: 45:00 ב־2 אימונים". */
+export function cardioTotalText(total: CardioPeriodTotal): string {
+  const p = cardioTotalParts(total);
+  // A recorded effort always has a distance or a time (cardioSetHasData).
+  const lead = p.distance ? `${p.distance.value} ${p.distance.unit}` : (p.clock ?? '');
+  const time = p.distance && p.clock ? ` · ${p.clock}` : '';
+  return `${p.label}: ${lead} ${p.countText}${time}`;
 }
 
 // ---- Body weight ------------------------------------------------------------
@@ -153,6 +227,8 @@ export interface ShareSummaryInput {
   weightTrend: WeightTrend | null;
   prCount: number;
   nutrition: NutritionSummary;
+  /** Cardio per discipline in the window (omit or [] when none). */
+  cardio?: readonly CardioPeriodTotal[];
 }
 
 /**
@@ -167,6 +243,7 @@ export function buildShareSummary(input: ShareSummaryInput): string {
   if (training.totalVolume > 0) {
     lines.push(`נפח כולל: ${Math.round(training.totalVolume).toLocaleString('he-IL')} ק"ג`);
   }
+  for (const total of input.cardio ?? []) lines.push(cardioTotalText(total));
   if (weightTrend) {
     const sign = weightTrend.delta > 0 ? '+' : '';
     lines.push(`שינוי משקל: ${sign}${weightTrend.delta} ק"ג`);

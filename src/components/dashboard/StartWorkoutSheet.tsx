@@ -1,4 +1,4 @@
-import { ChevronLeft, Dumbbell, LayoutList, RotateCcw, Sparkles } from 'lucide-react';
+import { ChevronLeft, Dumbbell, Footprints, LayoutList, RotateCcw, Sparkles } from 'lucide-react';
 import { type ReactNode, memo } from 'react';
 import { useIsRTL } from '../../hooks/useIsRTL';
 import type { WorkoutTemplate } from '../../types';
@@ -16,6 +16,8 @@ interface StartWorkoutSheetProps {
   onPickTemplate: () => void;
   /** Start a blank workout with no template. */
   onEmptyWorkout: () => void;
+  /** Open the running / cardio screen. */
+  onCardio: () => void;
 }
 
 interface StartOptionProps {
@@ -114,6 +116,7 @@ export const StartWorkoutSheet = memo(function StartWorkoutSheet({
   onContinueLast,
   onPickTemplate,
   onEmptyWorkout,
+  onCardio,
 }: StartWorkoutSheetProps) {
   const hasLast = Boolean(lastUsedTemplate);
 
@@ -170,6 +173,14 @@ export const StartWorkoutSheet = memo(function StartWorkoutSheet({
             title="אימון ריק"
             subtitle="הוסיפו תרגילים תוך כדי — למתקדמים"
             onClick={onEmptyWorkout}
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <StartOption
+            icon={<Footprints size={20} strokeWidth={2} aria-hidden="true" />}
+            title="ריצה או אירובי"
+            subtitle="ריצה, הליכה, רכיבה, הליכון ועוד — עם שעון ו־GPS"
+            onClick={onCardio}
           />
         </StaggerItem>
       </Stagger>

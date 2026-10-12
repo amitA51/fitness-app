@@ -12,6 +12,7 @@ import { Sheet } from '../../../components/ui/Sheet';
 import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import { getPersonalExercises } from '../../../services/workoutDb';
 import type { PersonalExercise, WorkoutTemplate } from '../../../types';
+import { isCardioExercise } from '../../../utils/cardio';
 
 export interface TemplateExerciseInput {
   exerciseId?: string;
@@ -20,6 +21,9 @@ export interface TemplateExerciseInput {
   targetSets: number;
   targetReps: number;
   restSeconds: number;
+  /** Cardio prescription from a coach's program — kept through edit/save. */
+  targetDurationSec?: number;
+  targetDistanceKm?: number;
 }
 
 type DraftTemplateExercise = TemplateExerciseInput & { clientId: string };
@@ -40,6 +44,8 @@ const toDraft = (template?: WorkoutTemplate): DraftTemplateExercise[] =>
     targetSets: ex.targetSets,
     targetReps: ex.targetReps,
     restSeconds: ex.restSeconds,
+    targetDurationSec: ex.targetDurationSec,
+    targetDistanceKm: ex.targetDistanceKm,
   }));
 
 export function CreateTemplateModal({ template, onClose, onCreate }: CreateTemplateModalProps) {
@@ -107,7 +113,8 @@ export function CreateTemplateModal({ template, onClose, onCreate }: CreateTempl
         exerciseName: exName,
         targetMuscle: exercise.targetMuscle ?? exercise.muscleGroup ?? '',
         targetSets: exercise.defaultSets ?? 3,
-        targetReps: 10,
+        // Cardio is logged as time + distance; a rep target means nothing there.
+        targetReps: isCardioExercise(exercise) ? 0 : 10,
         restSeconds: exercise.defaultRestTime ?? 60,
       },
     ]);
@@ -275,7 +282,9 @@ export function CreateTemplateModal({ template, onClose, onCreate }: CreateTempl
                         color: 'var(--fs-heading)',
                       }}
                     >
-                      {ex.targetSets}×{ex.targetReps}
+                      {isCardioExercise({ exerciseName: ex.exerciseName })
+                        ? 'זמן ומרחק'
+                        : `${ex.targetSets}×${ex.targetReps}`}
                     </span>
                     <span
                       className="whitespace-nowrap"

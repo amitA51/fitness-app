@@ -21,8 +21,16 @@ import { ChevronDown, ChevronUp, Clock, Dumbbell, Search } from 'lucide-react';
 import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { WorkoutExercise, WorkoutSession } from '../../../types';
+import {
+  cardioActivityConfig,
+  cardioEffortOf,
+  cardioEffortsOf,
+  isCardioSession,
+  sessionCardioTotals,
+} from '../../../utils/cardio';
 import { formatDate, formatDuration, formatVolume } from '../../../utils/workoutFormatters';
 import { setVolume } from '../../../utils/workoutMath';
+import { CardioEffortLine } from '../../cardio/CardioEffortLine';
 import { Card } from '../../ui/Card';
 import { SkeletonBox } from '../../ui/SkeletonLoader';
 
@@ -86,12 +94,15 @@ const computeStats = (completed: WorkoutSession[]): HistoryStats => {
   const monthAgo = now - 30 * 86400000;
 
   let totalVolume = 0;
+  let liftingSessions = 0;
   let totalDurationMin = 0;
   let workoutsThisWeek = 0;
   let workoutsThisMonth = 0;
 
   for (const session of completed) {
     totalVolume += session.totalVolume || 0;
+    // Average lifting volume is over lifting sessions: a run is not a 0-kg workout.
+    if (!isCardioSession(session)) liftingSessions += 1;
 
     if (session.duration > 0) {
       totalDurationMin += session.duration / 60;
@@ -108,7 +119,7 @@ const computeStats = (completed: WorkoutSession[]): HistoryStats => {
   const count = completed.length;
   return {
     totalWorkouts: count,
-    averageVolume: count > 0 ? Math.round(totalVolume / count) : 0,
+    averageVolume: liftingSessions > 0 ? Math.round(totalVolume / liftingSessions) : 0,
     averageDuration: count > 0 ? Math.round(totalDurationMin / count) : 0,
     workoutsThisWeek,
     workoutsThisMonth,
@@ -116,7 +127,14 @@ const computeStats = (completed: WorkoutSession[]): HistoryStats => {
   };
 };
 
-const sessionTitle = (session: WorkoutSession): string =>
+const sessionTitle = (session: WorkoutSession): string => {
+  // A run reads "ריצה", not the catalog's bilingual "ריצה | Running".
+  const cardio = isCardioSession(session) ? cardioEffortsOf(session)[0] : undefined;
+  if (cardio) return cardioActivityConfig(cardio.activity).label;
+  return legacyTitle(session);
+};
+
+const legacyTitle = (session: WorkoutSession): string =>
   session.exercises[0]?.exerciseName ||
   session.exercises[0]?.name ||
   (session.templateId ? 'אימון מתבנית' : 'אימון חופשי');
@@ -178,6 +196,46 @@ const ExerciseLine = memo(function ExerciseLine({
 }) {
   const workingSets = (exercise.sets || []).filter((s) => !s.isWarmup && s.isCompleted);
   const name = exercise.exerciseName || exercise.name || 'תרגיל';
+  const cardio = cardioEffortOf(exercise);
+
+  if (cardio) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          padding: '6px 0',
+          gap: 8,
+          borderBottom: withDivider ? '1px dashed var(--fs-surface-2)' : 'none',
+        }}
+      >
+        <span
+          className="line-clamp-1"
+          style={{
+            flex: 1,
+            minWidth: 0,
+            fontFamily: 'var(--font-hebrew)',
+            fontSize: 13,
+            fontWeight: 600,
+            color: 'var(--fs-ink)',
+          }}
+        >
+          {name}
+        </span>
+        <span
+          style={{
+            flexShrink: 0,
+            fontFamily: 'var(--font-body)',
+            fontSize: 12,
+            color: 'var(--fs-muted)',
+          }}
+        >
+          <CardioEffortLine effort={cardio} />
+        </span>
+      </div>
+    );
+  }
 
   if (workingSets.length === 0) {
     return (
@@ -283,6 +341,9 @@ const SessionRow = memo(function SessionRow({
   const durationLabel = session.duration > 0 ? formatDuration(session.duration) : '--';
   const sets = completedSetCount(session);
   const visibleExercises = exercises.slice(0, MAX_EXPANDED_EXERCISES);
+  const cardioOnly = isCardioSession(session);
+  const cardioTotals = cardioOnly ? sessionCardioTotals(session) : null;
+  const firstCardio = cardioOnly ? cardioEffortsOf(session)[0] : undefined;
   const detailsId = `workout-row-${session.id}`;
 
   return (
@@ -347,12 +408,25 @@ const SessionRow = memo(function SessionRow({
               whiteSpace: 'nowrap',
             }}
           >
-            {exercises.length} תרגילים
-            <span style={{ color: 'var(--fs-surface-2)', margin: '0 4px' }}>·</span>
-            <span style={{ color: 'var(--fs-accent)' }} className="kinetic-number" dir="ltr">
-              {formatVolume(session.totalVolume || 0)}
-            </span>{' '}
-            ק"ג
+            {cardioTotals && firstCardio ? (
+              <CardioEffortLine
+                effort={{
+                  activity: firstCardio.activity,
+                  distanceKm: cardioTotals.distanceKm,
+                  durationSec: cardioTotals.durationSec,
+                }}
+                withPace={false}
+              />
+            ) : (
+              <>
+                {exercises.length} תרגילים
+                <span style={{ color: 'var(--fs-surface-2)', margin: '0 4px' }}>·</span>
+                <span style={{ color: 'var(--fs-accent)' }} className="kinetic-number" dir="ltr">
+                  {formatVolume(session.totalVolume || 0)}
+                </span>{' '}
+                ק"ג
+              </>
+            )}
           </span>
           {hasExercises &&
             (isExpanded ? (
@@ -389,7 +463,7 @@ const SessionRow = memo(function SessionRow({
               <Clock size={12} aria-hidden="true" />
               {durationLabel}
             </span>
-            <span>{sets} סטים</span>
+            {!cardioOnly && <span>{sets} סטים</span>}
           </div>
 
           {hasExercises &&

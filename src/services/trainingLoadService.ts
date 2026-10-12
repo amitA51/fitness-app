@@ -1,4 +1,5 @@
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../types';
+import { cardioEffortsOf } from '../utils/cardio';
 import { completedSetsVolume } from '../utils/workoutMath';
 import { type RecoveryLog, calculateRecoveryScore } from './bodyStatsService';
 import {
@@ -338,7 +339,10 @@ export function calculateTrainingLoad(
   const loadSpikePenalty = Math.max(0, acuteChronicRatio - 1) * 35;
   const rpePenalty = averageRPE !== null && averageRPE > 8 ? (averageRPE - 8) * 12 : 0;
   const frequencyPenalty = weeklySessions.length >= 6 ? 10 : 0;
-  const noVolumePenalty = weeklyVolume === 0 ? 25 : 0;
+  // Load stays a lifting measure (kg × RPE), but a week of runs is not "no
+  // training": cardio sessions lift the empty-week penalty and label.
+  const trainedCardio = weeklySessions.some((s) => cardioEffortsOf(s).length > 0);
+  const noVolumePenalty = weeklyVolume === 0 && !trainedCardio ? 25 : 0;
   const fatigueScore = clamp(
     Math.round(
       recoveryPenalty + loadSpikePenalty + rpePenalty + frequencyPenalty + noVolumePenalty
@@ -350,7 +354,8 @@ export function calculateTrainingLoad(
   const primaryConstraint = getPrimaryConstraint({
     averageRPE,
     recoveryScore,
-    weeklyVolume,
+    // A cardio-only week is training, not a low-volume week.
+    weeklyVolume: trainedCardio && weeklyVolume === 0 ? 1 : weeklyVolume,
     volumeChangePercent,
   });
   const latestRecovery = [...recoveryLogs].sort((a, b) => b.date.localeCompare(a.date))[0];

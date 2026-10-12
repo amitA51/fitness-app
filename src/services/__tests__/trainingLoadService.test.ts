@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../../types';
+import { buildCardioSession } from '../../utils/cardio';
 import type { RecoveryLog } from '../bodyStatsService';
 import { calculateTrainingLoad } from '../trainingLoadService';
 
@@ -151,6 +152,27 @@ describe('calculateTrainingLoad', () => {
     expect(load.weeklyVolume).toBe(0);
     expect(load.chronicLoad).toBe(0);
     expect(load.acuteLoad).toBe(0);
+  });
+
+  it('does not read a week of runs as "no training" (no empty-week penalty or label)', () => {
+    // Arrange — the same empty-lifting week, once with nothing and once with two runs
+    const now = new Date('2026-04-26T12:00:00.000Z');
+    const run = (daysAgo: number) =>
+      buildCardioSession({
+        activity: 'run',
+        startTime: new Date(now.getTime() - daysAgo * 86_400_000).toISOString(),
+        durationSec: 1800,
+        distanceKm: 6,
+      });
+
+    // Act
+    const idle = calculateTrainingLoad([], [], { now });
+    const runner = calculateTrainingLoad([run(1), run(3)], [], { now });
+
+    // Assert — lifting volume is still 0, but the runner is not penalised for it
+    expect(runner.weeklyVolume).toBe(0);
+    expect(runner.fatigueScore).toBe(idle.fatigueScore - 25);
+    expect(runner.primaryConstraint).not.toBe('low_volume');
   });
 
   it('handles sessions where no set is completed', () => {

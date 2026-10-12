@@ -4,7 +4,9 @@
  * exercise-names, week-over-week, PRs) with a consolidated traversal.
  */
 
+import { countsTowardMuscleWork } from '../../services/analytics/shared';
 import type { WorkoutSession } from '../../types';
+import { isCardioExercise } from '../../utils/cardio';
 import { completedSetsVolume, setVolume } from '../../utils/workoutMath';
 
 // Re-export types used by the hook (mirrors analyticsService shapes)
@@ -132,10 +134,16 @@ export function aggregateInsights(
       const inLastWeek = session.date >= lastWeekStartStr && session.date < thisWeekStartStr;
 
       for (const exercise of session.exercises) {
+        // A cardio effort (distance + time, 0 kg) still counts the session as a
+        // training day above, but has no strength progression, no muscle to
+        // neglect and no kg week-over-week delta — skip the per-exercise work.
+        if (isCardioExercise(exercise)) continue;
         exerciseNameSet.add(exercise.exerciseName);
 
-        // Muscle last-trained
-        const muscle = exercise.muscleGroup || exercise.targetMuscle;
+        // Muscle last-trained (the Cardio bucket is not a muscle)
+        const muscle = countsTowardMuscleWork(exercise)
+          ? exercise.muscleGroup || exercise.targetMuscle
+          : '';
         if (muscle) {
           const existing = muscleLastDate.get(muscle);
           if (!existing || session.date > existing) {
@@ -213,7 +221,7 @@ export function aggregateInsights(
     const muscles = new Set<string>();
     latestSession.exercises.forEach((e) => {
       const m = e.muscleGroup || e.targetMuscle;
-      if (m) muscles.add(m);
+      if (m && countsTowardMuscleWork(e)) muscles.add(m);
     });
     let totalVolume = 0;
     for (const exercise of latestSession.exercises) {

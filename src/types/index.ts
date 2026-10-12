@@ -18,6 +18,53 @@ export interface SetSegment {
   reps: number;
 }
 
+// ----------------------------------------------------------------------------
+// CARDIO — runs, walks, rides, machines. A cardio effort is a WorkoutSession
+// like any other: one (or more) exercises whose sets carry time + distance
+// instead of weight × reps. Everything rides inside `workout_sessions.exercises`
+// JSONB, so the cloud schema does not change.
+// ----------------------------------------------------------------------------
+
+/** How an exercise is logged: weight × reps (the default) or as a cardio effort. */
+export type TrackingType = 'weight_reps' | 'cardio';
+
+/** The cardio activity behind an exercise — drives fields, pace style and calories. */
+export type CardioActivity =
+  | 'run'
+  | 'treadmill'
+  | 'walk'
+  | 'hike'
+  | 'cycle'
+  | 'indoor_cycle'
+  | 'row'
+  | 'elliptical'
+  | 'stairs'
+  | 'swim'
+  | 'jump_rope'
+  | 'hiit'
+  | 'other';
+
+/** Optional intent of a run, as runners name it. */
+export type RunType = 'easy' | 'tempo' | 'intervals' | 'long' | 'recovery' | 'race';
+
+/** One kilometre split (the last one may be partial). */
+export interface CardioSplit {
+  /** 1-based index of the kilometre. */
+  index: number;
+  /** Distance of this split, km — 1 except a partial last split. */
+  distanceKm: number;
+  /** Elapsed seconds for this split. */
+  seconds: number;
+}
+
+/** A recorded GPS route, simplified for storage. */
+export interface CardioRoute {
+  /** [latitude, longitude] pairs, simplified to a few hundred points. */
+  points: [number, number][];
+  /** Where the route came from. */
+  source: 'gps';
+}
+
 export interface WorkoutSet {
   id: string;
   setNumber: number;
@@ -30,7 +77,21 @@ export interface WorkoutSet {
   /** Subjective set tag from the RPE picker (technique/near-failure/pain/deload). */
   rpeTag?: RpeTag | null;
   completedAt: string | null;
-  duration?: number; // for timed exercises (e.g., plank)
+  duration?: number; // seconds — timed exercises (plank) and every cardio set
+  /** Cardio: distance of this effort, km (swim/row are entered in metres). */
+  distanceKm?: number;
+  /** Cardio: average heart rate, bpm. */
+  avgHr?: number;
+  /** Cardio: highest heart rate, bpm. */
+  maxHr?: number;
+  /** Cardio: treadmill incline, percent grade. */
+  inclinePct?: number;
+  /** Cardio: elevation gained, metres. */
+  elevationGainM?: number;
+  /** Cardio: calories the user typed from their device (beats our estimate). */
+  calories?: number;
+  /** Cardio: per-kilometre splits (GPS or hand-entered). */
+  splits?: CardioSplit[];
   // Intensity techniques (optional — flipped via SET_TECHNIQUE action)
   isDropSet?: boolean;
   isFailure?: boolean;
@@ -72,6 +133,14 @@ export interface WorkoutExercise {
   targetRestTime?: number;
   tutorialText?: string;
   programExtras?: ProgramExtras;
+  /** Snapshot of how this exercise was logged; absent = weight × reps. */
+  trackingType?: TrackingType;
+  /** Snapshot of the cardio activity (only with trackingType 'cardio'). */
+  cardioActivity?: CardioActivity;
+  /** Optional run intent (easy / tempo / intervals …). */
+  runType?: RunType;
+  /** Recorded GPS route of a live-tracked effort. */
+  route?: CardioRoute;
 }
 
 export interface WorkoutSession {
@@ -139,6 +208,10 @@ export interface WorkoutTemplateExercise {
   sets?: { reps: number; weight: number }[];
   /** Rich program metadata (RPE target, intensity technique, substitutions, notes). */
   programExtras?: ProgramExtras;
+  /** Cardio prescription: target time, seconds (e.g. "20 דקות הליכון"). */
+  targetDurationSec?: number;
+  /** Cardio prescription: target distance, km. */
+  targetDistanceKm?: number;
 }
 
 // ============================================================================
@@ -230,6 +303,10 @@ export interface ExerciseCatalogEntry extends ExerciseClassification {
   imageUrl?: string | null;
   isCustom?: boolean;
   isTimed?: boolean; // e.g., plank - uses duration instead of reps
+  /** How the exercise is logged; absent = weight × reps. */
+  trackingType?: TrackingType;
+  /** The cardio activity, when trackingType is 'cardio'. */
+  cardioActivity?: CardioActivity;
   createdAt?: string;
 }
 
@@ -277,6 +354,10 @@ export interface Exercise {
   imageUrl?: string | null;
   isCustom?: boolean;
   isTimed?: boolean; // e.g., plank - uses duration instead of reps
+  /** How the exercise is logged; absent = weight × reps. */
+  trackingType?: TrackingType;
+  /** The cardio activity, when trackingType is 'cardio'. */
+  cardioActivity?: CardioActivity;
   createdAt?: string;
   // Classification (see ExerciseClassification) — what the movement actually is,
   // used by the library to sort and filter beyond the coarse muscle group.
@@ -299,6 +380,9 @@ export interface Exercise {
   restSeconds?: number;
   order?: number;
   notes?: string;
+  /** Cardio prescription carried from a template: target time (s) / distance (km). */
+  targetDurationSec?: number;
+  targetDistanceKm?: number;
   exerciseId?: string;
   exerciseName?: string;
   isCompleted?: boolean;

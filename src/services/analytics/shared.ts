@@ -2,7 +2,8 @@
 // SPARKOS FITNESS - Analytics Service: shared helpers
 // ============================================================================
 
-import type { WorkoutSession } from '../../types';
+import type { WorkoutExercise, WorkoutSession } from '../../types';
+import { isCardioExercise } from '../../utils/cardio';
 import { pad2 } from '../../utils/dateUtils';
 import {
   completedSetsVolume,
@@ -85,6 +86,31 @@ export function computeSessionStats(session: WorkoutSession): {
 /** Get the muscle key for an exercise: prefer muscleGroup, fallback to targetMuscle. */
 export function getMuscleKey(exercise: { muscleGroup?: string; targetMuscle: string }): string {
   return exercise.muscleGroup || exercise.targetMuscle || 'Unknown';
+}
+
+/** The "Cardio" bucket as the catalog writes it, or as a Hebrew template does. */
+const CARDIO_MUSCLE_KEYS: ReadonlySet<string> = new Set(['cardio', 'קרדיו', 'אירובי']);
+
+/** True for the Cardio bucket — it is not a muscle, so it is never weak or neglected. */
+export function isCardioMuscle(muscle: string | null | undefined): boolean {
+  return CARDIO_MUSCLE_KEYS.has((muscle ?? '').trim().toLowerCase());
+}
+
+/** The fields that decide whether an exercise is cardio and which muscle it trains. */
+export type MuscleWorkExercise = Pick<
+  WorkoutExercise,
+  'muscleGroup' | 'targetMuscle' | 'trackingType' | 'cardioActivity' | 'name' | 'exerciseName'
+>;
+
+/**
+ * Whether an exercise belongs in per-muscle findings (weak, neglected,
+ * imbalance). A cardio effort — a run, a treadmill warm-up — is measured in
+ * distance and time with 0 kg, so it would always read as a zero-volume weak
+ * muscle; moves filed under the Cardio group (burpees, sled push) have no
+ * muscle to flag. Session counts are unaffected: a run is still a training day.
+ */
+export function countsTowardMuscleWork(exercise: MuscleWorkExercise): boolean {
+  return !isCardioExercise(exercise) && !isCardioMuscle(getMuscleKey(exercise));
 }
 
 /** Filter sessions to the last N weeks from now. */

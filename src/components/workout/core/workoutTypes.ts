@@ -12,6 +12,15 @@ import type {
 } from '../../../types';
 
 /**
+ * Fields a set can be edited in place: weight × reps for lifts, and the cardio
+ * fields (time, distance, incline, heart rate) for a cardio exercise logged
+ * inside a strength session. `undefined` on a cardio key clears it.
+ */
+export type SetEditUpdates = Partial<
+  Pick<WorkoutSet, 'weight' | 'reps' | 'duration' | 'distanceKm' | 'inclinePct' | 'avgHr'>
+>;
+
+/**
  * Catalog metadata carried when swapping a live exercise to a LIBRARY movement,
  * so the muscle map, equipment badge and tutorial follow the new movement. The
  * prescription (sets/reps/RPE/rest/technique/notes) is preserved separately.
@@ -203,7 +212,7 @@ export type SetAction =
       payload: {
         exerciseIndex: number;
         setIndex: number;
-        updates: Partial<{ weight: number; reps: number }>;
+        updates: SetEditUpdates;
       };
     }
   // `token` ties a delete to its undo toast: RESTORE_DELETED_SET with a token

@@ -7,7 +7,7 @@
 export type ProgressTab = 'overview' | 'workouts' | 'body' | 'recovery';
 
 /** Secondary segmented control inside the Workouts tab, to de-densify content. */
-export type WorkoutsSubTab = 'history' | 'strength';
+export type WorkoutsSubTab = 'history' | 'strength' | 'cardio';
 
 /** Secondary segmented control inside the Body tab. */
 export type BodySubTab = 'weight' | 'measurements' | 'photos';

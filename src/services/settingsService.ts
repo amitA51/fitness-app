@@ -162,6 +162,9 @@ const BACKUP_SETTINGS_TO_LS: Record<string, string> = {
   // PROGRESS_KEY in services/programProgressService.ts — duplicated as a literal
   // so this module stays free of a service dependency. Keep the two in sync.
   programProgress: 'bbt_program_progress_v1',
+  // Heart-rate settings + weekly distance goal (pages/cardio/cardioPrefs.ts,
+  // CARDIO_PREFS_KEY) — local-only, so the backup is their only copy.
+  cardioPrefs: 'cardio_prefs_v1',
 };
 
 export interface FullBackup {

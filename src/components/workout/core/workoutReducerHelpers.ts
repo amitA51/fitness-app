@@ -1,5 +1,6 @@
 import type { WorkoutSet } from '../../../types';
 import type { WorkoutSettings } from '../../../types';
+import { type CardioLike, isCardioExercise } from '../../../utils/cardio';
 import { DEFAULT_WORKOUT_SETTINGS } from '../hooks/useWorkoutSettings';
 import { resolveActiveSet } from './setHelpers';
 
@@ -64,7 +65,7 @@ export const calculateRestTime = (
     muscleGroup?: string;
     targetRestTime?: number;
     programExtras?: { restTime?: unknown };
-  },
+  } & CardioLike,
   supersetShortRest: number | null,
   isDropSet: boolean,
   // Warmup sets are light ramp-ups — they shouldn't trigger a working-set rest
@@ -72,6 +73,11 @@ export const calculateRestTime = (
   isWarmup = false
 ): number => {
   if (isDropSet || isWarmup) return 0;
+  // A steady cardio block (treadmill, bike) has no rest after it unless the
+  // plan names one; interval cardio carries its own targetRestTime.
+  if (isCardioExercise(exercise) && !exercise.targetRestTime && !exercise.programExtras?.restTime) {
+    return 0;
+  }
 
   let restTime = settings?.defaultRestTime ?? DEFAULT_WORKOUT_SETTINGS.defaultRestTime;
 

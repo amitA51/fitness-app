@@ -8,17 +8,25 @@
 // silently collapse into the same column). On save it recomputes totalVolume
 // (Σ reps×weight) and writes via the audited coach writers. Labels ABOVE inputs,
 // numbers dir="ltr".
+//
+// Cardio (a run, a treadmill block) is READ-ONLY here: the row shows its
+// time/distance and saves back exactly as the trainee logged it. Edited lifts
+// keep every stored field the editor does not show (exercise id, RPE, warm-up,
+// completion time), and an untouched date/duration keeps its exact stored value.
 
 import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { CardioEffortLine } from '../../../components/cardio/CardioEffortLine';
 import { Button } from '../../../components/ui/Button';
 import { showToast } from '../../../components/ui/GlobalToast';
 import { Input } from '../../../components/ui/Input';
 import { Sheet } from '../../../components/ui/Sheet';
 import { createClientSession, updateClientSession } from '../../../services/coach';
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../../../types';
+import { type CardioEffort, cardioEffortOf, isCardioExercise } from '../../../utils/cardio';
 import { todayStr } from '../../../utils/dateUtils';
 import { generateId } from '../../../utils/id';
+import { cardioExerciseName } from './sessionCardio';
 
 interface EditSessionSheetProps {
   clientId: string;
@@ -36,15 +44,24 @@ interface EditableSet {
   id: string;
   reps: string;
   weight: string;
+  /** The stored set this row edits; undefined for a set the coach added. */
+  source?: WorkoutSet;
 }
 
 interface EditableExercise {
   id: string;
   name: string;
   sets: EditableSet[];
+  /** The stored exercise this row edits; undefined for an exercise the coach added. */
+  source?: WorkoutExercise;
+  /** Set for a cardio exercise — shown read-only and saved back unchanged. */
+  cardio?: { effort: CardioEffort | null };
 }
 
 const blankSet = (): EditableSet => ({ id: generateId('set'), reps: '', weight: '' });
+
+const minutesText = (seconds: number | undefined): string =>
+  seconds ? String(Math.round(seconds / SECONDS_PER_MINUTE)) : '';
 
 /**
  * Local-noon ISO timestamp for a picked YYYY-MM-DD date. UTC midnight
@@ -54,44 +71,90 @@ const blankSet = (): EditableSet => ({ id: generateId('set'), reps: '', weight: 
  */
 const localNoonIso = (dateStr: string): string => new Date(`${dateStr}T12:00:00`).toISOString();
 
-const toEditableExercises = (session?: WorkoutSession): EditableExercise[] =>
-  (session?.exercises ?? []).map((ex) => ({
-    id: ex.id || generateId('ex'),
-    name: ex.exerciseName || ex.name || '',
-    sets:
-      ex.sets.length > 0
-        ? ex.sets.map((s) => ({
-            id: s.id || generateId('set'),
-            reps: s.reps ? String(s.reps) : '',
-            weight: s.weight ? String(s.weight) : '',
-          }))
-        : [blankSet()],
-  }));
+export const toEditableExercises = (session?: WorkoutSession): EditableExercise[] =>
+  (session?.exercises ?? []).map((ex) => {
+    const id = ex.id || generateId('ex');
+    if (isCardioExercise(ex)) {
+      return {
+        id,
+        name: cardioExerciseName(ex),
+        sets: [],
+        source: ex,
+        cardio: { effort: cardioEffortOf(ex) },
+      };
+    }
+    return {
+      id,
+      name: ex.exerciseName || ex.name || '',
+      source: ex,
+      sets:
+        ex.sets.length > 0
+          ? ex.sets.map((s) => ({
+              id: s.id || generateId('set'),
+              reps: s.reps ? String(s.reps) : '',
+              weight: s.weight ? String(s.weight) : '',
+              source: s,
+            }))
+          : [blankSet()],
+    };
+  });
 
-/** Build the canonical exercises array (full WorkoutSet shape) from the editor state. */
-const buildExercises = (exercises: EditableExercise[]): WorkoutExercise[] =>
+/** Defaults for a set / exercise the coach adds (nothing stored to keep). */
+const NEW_SET: Omit<WorkoutSet, 'id' | 'setNumber' | 'reps' | 'weight' | 'isCompleted'> = {
+  rpe: null,
+  isWarmup: false,
+  notes: '',
+  completedAt: null,
+};
+
+/**
+ * Build the canonical exercises array (full WorkoutSet shape) from the editor
+ * state. `completedAt` stamps sets the coach ADDS — a logged set without one is
+ * invisible to every completed-set reader (volume, PRs, "is this a lifting
+ * session"), so a lift added to a run would not count as lifting.
+ */
+export const buildExercises = (
+  exercises: EditableExercise[],
+  completedAt: string = new Date().toISOString()
+): WorkoutExercise[] =>
   exercises
-    .filter((ex) => ex.name.trim())
+    .filter((ex) => ex.cardio || ex.name.trim())
     .map((ex, order) => {
+      // Cardio is not editable here — save it back exactly as logged.
+      if (ex.cardio && ex.source) return { ...ex.source, order };
       const sets: WorkoutSet[] = ex.sets.map((s, i) => ({
+        ...(s.source ?? NEW_SET),
         id: s.id,
         setNumber: i + 1,
         reps: Number(s.reps) || 0,
         weight: Number(s.weight) || 0,
-        rpe: null,
-        isWarmup: false,
         isCompleted: true,
-        notes: '',
-        completedAt: null,
+        completedAt: s.source?.completedAt ?? completedAt,
       }));
+      const name = ex.name.trim();
+      // A renamed exercise is a DIFFERENT movement: keeping the old id / muscle /
+      // program data would file squat sets under bench press in every chart.
+      const sourceName = (ex.source?.exerciseName || ex.source?.name || '').trim();
+      const renamed = !!ex.source && name !== sourceName;
+      const base: Omit<WorkoutExercise, 'sets' | 'order'> =
+        ex.source && !renamed
+          ? ex.source
+          : {
+              id: ex.id,
+              exerciseId: ex.id,
+              exerciseName: name,
+              targetMuscle: '',
+              notes: ex.source?.notes ?? '',
+              restSeconds: ex.source?.restSeconds ?? 0,
+              isCompleted: true,
+              ...(ex.source?.name !== undefined && { name }),
+            };
       return {
+        ...base,
         id: ex.id,
-        exerciseId: ex.id,
-        exerciseName: ex.name.trim(),
-        targetMuscle: '',
+        exerciseName: name,
+        ...(base.name !== undefined && { name }),
         sets,
-        notes: '',
-        restSeconds: 0,
         isCompleted: true,
         order,
       };
@@ -106,9 +169,7 @@ export function EditSessionSheet({
 }: EditSessionSheetProps) {
   const [title, setTitle] = useState(initial?.notes ?? '');
   const [date, setDate] = useState(initial?.date ?? todayStr());
-  const [durationMin, setDurationMin] = useState(
-    initial?.duration ? String(Math.round(initial.duration / SECONDS_PER_MINUTE)) : ''
-  );
+  const [durationMin, setDurationMin] = useState(minutesText(initial?.duration));
   const [exercises, setExercises] = useState<EditableExercise[]>(() =>
     toEditableExercises(initial)
   );
@@ -120,9 +181,7 @@ export function EditSessionSheet({
     if (!isOpen) return;
     setTitle(initial?.notes ?? '');
     setDate(initial?.date ?? todayStr());
-    setDurationMin(
-      initial?.duration ? String(Math.round(initial.duration / SECONDS_PER_MINUTE)) : ''
-    );
+    setDurationMin(minutesText(initial?.duration));
     setExercises(toEditableExercises(initial));
     setError(null);
     setExercisesError(null);
@@ -167,7 +226,10 @@ export function EditSessionSheet({
       return;
     }
     setError(null);
-    const builtExercises = buildExercises(exercises);
+    const builtExercises = buildExercises(
+      exercises,
+      initial?.endTime ?? initial?.startTime ?? new Date().toISOString()
+    );
     if (builtExercises.length === 0) {
       setExercisesError('יש להוסיף לפחות תרגיל אחד');
       return;
@@ -175,16 +237,25 @@ export function EditSessionSheet({
     setExercisesError(null);
     setBusy(true);
     try {
-      const durationSeconds = durationMin ? Number(durationMin) * SECONDS_PER_MINUTE : 0;
+      // An untouched duration keeps its exact seconds (a 28:40 run must not
+      // become 29:00 because the coach fixed its title).
+      const durationUnchanged = !!initial && durationMin === minutesText(initial.duration);
+      const durationSeconds = durationUnchanged
+        ? initial.duration
+        : durationMin
+          ? Number(durationMin) * SECONDS_PER_MINUTE
+          : 0;
       // The chosen date drives the canonical start_time too — getClientSessions
       // orders/displays by start_time, so the edit must move it (matching create).
+      // An unchanged date keeps the logged start/end times (a 06:30 run stays 06:30).
       // `notes` is the single session column; the coach writer mirrors it into the
       // title column, so the "כותרת" field maps straight to notes.
+      const keepTimes = !!initial?.startTime && date === initial.date;
       const patch: Partial<WorkoutSession> = {
         notes: title.trim(),
         date,
-        startTime: localNoonIso(date),
-        endTime: localNoonIso(date),
+        startTime: keepTimes ? initial.startTime : localNoonIso(date),
+        endTime: keepTimes ? (initial.endTime ?? initial.startTime) : localNoonIso(date),
         duration: Number.isFinite(durationSeconds) ? durationSeconds : 0,
         exercises: builtExercises,
       };
@@ -244,84 +315,93 @@ export function EditSessionSheet({
 
         {/* Per-exercise editable set rows */}
         <div className="flex flex-col gap-3">
-          {exercises.map((ex) => (
-            <div
-              key={ex.id}
-              className="flex flex-col gap-2 p-3"
-              style={{ border: '1px solid var(--fs-surface-2)', background: 'var(--fs-surface)' }}
-            >
-              <div className="flex items-end gap-2">
-                <div className="flex-1 min-w-0">
-                  <Input
-                    label="תרגיל"
-                    value={ex.name}
-                    onChange={(e) => setExerciseName(ex.id, e.target.value)}
-                    placeholder="שם התרגיל"
-                  />
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeExercise(ex.id)}
-                  aria-label="מחיקת תרגיל"
-                  className="shrink-0"
-                >
-                  <Trash2 size={18} aria-hidden="true" />
-                </Button>
-              </div>
-
-              {ex.sets.map((s, i) => (
-                <div key={s.id} className="flex items-end gap-2">
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 12,
-                      color: 'var(--fs-muted)',
-                      minWidth: 24,
-                      paddingBottom: 14,
-                    }}
-                    dir="ltr"
-                  >
-                    {i + 1}
-                  </span>
-                  <div className="flex-1">
+          {exercises.map((ex) =>
+            ex.cardio ? (
+              <CardioExerciseRow
+                key={ex.id}
+                name={ex.name}
+                effort={ex.cardio.effort}
+                onRemove={() => removeExercise(ex.id)}
+              />
+            ) : (
+              <div
+                key={ex.id}
+                className="flex flex-col gap-2 p-3"
+                style={{ border: '1px solid var(--fs-surface-2)', background: 'var(--fs-surface)' }}
+              >
+                <div className="flex items-end gap-2">
+                  <div className="flex-1 min-w-0">
                     <Input
-                      label="חזרות"
-                      type="number"
-                      inputMode="numeric"
-                      dir="ltr"
-                      value={s.reps}
-                      onChange={(e) => setSetField(ex.id, s.id, 'reps', e.target.value)}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <Input
-                      label="משקל"
-                      type="number"
-                      inputMode="decimal"
-                      dir="ltr"
-                      unit='ק"ג'
-                      value={s.weight}
-                      onChange={(e) => setSetField(ex.id, s.id, 'weight', e.target.value)}
+                      label="תרגיל"
+                      value={ex.name}
+                      onChange={(e) => setExerciseName(ex.id, e.target.value)}
+                      placeholder="שם התרגיל"
                     />
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => removeSet(ex.id, s.id)}
-                    aria-label="מחיקת סט"
+                    onClick={() => removeExercise(ex.id)}
+                    aria-label="מחיקת תרגיל"
                     className="shrink-0"
                   >
-                    <Trash2 size={16} aria-hidden="true" />
+                    <Trash2 size={18} aria-hidden="true" />
                   </Button>
                 </div>
-              ))}
 
-              <Button variant="secondary" size="sm" onClick={() => addSet(ex.id)}>
-                <Plus size={14} aria-hidden="true" /> הוספת סט
-              </Button>
-            </div>
-          ))}
+                {ex.sets.map((s, i) => (
+                  <div key={s.id} className="flex items-end gap-2">
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 12,
+                        color: 'var(--fs-muted)',
+                        minWidth: 24,
+                        paddingBottom: 14,
+                      }}
+                      dir="ltr"
+                    >
+                      {i + 1}
+                    </span>
+                    <div className="flex-1">
+                      <Input
+                        label="חזרות"
+                        type="number"
+                        inputMode="numeric"
+                        dir="ltr"
+                        value={s.reps}
+                        onChange={(e) => setSetField(ex.id, s.id, 'reps', e.target.value)}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Input
+                        label="משקל"
+                        type="number"
+                        inputMode="decimal"
+                        dir="ltr"
+                        unit='ק"ג'
+                        value={s.weight}
+                        onChange={(e) => setSetField(ex.id, s.id, 'weight', e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeSet(ex.id, s.id)}
+                      aria-label="מחיקת סט"
+                      className="shrink-0"
+                    >
+                      <Trash2 size={16} aria-hidden="true" />
+                    </Button>
+                  </div>
+                ))}
+
+                <Button variant="secondary" size="sm" onClick={() => addSet(ex.id)}>
+                  <Plus size={14} aria-hidden="true" /> הוספת סט
+                </Button>
+              </div>
+            )
+          )}
         </div>
 
         <Button variant="secondary" fullWidth onClick={addExercise}>
@@ -343,6 +423,57 @@ export function EditSessionSheet({
         )}
       </div>
     </Sheet>
+  );
+}
+
+/** A run / treadmill block: its time and distance, read-only, removable. */
+function CardioExerciseRow({
+  name,
+  effort,
+  onRemove,
+}: {
+  name: string;
+  effort: CardioEffort | null;
+  onRemove: () => void;
+}) {
+  return (
+    <div
+      className="flex items-center gap-2 p-3"
+      style={{ border: '1px solid var(--fs-surface-2)', background: 'var(--fs-surface)' }}
+    >
+      <div className="flex-1 min-w-0">
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 14,
+            fontWeight: 600,
+            color: 'var(--fs-ink)',
+            margin: 0,
+          }}
+        >
+          <bdi>{name}</bdi>
+        </p>
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 13,
+            color: 'var(--fs-muted)',
+            margin: '2px 0 0',
+          }}
+        >
+          {effort ? <CardioEffortLine effort={effort} /> : 'לא תועדו זמן או מרחק'}
+        </p>
+      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onRemove}
+        aria-label={`מחיקת ${name}`}
+        className="shrink-0"
+      >
+        <Trash2 size={18} aria-hidden="true" />
+      </Button>
+    </div>
   );
 }
 

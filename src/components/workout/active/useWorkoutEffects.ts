@@ -3,6 +3,7 @@ import { showToast } from '../../../components/ui/GlobalToast';
 import { getWorkoutTemplate } from '../../../services/dataService';
 import type { Exercise, WorkoutSettings } from '../../../types';
 import { createWorkoutSet } from '../../../types';
+import { cardioSnapshot } from '../../../utils/cardio';
 import { triggerHaptic } from '../../../utils/haptics';
 import type { WorkoutAction } from '../core/workoutTypes';
 
@@ -126,7 +127,9 @@ export function useWorkoutEffects({
             // `reps` is only the target the set-logging UI pre-fills. It sizes the
             // progress spine ("הבא · סט 1 מתוך 4") and nothing else.
             const setCount = Math.max(1, ex.targetSets ?? ex.sets?.length ?? 1);
-            const reps = ex.targetReps ?? 0;
+            // A cardio exercise is logged as time + distance: no rep target.
+            const cardio = cardioSnapshot({ name: ex.name, exerciseName: ex.exerciseName });
+            const reps = cardio.trackingType ? 0 : (ex.targetReps ?? 0);
             // Structured-program exercises prepend the PDF's prescribed warmup
             // set(s) before the working sets: [ ...warmups (isWarmup), ...working ].
             // Warmups carry no target reps/weight (they're ramp-ups) and are
@@ -152,6 +155,9 @@ export function useWorkoutEffects({
               notes: isProgram ? ex.notes : undefined,
               programExtras: ex.programExtras,
               sets: [...warmupSets, ...workingSets],
+              ...cardio,
+              ...(ex.targetDurationSec ? { targetDurationSec: ex.targetDurationSec } : {}),
+              ...(ex.targetDistanceKm ? { targetDistanceKm: ex.targetDistanceKm } : {}),
             };
             loaded.push(exercise);
           }

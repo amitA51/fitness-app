@@ -33,6 +33,7 @@ import {
   sliceByRangeDays,
 } from '../progressMetrics';
 import type { WorkoutsSubTab } from '../types';
+import { CardioSection } from './CardioSection';
 import { StrengthSection } from './StrengthSection';
 
 // Range options for the volume-trend control (W/M/3M/6M/Y), mono LTR labels.
@@ -70,6 +71,7 @@ function volumeTrendSummary(data: { y: number }[]): string {
 const SUB_TABS: readonly SegmentOption<WorkoutsSubTab>[] = [
   { key: 'history', label: 'היסטוריה' },
   { key: 'strength', label: 'כוח' },
+  { key: 'cardio', label: 'אירובי' },
 ];
 
 export const WorkoutsTab = memo(function WorkoutsTab({
@@ -217,6 +219,15 @@ export const WorkoutsTab = memo(function WorkoutsTab({
               )}
             </div>
           </AdvancedSection>
+        </div>
+      ) : sub === 'cardio' ? (
+        <div
+          id="workouts-sub-panel-cardio"
+          role="tabpanel"
+          aria-labelledby="workouts-sub-tab-cardio"
+          className="space-y-4"
+        >
+          <CardioSection sessions={sessions} />
         </div>
       ) : (
         <div

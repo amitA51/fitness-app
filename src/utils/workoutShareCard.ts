@@ -15,6 +15,11 @@ export interface WorkoutShareStats {
   totalSets: number;
   durationSec: number;
   prsCount: number;
+  /**
+   * Replaces the volume hero — a run brags in kilometres, not "0 ק״ג".
+   * `secondary` replaces the sets column ("5:31" / "דק׳/ק״מ").
+   */
+  hero?: { value: string; label: string; secondary?: { value: string; label: string } };
 }
 
 /** 4:5 portrait — fills Instagram/Twitter/Status previews without letterboxing. */
@@ -124,11 +129,11 @@ export async function renderWorkoutShareCard(
     // ── Hero: total volume (the number lifters brag about) ────────────────
     ctx.fillStyle = ink;
     ctx.font = '800 224px Assistant, system-ui, sans-serif';
-    ctx.fillText(stats.totalVolume.toLocaleString('he-IL'), CARD_W / 2, 520);
+    ctx.fillText(stats.hero?.value ?? stats.totalVolume.toLocaleString('he-IL'), CARD_W / 2, 520);
 
     ctx.fillStyle = muted;
     ctx.font = '600 46px Assistant, system-ui, sans-serif';
-    ctx.fillText('ק"ג נפח כולל', CARD_W / 2, 592);
+    ctx.fillText(stats.hero?.label ?? 'ק"ג נפח כולל', CARD_W / 2, 592);
 
     // Hairline divider
     ctx.fillStyle = 'rgba(255,255,255,0.14)';
@@ -137,7 +142,11 @@ export async function renderWorkoutShareCard(
     // ── Secondary pair (RTL reading order: right first = sets) ────────────
     const minutes = Math.max(1, Math.round(stats.durationSec / 60));
     const cols: Array<{ x: number; value: string; label: string }> = [
-      { x: CARD_W / 2 + 260, value: String(stats.totalSets), label: 'סטים' },
+      {
+        x: CARD_W / 2 + 260,
+        value: stats.hero?.secondary?.value ?? String(stats.totalSets),
+        label: stats.hero?.secondary?.label ?? 'סטים',
+      },
       { x: CARD_W / 2 - 260, value: `${minutes}`, label: 'דקות' },
     ];
     for (const col of cols) {

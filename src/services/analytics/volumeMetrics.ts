@@ -3,11 +3,13 @@
 // ============================================================================
 
 import type { WorkoutSession } from '../../types';
+import { isCardioExercise, isCardioSession } from '../../utils/cardio';
 import { todayStr } from '../../utils/dateUtils';
 import { setVolume } from '../../utils/workoutMath';
 import { getWorkoutSessions } from '../workoutDb';
 import {
   computeSessionStats,
+  countsTowardMuscleWork,
   filterByWeeks,
   formatLocalDateStr,
   getISOWeek,
@@ -110,13 +112,17 @@ export const calculateWeeklyVolumes = (
       totalReps += stats.reps;
 
       for (const exercise of session.exercises) {
+        // A cardio effort has distance and time, not kg: no 0-volume exercise
+        // entry. The session itself still counts in sessionCount above.
+        if (isCardioExercise(exercise)) continue;
         const muscle = getMuscleKey(exercise);
+        const countsForMuscle = countsTowardMuscleWork(exercise);
         let exerciseVolume = 0;
         for (const set of exercise.sets) {
           if (set.isCompleted && !set.isWarmup) {
             const setVol = setVolume(set);
             exerciseVolume += setVol;
-            byMuscle[muscle] = (byMuscle[muscle] || 0) + setVol;
+            if (countsForMuscle) byMuscle[muscle] = (byMuscle[muscle] || 0) + setVol;
           }
         }
         byExercise[exercise.exerciseName] =
@@ -161,8 +167,10 @@ export const calculateMuscleBalance = (
   weeks?: number
 ): MuscleBalanceData[] => {
   const filtered = filterByWeeks(sessions, weeks);
+  // Cardio-only sessions carry no muscle volume; counting them would dilute the
+  // per-session averages below and read as a false "down" trend.
   const completedSessions = filtered
-    .filter((s) => s.status === 'completed')
+    .filter((s) => s.status === 'completed' && !isCardioSession(s))
     .sort((a, b) => a.date.localeCompare(b.date));
 
   // Split into current and previous halves for trend comparison
@@ -175,6 +183,7 @@ export const calculateMuscleBalance = (
     const map = new Map<string, number>();
     for (const session of list) {
       for (const exercise of session.exercises) {
+        if (!countsTowardMuscleWork(exercise)) continue;
         const muscle = getMuscleKey(exercise);
         for (const set of exercise.sets) {
           if (set.isCompleted && !set.isWarmup) {
@@ -252,8 +261,11 @@ export const forecastProgress = (
   const filtered = filterByWeeks(sessions, weeks);
   const completedSessions = filtered.filter((s) => s.status === 'completed');
 
-  // Compute volume per week
-  const weeklyVolumes = calculateWeeklyVolumes(completedSessions);
+  // Compute volume per week. A cardio-only week is not a 0 kg lifting week, so
+  // it must not enter the regression as a zero point.
+  const weeklyVolumes = calculateWeeklyVolumes(
+    completedSessions.filter((s) => !isCardioSession(s))
+  );
 
   // If exerciseId is provided, compute exercise-specific volume per week
   const dataPoints: { week: string; actual: number }[] = [];
@@ -330,9 +342,10 @@ export const getExerciseProgress = (
   const filtered = filterByWeeks(sessions, weeks);
   const completedSessions = filtered.filter((s) => s.status === 'completed');
 
-  // Find all sessions containing the exercise
+  // Find all sessions containing the exercise. A cardio exercise has no kg
+  // progress to chart, so it yields no 0-volume points.
   const relevantSessions = completedSessions.filter((session) =>
-    session.exercises.some((e) => e.exerciseId === exerciseId)
+    session.exercises.some((e) => e.exerciseId === exerciseId && !isCardioExercise(e))
   );
 
   // Build data points per session date
@@ -344,7 +357,7 @@ export const getExerciseProgress = (
     let maxReps = 0;
 
     for (const exercise of session.exercises) {
-      if (exercise.exerciseId !== exerciseId) continue;
+      if (exercise.exerciseId !== exerciseId || isCardioExercise(exercise)) continue;
 
       for (const set of exercise.sets) {
         if (set.isCompleted && !set.isWarmup) {

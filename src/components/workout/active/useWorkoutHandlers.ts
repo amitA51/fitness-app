@@ -4,6 +4,7 @@ import type { Exercise, WorkoutSettings } from '../../../types';
 import { playSuccess, unlockAudio } from '../../../utils/audio';
 import { triggerHaptic } from '../../../utils/haptics';
 import { useWorkoutDispatch } from '../core/WorkoutContext';
+import type { SetEditUpdates } from '../core/workoutTypes';
 
 interface UseWorkoutHandlersOptions {
   currentExerciseIndex: number;
@@ -142,7 +143,7 @@ export function useWorkoutHandlers({
   );
 
   const handleEditSet = useCallback(
-    (setIndex: number, updates: { weight?: number; reps?: number }) => {
+    (setIndex: number, updates: SetEditUpdates) => {
       dispatch({
         type: 'EDIT_SPECIFIC_SET',
         payload: { exerciseIndex: currentExerciseIndex, setIndex, updates },
@@ -152,7 +153,7 @@ export function useWorkoutHandlers({
   );
 
   const handleEditSetInList = useCallback(
-    (exerciseIndex: number, setIndex: number, updates: { weight?: number; reps?: number }) => {
+    (exerciseIndex: number, setIndex: number, updates: SetEditUpdates) => {
       dispatch({
         type: 'EDIT_SPECIFIC_SET',
         payload: { exerciseIndex, setIndex, updates },

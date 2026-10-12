@@ -75,6 +75,9 @@ const Settings = lazy(() => import('./pages/Settings'));
 const Templates = lazy(() => import('./pages/Templates'));
 const Program = lazy(() => import('./pages/Program'));
 const WorkoutDetail = lazy(() => import('./pages/WorkoutDetail'));
+const CardioPage = lazy(() => import('./pages/cardio/CardioPage'));
+const CardioLogPage = lazy(() => import('./pages/cardio/CardioLogPage'));
+const CardioLivePage = lazy(() => import('./pages/cardio/CardioLivePage'));
 
 // Coach platform pages
 const CoachHome = lazy(() => import('./pages/coach/CoachHome'));
@@ -477,6 +480,30 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
         }
       />
       <Route
+        path="/cardio"
+        element={
+          <PageErrorBoundary pageLabel="ריצה ואירובי">
+            <CardioPage />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/cardio/log"
+        element={
+          <PageErrorBoundary pageLabel="רישום אירובי">
+            <CardioLogPage />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/cardio/live"
+        element={
+          <PageErrorBoundary pageLabel="אירובי פעיל">
+            <CardioLivePage />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
         path="/detail/:id"
         element={
           <PageErrorBoundary pageLabel="פרטי האימון">
@@ -789,7 +816,10 @@ function AppShell() {
   const mainRef = useRef<HTMLElement | null>(null);
   const prevPathRef = useRef<string | null>(null);
 
-  const isWorkoutActive = location.pathname.startsWith('/workout');
+  // Focused flows hide the bottom nav: an active workout, and the cardio log /
+  // live screens (the /cardio picker itself keeps it).
+  const isWorkoutActive =
+    location.pathname.startsWith('/workout') || location.pathname.startsWith('/cardio/');
 
   const pageAccent = useMemo(() => getPageAccent(location.pathname), [location.pathname]);
 

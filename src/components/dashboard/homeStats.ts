@@ -16,9 +16,17 @@
 
 import type { WorkoutSession } from '../../types';
 import {
+  cardioActivityConfig,
+  cardioEffortsOf,
+  isCardioSession,
+  sessionCardioTotals,
+} from '../../utils/cardio';
+import {
   completedOnly,
   sessionVolume,
+  sessionsInWeek,
   sessionsThisWeek,
+  weekStartAt,
   weeklyTarget,
   weeklyVolumeDeltaPct,
 } from '../../utils/trainingWeek';
@@ -101,6 +109,8 @@ export interface LastWorkoutRecap {
   volume: number;
   /** Exercises whose all-time best was set in this session. */
   prCount: number;
+  /** Cardio distance in the session (runs, rides, treadmill), km. */
+  distanceKm: number;
 }
 
 export interface HomeStatsInput {
@@ -125,6 +135,8 @@ export interface HomeStats {
   /** Volume vs the same point last week, signed %, or `null`. */
   volumeDeltaPct: number | null;
   lastWorkout: LastWorkoutRecap | null;
+  /** Cardio kilometres in the current week (0 for a lifter who never runs). */
+  weekDistanceKm: number;
 }
 
 /** Names a session: its template, else its first exercise, else a plain label. */
@@ -137,6 +149,11 @@ function sessionName(
     : undefined;
   const fromTemplate = template?.name?.trim();
   if (fromTemplate) return displayExerciseName(fromTemplate);
+
+  // A run / treadmill / ride reads by its activity ("הליכון"), not the catalog
+  // entry it was logged under ("ריצה על מסילה").
+  const cardio = isCardioSession(session) ? cardioEffortsOf(session)[0] : undefined;
+  if (cardio) return cardioActivityConfig(cardio.activity).label;
 
   const first = session.exercises?.[0];
   const rawName = (first?.exerciseName || first?.name || '').trim();
@@ -185,14 +202,21 @@ export function computeHomeStats({
       durationSec: latest.duration ?? 0,
       volume: sessionVolume(latest),
       prCount: prExercises.size,
+      distanceKm: sessionCardioTotals(latest).distanceKm,
     };
   }
+
+  const weekDistanceKm = sessionsInWeek(completed, weekStartAt(now)).reduce(
+    (sum, s) => sum + sessionCardioTotals(s).distanceKm,
+    0
+  );
 
   return {
     thisWeek: sessionsThisWeek(completed, now),
     target: weeklyTarget(completed, programSessionsPerWeek, now),
     volumeDeltaPct: weeklyVolumeDeltaPct(completed, now),
     lastWorkout,
+    weekDistanceKm,
   };
 }
 

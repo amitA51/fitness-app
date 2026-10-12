@@ -7,6 +7,7 @@ import { Suspense, lazy } from 'react';
 import { createWorkoutTemplate, saveWorkoutSession } from '../../../services/dataService';
 import { readAthleteProfile } from '../../../services/intelligence/profile';
 import type { PersonalItem, WorkoutExercise, WorkoutSession } from '../../../types';
+import { cardioSnapshot, workoutCalories } from '../../../utils/cardio';
 import { todayStr } from '../../../utils/dateUtils';
 import { estimateCaloriesBurned } from '../../../utils/estimateCaloriesBurned';
 import { triggerHaptic } from '../../../utils/haptics';
@@ -268,7 +269,16 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
           muscleGroup: ex.muscleGroup,
           tempo: ex.tempo,
           targetRestTime: ex.targetRestTime,
+          ...cardioSnapshot(ex),
         }));
+        const durationSec = Math.floor(
+          (Date.now() - state.startTimestamp - state.totalPausedTime) / 1000
+        );
+        const volumeKg = workoutExercises.reduce(
+          (sum, ex) => sum + ex.sets.reduce((setSum, s) => setSum + setVolume(s), 0),
+          0
+        );
+        const weightKg = readAthleteProfile().weightKg;
 
         const session: WorkoutSession = {
           // UUID, never a prefixed string — cloud workout_sessions.id is uuid
@@ -281,23 +291,20 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
           // Local-date key (not UTC slice) so an early-morning finish isn't
           // mis-attributed to the previous calendar day for users ahead of UTC.
           date: todayStr(),
-          duration: Math.floor((Date.now() - state.startTimestamp - state.totalPausedTime) / 1000),
+          duration: durationSec,
           status: 'completed',
           templateId: null,
           notes: '',
           rating: null,
-          totalVolume: workoutExercises.reduce(
-            (sum, ex) => sum + ex.sets.reduce((setSum, s) => setSum + setVolume(s), 0),
-            0
-          ),
-          caloriesBurned: estimateCaloriesBurned(
-            workoutExercises.reduce(
-              (sum, ex) => sum + ex.sets.reduce((setSum, s) => setSum + setVolume(s), 0),
-              0
-            ),
-            Math.floor((Date.now() - state.startTimestamp - state.totalPausedTime) / 60000),
-            readAthleteProfile().weightKg
-          ),
+          totalVolume: volumeKg,
+          caloriesBurned: workoutCalories({
+            exercises: workoutExercises,
+            durationSec,
+            volumeKg,
+            weightKg,
+            strength: (volume, minutes) =>
+              estimateCaloriesBurned(volume, Math.floor(minutes), weightKg),
+          }),
           goalType: workoutSettings.defaultWorkoutGoal ?? 'general',
           exercises: workoutExercises,
           createdAt: new Date().toISOString(),

@@ -113,7 +113,8 @@ that one is answered.
 | Personal info → Email address | Yes | No | Required | App functionality; Account management | `src/services/supabaseAuth.ts` |
 | Personal info → User IDs | Yes | No | Required | App functionality; Account management; Analytics | Supabase auth uid; Sentry keeps `user.id` only (`src/main.tsx:52`) |
 | Personal info → Other info (date of birth / gender / height / goals / experience) | Yes | No | Optional | App functionality; Personalization | `PRIVACY_DOC` "נתוני פרופיל וכושר" |
-| Health and fitness → Fitness info (workouts, sets, reps, weights, PRs, body weight, body measurements) | Yes | No | Optional | App functionality; Personalization | `src/services/sessionDb.ts`, `prService.ts`, `bodyStatsService.ts`, `bodyWeightDb.ts` |
+| Health and fitness → Fitness info (workouts, sets, reps, weights, PRs, body weight, body measurements, runs and cardio: time, distance, pace, heart rate the user types) | Yes | No | Optional | App functionality; Personalization | `src/services/sessionDb.ts`, `prService.ts`, `bodyStatsService.ts`, `bodyWeightDb.ts`, `src/utils/cardio/session.ts` |
+| Location → Precise location | Yes | No | Optional | App functionality | live run tracking only, while the user runs it and a notification shows: GPS fixes become distance/splits, and a simplified route shape is saved with that workout (`src/pages/cardio/live/`, `exercises[].route`). Never collected in the background without the notification, never used for anything else. |
 | Messages → Other in-app messages | Yes | No | Optional | App functionality | coach↔trainee messaging (`src/pages/MyCoach.tsx`); community posts (`src/services/community/communityService.ts`) |
 | Photos and videos → Photos | Yes | No | Optional | App functionality | progress photos `src/pages/progress/tabs/BodyTab.tsx:193`; coach check-in `src/pages/MyCoach.tsx:908`; avatar `ProfileEditSection.tsx:319` |
 | App activity → Other user-generated content | Yes | No | Optional | App functionality | workout templates, notes (`src/services/templateDb.ts`) |
@@ -128,13 +129,17 @@ id (`src/main.tsx:46-58`).
 
 ### 5b. NOT collected — leave unticked
 
-Location (approximate and precise) · Financial info · Contacts · Calendar ·
-Audio · Files and docs · Web browsing history · App activity → in-app search
-history · Installed apps · Device or other IDs · anything Advertising.
+Location → Approximate location (only precise GPS is used, and only for live
+run tracking — see 5a) · Financial info · Contacts · Calendar · Audio · Files
+and docs · Web browsing history · App activity → in-app search history ·
+Installed apps · Device or other IDs · anything Advertising.
 
-Grounded in: `android/app/src/main/AndroidManifest.xml:40` declares exactly one
-permission, `INTERNET`. No Firebase / FCM / AdMob / advertising-ID dependency
-exists anywhere in `src/`.
+Grounded in: the app manifest declares `INTERNET`; the merged manifest adds the
+two plugins' permissions — `@capacitor/local-notifications` (POST_NOTIFICATIONS)
+and, since 2026-10-11, `@capacitor-community/background-geolocation`
+(ACCESS_FINE/COARSE_LOCATION, FOREGROUND_SERVICE, FOREGROUND_SERVICE_LOCATION).
+No ACCESS_BACKGROUND_LOCATION. No Firebase / FCM / AdMob / advertising-ID
+dependency exists anywhere in `src/`.
 
 **Health and fitness → Health info: No.** There is no medical-condition or
 injury field in the app — I grepped for one and it does not exist. Read
@@ -155,6 +160,14 @@ the AI feature could contain health details.
 - **Ads.** No.
 - **Health apps declaration.** Only required if you integrate Health Connect or
   claim a medical function. Neither is in the repo → No.
+- **Foreground service declaration (added 2026-10-11).** Live run tracking runs a
+  foreground service of type `location`. App content → "Foreground service
+  permissions" → declare **Location**, use case "Fitness: tracking a run the user
+  started", and attach a short screen recording: start a run, lock the screen,
+  show the notification, finish and save. Without it Play rejects the release.
+- **Location permission.** Fine location, foreground only (no background
+  location form needed). The prompt appears only when the user taps "התחלה" on
+  an outdoor activity.
 - **Generative AI.** See OPEN QUESTION 2. This one is a real policy exposure.
 
 ---

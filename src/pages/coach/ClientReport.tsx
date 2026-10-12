@@ -31,6 +31,7 @@ import {
   type ReportRange,
   buildReportRange,
   buildShareSummary,
+  computeCardioSummary,
   computeNutritionSummary,
   computeTrainingSummary,
   computeWeightTrend,
@@ -38,6 +39,7 @@ import {
   findCalorieTarget,
   sparklinePoints,
 } from './client/reportMetrics';
+import { CardioTotals } from './client/sessionCardio';
 
 const REPORT_DAYS = 30;
 /** How many in-range PRs the report lists before truncating (print space). */
@@ -122,6 +124,7 @@ export default function ClientReport() {
       weightTrend,
       prCount: prsInRange.length,
       nutrition,
+      cardio: computeCardioSummary(q.data.sessions, range),
     });
   }, [q.data, range]);
 
@@ -218,9 +221,12 @@ function ReportBody({
   onNotesChange: (next: string) => void;
 }) {
   const training = computeTrainingSummary(data.sessions, range);
+  const cardio = computeCardioSummary(data.sessions, range);
   const weightTrend = computeWeightTrend(data.weights, range);
   const prsInRange = filterPRsInRange(data.prs, range);
   const nutrition = computeNutritionSummary(data.nutrition, range, data.calorieTarget);
+  // A month of runs only has no lifting volume — "0 ק״ג" would read as nothing done.
+  const showVolume = training.totalVolume > 0 || cardio.length === 0;
 
   // Scheduled-plan adherence over the trailing week (only when a plan exists).
   const scheduled = (data.weekAdherence ?? []).reduce((sum, d) => sum + d.scheduled, 0);
@@ -266,11 +272,18 @@ function ReportBody({
           <>
             <div className="grid grid-cols-2 gap-3">
               <Stat label="אימונים" value={String(training.sessionCount)} />
-              <Stat
-                label="נפח כולל (ק״ג)"
-                value={Math.round(training.totalVolume).toLocaleString('he-IL')}
-              />
+              {showVolume && (
+                <Stat
+                  label="נפח כולל (ק״ג)"
+                  value={Math.round(training.totalVolume).toLocaleString('he-IL')}
+                />
+              )}
             </div>
+            {cardio.length > 0 && (
+              <div style={{ marginTop: 10 }}>
+                <CardioTotals totals={cardio} />
+              </div>
+            )}
             {scheduled > 0 && (
               <p style={{ ...metaTextStyle, marginTop: 10 }}>
                 היענות לתוכנית בשבוע האחרון:{' '}

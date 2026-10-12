@@ -14,6 +14,7 @@
 import { ChevronLeft } from 'lucide-react';
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
+import { UNIT_KM, formatKm } from '../../utils/cardio';
 import { formatThousandsDecimal } from '../../utils/formatThousands';
 import { formatDuration } from '../../utils/workoutFormatters';
 import type { LastWorkoutRecap } from './homeStats';
@@ -108,6 +109,19 @@ export const LastWorkoutCard = memo(function LastWorkoutCard({ recap }: LastWork
                 {formatThousandsDecimal(recap.volume)}
               </span>{' '}
               ק״ג
+            </span>
+          )}
+          {recap.distanceKm > 0 && (
+            <span style={statStyle}>
+              {(recap.durationSec > 0 || recap.volume > 0) && (
+                <span aria-hidden="true" style={{ marginInlineEnd: 8 }}>
+                  ·
+                </span>
+              )}
+              <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                {formatKm(recap.distanceKm)}
+              </span>{' '}
+              {UNIT_KM}
             </span>
           )}
           {prLabel && (

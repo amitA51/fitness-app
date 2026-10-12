@@ -5,7 +5,7 @@
 import type { WorkoutSession } from '../../types';
 import { todayStr } from '../../utils/dateUtils';
 import { completedSetsVolume, oneRepMax } from '../../utils/workoutMath';
-import { computeSessionVolume, parseLocalDate } from './shared';
+import { computeSessionVolume, countsTowardMuscleWork, parseLocalDate } from './shared';
 
 // ============================================================================
 // Additional exports for useFitnessInsights hook
@@ -45,10 +45,11 @@ export const getLastWorkoutSummary = (sessions: WorkoutSession[]): LastWorkoutSu
   const last = completed.reduce((latest, s) =>
     new Date(s.startTime).getTime() > new Date(latest.startTime).getTime() ? s : latest
   );
+  // Muscles only — a run or a treadmill warm-up names no muscle to complement.
   const muscles = new Set<string>();
   last.exercises.forEach((e) => {
     const m = e.muscleGroup || e.targetMuscle;
-    if (m) muscles.add(m);
+    if (m && countsTowardMuscleWork(e)) muscles.add(m);
   });
   return {
     date: last.date,
@@ -64,6 +65,8 @@ export const getMuscleGroupDaysSince = (sessions: WorkoutSession[]): MuscleGroup
   for (const session of sessions) {
     if (session.status !== 'completed') continue;
     for (const exercise of session.exercises) {
+      // Cardio is not a muscle that can be "neglected".
+      if (!countsTowardMuscleWork(exercise)) continue;
       const muscle = exercise.muscleGroup || exercise.targetMuscle;
       if (muscle) {
         const existing = muscleLastDate.get(muscle);

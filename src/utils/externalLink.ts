@@ -7,7 +7,7 @@
 // plugin registry, so no @capacitor/browser import is required for the web build.
 // ============================================================================
 
-import { getCapacitorPlugin, isNativePlatform } from './platform';
+import { isNativePlatform, loadCapacitorPlugin } from './platform';
 
 interface CapacitorBrowserPlugin {
   open(options: { url: string }): Promise<void>;
@@ -16,7 +16,7 @@ interface CapacitorBrowserPlugin {
 /** Open an external (or full-origin) URL appropriately for the platform. */
 export async function openExternalLink(url: string): Promise<void> {
   if (isNativePlatform()) {
-    const browser = getCapacitorPlugin<CapacitorBrowserPlugin>('Browser');
+    const browser = (await loadCapacitorPlugin<CapacitorBrowserPlugin>('Browser'))?.plugin;
     if (browser?.open) {
       await browser.open({ url });
       return;

@@ -2,6 +2,7 @@
 // Platform-agnostic: no DOM, no window, no localStorage. Reusable in React Native.
 
 import type { ActiveExercise, WorkoutExercise, WorkoutSession } from '../types';
+import { cardioSnapshot, workoutCalories } from '../utils/cardio';
 import { toLocalDateStr } from '../utils/dateUtils';
 import { generateId } from '../utils/id';
 import { setVolume } from '../utils/workoutMath';
@@ -12,6 +13,8 @@ export interface BuildSessionInput {
   totalPausedTime: number;
   itemId: string;
   goalType?: string;
+  /** Body weight for cardio calories; without it cardio adds none. */
+  bodyWeightKg?: number | null;
   /** Override "now" for testability; defaults to Date.now() */
   now?: number;
 }
@@ -28,7 +31,15 @@ export interface BuildSessionResult {
  * Returns null if no exercises have completed sets.
  */
 export function buildWorkoutSession(input: BuildSessionInput): BuildSessionResult | null {
-  const { exercises, startTimestamp, totalPausedTime, itemId, goalType, now = Date.now() } = input;
+  const {
+    exercises,
+    startTimestamp,
+    totalPausedTime,
+    itemId,
+    goalType,
+    bodyWeightKg,
+    now = Date.now(),
+  } = input;
 
   const completedExercises = exercises.filter((ex) => (ex.sets ?? []).some((s) => s.completedAt));
 
@@ -51,6 +62,7 @@ export function buildWorkoutSession(input: BuildSessionInput): BuildSessionResul
       muscleGroup: ex.muscleGroup,
       tempo: ex.tempo,
       targetRestTime: ex.targetRestTime,
+      ...cardioSnapshot(ex),
     })
   );
 
@@ -60,9 +72,16 @@ export function buildWorkoutSession(input: BuildSessionInput): BuildSessionResul
     0
   );
 
-  // Calorie estimate: ~0.04 kcal per kg volume + ~5 kcal/min baseline. Cap 1500.
-  const minutes = Math.max(0, sessionDurationSec / 60);
-  const estCalories = Math.min(1500, Math.round(totalVolume * 0.04 + minutes * 5));
+  // Strength estimate: ~0.04 kcal per kg volume + ~5 kcal/min baseline, capped at
+  // 1500, over the minutes not spent on cardio; cardio adds its own MET estimate.
+  const estCalories =
+    workoutCalories({
+      exercises: workoutExercises,
+      durationSec: sessionDurationSec,
+      volumeKg: totalVolume,
+      weightKg: bodyWeightKg,
+      strength: (volumeKg, minutes) => Math.min(1500, Math.round(volumeKg * 0.04 + minutes * 5)),
+    }) ?? 0;
 
   const endTimeISO = new Date(now).toISOString();
 

@@ -28,7 +28,7 @@ import { BodyTab } from './progress/tabs/BodyTab';
 import { OverviewTab } from './progress/tabs/OverviewTab';
 import { RecoveryTab } from './progress/tabs/RecoveryTab';
 import { WorkoutsTab } from './progress/tabs/WorkoutsTab';
-import type { ProgressTab } from './progress/types';
+import type { ProgressTab, WorkoutsSubTab } from './progress/types';
 import { useProgressData } from './progress/useProgressData';
 
 // Four grouped sections (was six). Strength folds into Workouts; Weight +
@@ -338,7 +338,7 @@ export default function ProgressPage() {
                     prs={prs}
                     isLoading={isLoading}
                     initialSub={
-                      (location.state?.subTab as 'history' | 'strength' | undefined) ?? initialSub
+                      (location.state?.subTab as WorkoutsSubTab | undefined) ?? initialSub
                     }
                     initialStrengthSelection={location.state?.exercise}
                   />

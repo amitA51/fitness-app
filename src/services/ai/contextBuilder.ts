@@ -5,6 +5,7 @@
 import type { MacroNutrients, WorkoutSession } from '../../types';
 import { completedSetsVolume, oneRepMax } from '../../utils/workoutMath';
 import { calculateStreak } from '../achievementService';
+import { countsTowardMuscleWork, isCardioMuscle } from '../analytics/shared';
 import type { RecoveryLog } from '../bodyStatsService';
 import {
   type NutritionAdherence,
@@ -16,6 +17,7 @@ import {
   type TrainingLoadRecommendation,
   calculateTrainingLoad,
 } from '../trainingLoadService';
+import { type CardioSummary, buildCardioSummary, describeCardioForPrompt } from './cardioContext';
 import { WEAK_MUSCLE_THRESHOLD } from './constants';
 
 /** Which inputs were actually available, so the model can hedge rather than
@@ -62,6 +64,8 @@ export interface AIContext {
   streakDays: number;
   /** Top exercises by frequency/recency with pre-computed 1RM and progress */
   topExercises?: readonly TopExerciseEntry[];
+  /** Last 4 weeks of runs/rides/swims…; null when the trainee did no cardio. */
+  cardio: CardioSummary | null;
 }
 
 export function buildSystemPrompt(context: AIContext): string {
@@ -113,6 +117,13 @@ export function buildSystemPrompt(context: AIContext): string {
       const days = m.daysSinceLastTrained === null ? '?' : m.daysSinceLastTrained;
       prompt += `\n• ${sanitize(m.muscle)}: ${m.status} | מוכנות=${m.recoveryScore}/100 | ${days} ימים מאז אימון`;
     }
+  }
+
+  // Cardio (distance/time/pace, 0 kg) — only when there is any, so a lifter
+  // gets no empty heading. Built from computed numbers only, no user strings.
+  const cardioBlock = describeCardioForPrompt(context.cardio);
+  if (cardioBlock) {
+    prompt += `\n\n${cardioBlock}`;
   }
 
   // Data-sufficiency hedge (TL-7): when key inputs were defaulted, tell the model
@@ -249,12 +260,14 @@ export function buildContext(
   if (trainingLoad.volumeChangePercent > 5) volumeTrend = 'increasing';
   else if (trainingLoad.volumeChangePercent < -5) volumeTrend = 'decreasing';
 
-  // Muscle coverage
+  // Muscle coverage. Cardio (a run, a treadmill warm-up, the Cardio group) is
+  // not a muscle: it is summarised in `cardio` below instead, and must never
+  // show up as a 0 kg "weak" or "neglected" muscle.
   const muscleSet = new Set<string>();
   recentSessions.forEach((s) =>
     s.exercises.forEach((e) => {
       const muscle = e.muscleGroup || e.targetMuscle;
-      if (muscle) muscleSet.add(muscle);
+      if (muscle && countsTowardMuscleWork(e)) muscleSet.add(muscle);
     })
   );
 
@@ -263,7 +276,7 @@ export function buildContext(
   recentSessions.forEach((s) =>
     s.exercises.forEach((e) => {
       const muscle = e.muscleGroup || e.targetMuscle;
-      if (muscle) {
+      if (muscle && countsTowardMuscleWork(e)) {
         const vol = completedSetsVolume(e.sets);
         muscleVolumes[muscle] = (muscleVolumes[muscle] || 0) + vol;
       }
@@ -289,7 +302,8 @@ export function buildContext(
       )
     : null;
 
-  const neglectedMuscles = trainingLoad.muscles
+  const muscleRecovery = trainingLoad.muscles.filter((m) => !isCardioMuscle(m.muscle));
+  const neglectedMuscles = muscleRecovery
     .filter((m) => m.status === 'neglected')
     .map((m) => m.muscle);
 
@@ -311,7 +325,7 @@ export function buildContext(
     acuteChronicRatio: trainingLoad.acuteChronicRatio,
     fatigueScore: trainingLoad.fatigueScore,
     muscleCoverage: Array.from(muscleSet),
-    muscleRecovery: trainingLoad.muscles,
+    muscleRecovery,
     weakMuscles,
     neglectedMuscles,
     recoveryScore: trainingLoad.recoveryScore,
@@ -330,5 +344,7 @@ export function buildContext(
     trainingLoadRecommendation: trainingLoad.recommendation,
     streakDays,
     topExercises,
+    // Same 28-day reach as the training-load baseline, over every session given.
+    cardio: buildCardioSummary(sessions),
   };
 }

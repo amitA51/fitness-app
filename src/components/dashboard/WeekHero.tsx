@@ -14,6 +14,7 @@
 
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { memo } from 'react';
+import { UNIT_KM, formatKm } from '../../utils/cardio';
 
 interface WeekHeroProps {
   /** Completed sessions in the current Sunday-based week. */
@@ -22,12 +23,15 @@ interface WeekHeroProps {
   target: number | null;
   /** Signed % volume change vs the same point last week, or null. */
   volumeDeltaPct: number | null;
+  /** Cardio kilometres this week; the line is omitted at 0. */
+  distanceKm?: number;
 }
 
 export const WeekHero = memo(function WeekHero({
   sessions,
   target,
   volumeDeltaPct,
+  distanceKm = 0,
 }: WeekHeroProps) {
   const pct = target && target > 0 ? Math.min(100, Math.round((sessions / target) * 100)) : null;
   const up = (volumeDeltaPct ?? 0) >= 0;
@@ -124,6 +128,7 @@ export const WeekHero = memo(function WeekHero({
           {target !== null
             ? `${sessions} אימונים מתוך ${target} השבוע`
             : `${sessions} אימונים השבוע`}
+          {distanceKm > 0 && `, ${formatKm(distanceKm)} ${UNIT_KM} של אירובי`}
         </span>
       </p>
 
@@ -139,6 +144,15 @@ export const WeekHero = memo(function WeekHero({
         }}
       >
         {target !== null ? 'אימונים מתוך היעד השבועי' : 'אימונים הושלמו'}
+        {distanceKm > 0 && (
+          <>
+            {' · '}
+            <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+              {formatKm(distanceKm)}
+            </span>{' '}
+            {UNIT_KM}
+          </>
+        )}
       </p>
 
       {/* Target bar — fills from the reading start (right in RTL) because the

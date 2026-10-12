@@ -3,7 +3,9 @@
  * Kept out of the page component so the presentation tree stays focused.
  */
 
+import { cardioEffortText } from '../../components/cardio/CardioEffortLine';
 import type { WorkoutSession } from '../../types';
+import { cardioEffortOf, isCardioSession } from '../../utils/cardio';
 import { formatDuration, formatHebrewDate, formatVolume } from '../../utils/dateUtils';
 import { computeSessionStats } from '../../utils/workoutMath';
 
@@ -24,6 +26,9 @@ export function derivePreviousSession(
   sessions: WorkoutSession[]
 ): WorkoutSession | null {
   const currentStart = new Date(current.startTime).getTime();
+  // A gym session is never compared with a run (volume 0 would read as a collapse).
+  const currentIsCardio = isCardioSession(current);
+  const sameKind = (s: WorkoutSession) => isCardioSession(s) === currentIsCardio;
   const priorSameTemplate = current.templateId
     ? sessions
         .filter(
@@ -40,6 +45,7 @@ export function derivePreviousSession(
       (s) =>
         s.id !== current.id &&
         s.status === 'completed' &&
+        sameKind(s) &&
         new Date(s.startTime).getTime() < currentStart
     )
     .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())[0];
@@ -61,6 +67,8 @@ export function buildShareText(session: WorkoutSession): string {
 
   const exerciseLines = session.exercises
     .map((ex) => {
+      const cardio = cardioEffortOf(ex);
+      if (cardio) return `• ${ex.name ?? ex.exerciseName} - ${cardioEffortText(cardio)}`;
       const completedSets = ex.sets.filter((s) => s.isCompleted).length;
       return `• ${ex.name} - ${completedSets} סטים`;
     })

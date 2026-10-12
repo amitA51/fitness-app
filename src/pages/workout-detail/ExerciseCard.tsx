@@ -6,8 +6,10 @@
 
 import { m } from 'framer-motion';
 import { Trophy } from 'lucide-react';
+import { CardioEffortLine } from '../../components/cardio/CardioEffortLine';
 import { Card } from '../../components/ui/Card';
 import type { WorkoutExercise } from '../../types';
+import { cardioActivityConfig, cardioEffortOf } from '../../utils/cardio';
 import { formatVolume } from '../../utils/dateUtils';
 import { completedSetsVolume, computeSessionStats, setVolume } from '../../utils/workoutMath';
 import { MUSCLE_COLOR } from './helpers';
@@ -19,6 +21,47 @@ interface ExerciseCardProps {
 }
 
 export function ExerciseCard({ exercise, index, reduceMotion }: ExerciseCardProps) {
+  // A treadmill / rower inside a gym session: time + distance, not kg × reps.
+  const cardio = cardioEffortOf(exercise);
+  if (cardio) {
+    return (
+      <m.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={reduceMotion ? { duration: 0 } : { delay: index * 0.08, duration: 0.3 }}
+      >
+        <Card
+          variant="elevated"
+          asymmetric
+          style={{ border: '1px solid var(--color-border)', padding: '14px 16px' }}
+        >
+          <h3
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 600,
+              fontSize: 16,
+              color: 'var(--fs-ink)',
+              lineHeight: 1.2,
+              margin: 0,
+            }}
+          >
+            {exercise.exerciseName || exercise.name || cardioActivityConfig(cardio.activity).label}
+          </h3>
+          <p
+            style={{
+              margin: '6px 0 0',
+              fontFamily: 'var(--font-body)',
+              fontSize: 14,
+              color: 'var(--fs-ink)',
+            }}
+          >
+            <CardioEffortLine effort={cardio} />
+          </p>
+        </Card>
+      </m.div>
+    );
+  }
+
   const completedSets = exercise.sets.filter((s) => s.isCompleted);
   const totalVolume = completedSetsVolume(exercise.sets);
   // Best working set (warmups excluded by setVolume) via the canonical SSOT.

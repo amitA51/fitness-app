@@ -9,6 +9,7 @@ import { useCallback, useRef, useState } from 'react';
 import { showToast } from '../../../components/ui/GlobalToast';
 import { trackFunnel } from '../../../services/analytics/funnel';
 import { saveWorkoutSession } from '../../../services/dataService';
+import { readAthleteProfile } from '../../../services/intelligence/profile';
 import { persistSessionPRs } from '../../../services/prService';
 import { buildWorkoutSession } from '../../../services/workoutSessionBuilder';
 import type { PersonalItem, WorkoutSession, WorkoutSettings } from '../../../types';
@@ -139,6 +140,7 @@ export function useWorkoutSave({
       totalPausedTime: state.totalPausedTime,
       itemId: item?.id || `workout_${Date.now()}`,
       goalType: workoutSettings.defaultWorkoutGoal ?? 'general',
+      bodyWeightKg: readAthleteProfile().weightKg,
       now,
     });
 

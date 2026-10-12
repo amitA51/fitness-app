@@ -158,6 +158,9 @@ export interface ProgramTemplateDay {
     targetMuscle: string;
     sets: number;
     reps: number;
+    /** Cardio rows: target minutes and/or kilometres instead of sets × reps. */
+    minutes?: number;
+    km?: number;
   }>;
 }
 

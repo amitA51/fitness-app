@@ -6,7 +6,19 @@ import { STORES, dbGetAll } from './indexedDBCore';
 
 // CSV Export
 export function exportWorkoutHistoryCSV(sessions: WorkoutSession[]): void {
-  const headers = ['תאריך', 'תרגיל', 'סט', 'חזרות', 'משקל', 'נפח', 'RPE', 'הערות'];
+  const headers = [
+    'תאריך',
+    'תרגיל',
+    'סט',
+    'חזרות',
+    'משקל',
+    'נפח',
+    'RPE',
+    'זמן (שניות)',
+    'מרחק (ק״מ)',
+    'דופק ממוצע',
+    'הערות',
+  ];
   const rows: string[][] = [];
 
   sessions.forEach((session) => {
@@ -22,6 +34,9 @@ export function exportWorkoutHistoryCSV(sessions: WorkoutSession[]): void {
           set.weight.toString(),
           setVolume(set).toString(),
           set.rpe?.toString() || '',
+          set.duration ? String(Math.round(set.duration)) : '',
+          set.distanceKm ? set.distanceKm.toFixed(2) : '',
+          set.avgHr ? String(set.avgHr) : '',
           set.notes || '',
         ]);
       });

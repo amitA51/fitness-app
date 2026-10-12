@@ -6,6 +6,7 @@
 // definition and lets vitest cover the logic without rendering React.
 
 import type { PersonalRecord, WorkoutSession } from '../../types';
+import { isCardioSession } from '../../utils/cardio';
 import { summarizeTrainingWeek, weekStartAt } from '../../utils/trainingWeek';
 import { completedSetsVolume, oneRepMax, setVolume } from '../../utils/workoutMath';
 import type { Zone } from '../../utils/zoneColor';
@@ -160,7 +161,9 @@ export function recentPRs(prs: PersonalRecord[], limit = 3): PersonalRecord[] {
 
 /** Last `limit` completed sessions as {label, volume} points for the area chart. */
 export function buildVolumeTrend(completedSessions: WorkoutSession[], limit = 14): VolumePoint[] {
-  return [...completedSessions]
+  // A run has no lifting volume; plotted, it would read as a collapse to 0.
+  return completedSessions
+    .filter((s) => !isCardioSession(s))
     .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
     .slice(-limit)
     .map((s) => {

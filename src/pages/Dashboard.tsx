@@ -152,6 +152,11 @@ export default function Dashboard() {
     navigate('/workout', { state: { startEmpty: true } });
   }, [navigate]);
 
+  const handleCardio = useCallback(() => {
+    setIsStartSheetOpen(false);
+    navigate('/cardio');
+  }, [navigate]);
+
   const goToPrevWeek = useCallback(() => {
     setSelectedWeekOffset((prev) => prev - 1);
   }, []);
@@ -362,7 +367,11 @@ export default function Dashboard() {
           ) : insightsError && !hasAnySession ? (
             <InsightErrorChip message={insightsError} onRetry={refreshData} />
           ) : !hasAnySession ? (
-            <FirstRunHero onStartTemplate={goToTemplates} onStartEmpty={handleEmptyWorkout} />
+            <FirstRunHero
+              onStartTemplate={goToTemplates}
+              onStartEmpty={handleEmptyWorkout}
+              onCardio={handleCardio}
+            />
           ) : (
             renderPopulatedBody()
           )}
@@ -375,6 +384,7 @@ export default function Dashboard() {
           onContinueLast={handleContinueLast}
           onPickTemplate={handlePickTemplate}
           onEmptyWorkout={handleEmptyWorkout}
+          onCardio={handleCardio}
         />
       </div>
     </div>
@@ -393,6 +403,7 @@ export default function Dashboard() {
           sessions={homeStats.thisWeek}
           target={homeStats.target}
           volumeDeltaPct={homeStats.volumeDeltaPct}
+          distanceKm={homeStats.weekDistanceKm}
         />
 
         {/* 2. WHAT IS NEXT — one block only. The coach's schedule (rendered
@@ -531,11 +542,14 @@ const FIRST_RUN_STEPS = [
 const FirstRunHero = memo(function FirstRunHero({
   onStartTemplate,
   onStartEmpty,
+  onCardio,
 }: {
   /** Recommended path: open template library with ready exercises. */
   onStartTemplate: () => void;
   /** Secondary path: blank workout (add exercises as you go). */
   onStartEmpty: () => void;
+  /** Runners: the cardio screen. */
+  onCardio: () => void;
 }) {
   return (
     <FadeIn>
@@ -672,6 +686,17 @@ const FirstRunHero = memo(function FirstRunHero({
         {/* Secondary: empty workout */}
         <button type="button" onClick={onStartEmpty} className="cta-secondary focus-ring">
           התחילו בלי תבנית
+        </button>
+
+        {/* Runners land here too — the cardio screen, one tap away. */}
+        <button
+          type="button"
+          onClick={onCardio}
+          className="cta-ghost focus-ring"
+          style={{ width: '100%' }}
+        >
+          רוצים לרוץ? ריצה ואירובי
+          <ChevronLeft size={14} aria-hidden="true" style={{ flexShrink: 0 }} />
         </button>
 
         <Link
