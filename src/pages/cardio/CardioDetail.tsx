@@ -225,6 +225,7 @@ export default function CardioDetail({ session, justSaved, onBack }: CardioDetai
               <ActivityIcon activity={effort.activity} size={18} />
               {config.label}
               {effort.runType && ` · ${RUN_TYPE_LABELS[effort.runType]}`}
+              {session.exercises.some((ex) => ex.external?.provider === 'strava') && ' · מ-Strava'}
             </span>
             <p className="cardio-detail-big">
               <span className="cardio-detail-big-value kinetic-number">

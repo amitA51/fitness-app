@@ -234,3 +234,79 @@ describe('buildContext with cardio', () => {
     expect(daily.detail).not.toContain('אין נפח אימון השבוע');
   });
 });
+
+describe('per-run detail for the model', () => {
+  /** A run with whole-km splits: `paces` s/km and `hrs` bpm per km. */
+  const splitRun = (daysAgo: number, paces: number[], hrs: number[]): WorkoutSession =>
+    buildCardioSession(
+      {
+        activity: 'run',
+        startTime: new Date(NOW.getTime() - daysAgo * DAY).toISOString(),
+        durationSec: paces.reduce((a, b) => a + b, 0),
+        distanceKm: paces.length,
+        avgHr: 150,
+        maxHr: 171,
+        elevationGainM: 35,
+        splits: paces.map((seconds, i) => ({
+          index: i + 1,
+          distanceKm: 1,
+          seconds,
+          avgHr: hrs[i],
+        })),
+      },
+      NOW.getTime()
+    );
+
+  it('lists the latest efforts newest first, with fastest/slowest km and heart-rate drift', () => {
+    const summary = buildCardioSummary(
+      [run(5, 8, 44), splitRun(1, [300, 305, 310, 320], [140, 144, 152, 156])],
+      NOW
+    );
+    const [latest, older] = summary?.recentEfforts ?? [];
+    expect(latest).toMatchObject({
+      daysAgo: 1,
+      distanceKm: 4,
+      fastestKmSec: 300,
+      slowestKmSec: 320,
+      hrDriftBpm: 12,
+      avgHr: 150,
+      maxHr: 171,
+    });
+    expect(older).toMatchObject({ daysAgo: 5, fastestKmSec: null, hrDriftBpm: null });
+
+    const text = describeCardioForPrompt(summary);
+    expect(text).toContain('האימונים האחרונים, מהחדש לישן');
+    expect(text).toContain('ק״מ מהיר 5:00, איטי 5:20');
+    expect(text).toContain('סחף +12');
+    expect(text).toContain('דופק 150 (שיא 171)');
+    expect(text).toContain('אתמול: ריצה 4 ק״מ ב-');
+  });
+
+  it('caps the list at the latest five efforts', () => {
+    const runs = Array.from({ length: 9 }, (_, i) => run(i + 1, 5, 27));
+    expect(buildCardioSummary(runs, NOW)?.recentEfforts).toHaveLength(5);
+  });
+
+  it('keeps a busy runner cardio block well inside the 4,000-character ai-chat message cap', () => {
+    // Worst realistic case: a run every other day for 8 weeks, every one with
+    // 21 km splits and heart rate, plus the spike warning.
+    const heavy = Array.from({ length: 28 }, (_, i) =>
+      splitRun(
+        i * 2 + 1,
+        Array.from({ length: 21 }, (_, k) => 280 + k),
+        Array.from({ length: 21 }, (_, k) => 140 + k)
+      )
+    );
+    const text = describeCardioForPrompt(buildCardioSummary([...heavy, run(0, 30, 160)], NOW));
+    expect(text.length).toBeLessThan(1400);
+  });
+
+  it('shows the weekly running trend beyond the 4-week window, only with 2+ weeks of runs', () => {
+    const summary = buildCardioSummary([run(1, 10, 55), run(40, 6, 33)], NOW);
+    expect(summary?.weeklyRunKm).toHaveLength(8);
+    expect(summary?.weeklyRunKm?.[7]).toBe(10);
+    expect(describeCardioForPrompt(summary)).toContain('ק״מ ריצה בשבוע');
+
+    expect(buildCardioSummary([run(1, 10, 55)], NOW)?.weeklyRunKm).toBeNull();
+  });
+});

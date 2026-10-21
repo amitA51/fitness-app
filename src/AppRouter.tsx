@@ -48,6 +48,7 @@ import { PageErrorBoundary } from './errors/PageErrorBoundary';
 import { useCloudDataReflection } from './hooks/useCloudDataReflection';
 import { useIsAppAdmin } from './hooks/useIsAppAdmin';
 import { useReducedMotion } from './hooks/useReducedMotion';
+import { useStravaAutoSync } from './hooks/useStravaAutoSync';
 import type { OnboardingData } from './pages/OnboardingFlow';
 import { trackFunnel } from './services/analytics/funnel';
 import {
@@ -95,6 +96,7 @@ const JoinPage = lazy(() => import('./pages/JoinPage'));
 const AccessibilityStatement = lazy(() => import('./pages/AccessibilityStatement'));
 const TermsPage = lazy(() => import('./pages/legal/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'));
+const StravaCallbackPage = lazy(() => import('./pages/strava/StravaCallbackPage'));
 
 // Wave 2 — community feed, public profile, billing paywall
 const CommunityFeed = lazy(() => import('./pages/community/CommunityFeed'));
@@ -272,6 +274,21 @@ export function AppRouter() {
 
   if (status === 'loading') {
     return <PageLoader />;
+  }
+
+  // Strava sends the user back here after they approve the link. On an iPhone
+  // that is Safari (or the in-app browser), where the installed app's login does
+  // not exist — so the page stands alone, before every auth and onboarding gate.
+  if (typeof window !== 'undefined' && window.location.pathname === '/strava/callback') {
+    return (
+      <BrowserRouter future={ROUTER_FUTURE}>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/strava/callback" element={<StravaCallbackPage />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    );
   }
 
   // Recovery links may establish a short-lived authenticated session. Handle
@@ -811,6 +828,9 @@ function AppShell() {
   // Reflect coach edits to trainee-owned data live (pull-on-mount + realtime
   // merge). Self-guards for guests / unconfigured Supabase.
   useCloudDataReflection();
+  // Strava activities (Garmin → Strava → here) while the app is open. A no-op
+  // for anyone who never linked Strava.
+  useStravaAutoSync();
   // Guest mode hides the pending-sync banner (a guest has no cloud target).
   const { isGuest } = useAuth();
   const mainRef = useRef<HTMLElement | null>(null);

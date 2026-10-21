@@ -127,6 +127,23 @@ export const syncWorkoutSession = async (
   }
 };
 
+/** Upsert many sessions in one request (an import). Throws on failure, like the single upsert. */
+export const syncWorkoutSessionsBatch = async (
+  userId: string,
+  sessions: readonly WorkoutSession[]
+): Promise<void> => {
+  if (!isSupabaseConfigured() || !supabase || sessions.length === 0) return;
+
+  const { error } = await supabase
+    .from('workout_sessions')
+    .upsert(sessions.map((session) => toSessionRow(userId, session)));
+
+  if (error) {
+    logger.sync.error('Error syncing a batch of workout sessions', error);
+    throw error;
+  }
+};
+
 export const fetchWorkoutSessions = async (userId: string): Promise<WorkoutSession[]> => {
   if (!isSupabaseConfigured() || !supabase) return [];
 

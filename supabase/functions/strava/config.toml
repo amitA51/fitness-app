@@ -1,0 +1,6 @@
+# The Strava redirect lands in Safari / the in-app browser on an iPhone, where the
+# installed app's login does not exist, so `exchange` cannot carry a Supabase JWT.
+# Every other action checks the caller's JWT inside the function; `exchange` is
+# bound to a user by the one-time OAuth state that `start` minted for them.
+[function_config]
+verify_jwt = false

@@ -26,6 +26,7 @@ import { LegalLinksSection } from './settings/sections/LegalLinksSection';
 import { NotificationsSection } from './settings/sections/NotificationsSection';
 import { ProfileEditSection } from './settings/sections/ProfileEditSection';
 import { ProfileSection } from './settings/sections/ProfileSection';
+import { StravaSection } from './settings/sections/StravaSection';
 import { ThemeSection } from './settings/sections/ThemeSection';
 import { UnsyncedChangesSection } from './settings/sections/UnsyncedChangesSection';
 import { WeeklyReportSection } from './settings/sections/WeeklyReportSection';
@@ -373,6 +374,10 @@ export default function Settings() {
             pushEnabled={state.pushEnabled}
             togglePush={state.togglePush}
           />
+
+          {/* Garmin → Strava → here. Needs a signed-in account: the link lives
+              on the server, and a guest has no cloud to import into. */}
+          {isSupabaseConfigured() && cloudConnected && <StravaSection />}
         </SettingsGroup>
 
         {/* ── 5 · נתונים ופרטיות ────────────────────────────────────────── */}

@@ -13,7 +13,11 @@ import { emitWorkoutSaved } from './dataEvents';
 import { STORES, dbDelete, dbGetAll, dbPut, initDB } from './indexedDBCore';
 import { queueMutation } from './offlineQueue';
 import { getCurrentUser, resolveCurrentUserOrNull } from './supabaseAuth';
-import { deleteCloudWorkoutSession, syncWorkoutSession } from './supabaseSync';
+import {
+  deleteCloudWorkoutSession,
+  syncWorkoutSession,
+  syncWorkoutSessionsBatch,
+} from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
 
 /**
@@ -351,6 +355,57 @@ export const saveWorkoutSession = async (session: WorkoutSession): Promise<void>
   }
 
   // Trigger UI Refresh
+  emitWorkoutSaved();
+};
+
+/** Cloud upsert size for an import — the same batch the full sync uses. */
+const IMPORT_BATCH_SIZE = 50;
+
+/**
+ * Save many sessions at once — an import (e.g. a Strava history), where one
+ * cloud request per workout would mean hundreds. Same guarantees as
+ * `saveWorkoutSession`: local first, ledger before the cloud, and a batch the
+ * cloud refuses goes to the offline queue session by session.
+ */
+export const saveImportedWorkoutSessions = async (
+  sessions: readonly WorkoutSession[]
+): Promise<void> => {
+  if (sessions.length === 0) return;
+
+  const db = await initDB();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORES.WORKOUT_SESSIONS, 'readwrite');
+    const store = tx.objectStore(STORES.WORKOUT_SESSIONS);
+    for (const session of sessions) store.put(session);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error ?? new Error('Import transaction aborted'));
+  });
+
+  if (isSupabaseConfigured()) {
+    for (const session of sessions) await markSessionUnsynced(session.id);
+    const user = await resolveCurrentUserOrNull();
+
+    for (let i = 0; i < sessions.length; i += IMPORT_BATCH_SIZE) {
+      const batch = sessions.slice(i, i + IMPORT_BATCH_SIZE);
+      const payloads = batch.map((s) => ({ ...s, endTime: s.endTime ?? undefined }));
+      let pushed = false;
+      if (user) {
+        try {
+          await syncWorkoutSessionsBatch(user.id, payloads);
+          pushed = true;
+        } catch (err) {
+          logger.sync.warn(`saveImportedWorkoutSessions: batch of ${batch.length} queued`, err);
+        }
+      }
+      if (pushed) {
+        for (const s of batch) await clearUnsyncedSessionMarker(s.id);
+      } else {
+        for (const payload of payloads) await queueMutation('session:update', payload);
+      }
+    }
+  }
+
   emitWorkoutSaved();
 };
 

@@ -6,6 +6,20 @@
 
 ---
 
+## Strava — ייבוא ריצות מהגרמין (נוסף 21.10.2026, טרם נפרס)
+
+בלי הצעדים האלה כרטיס Strava בהגדרות יראה "החיבור ל-Strava עוד לא הופעל בשרת".
+
+- [ ] אפליקציית מפתחים ב-strava.com/settings/api (דורש מנוי Strava): Website
+      `https://fitness-app-amit.netlify.app`, Authorization Callback Domain `fitness-app-amit.netlify.app`.
+- [ ] `supabase secrets set STRAVA_CLIENT_ID=... STRAVA_CLIENT_SECRET=...`
+      (ודאו ש-`ALLOWED_ORIGIN` כולל את `https://fitness-app-amit.netlify.app` — הפונקציה דוחה כתובת חזרה אחרת).
+- [ ] migration: `supabase/migrations/20261021000000_strava_connections.sql`
+- [ ] `supabase functions deploy strava` (ה-`config.toml` שלה קובע `verify_jwt = false` — בכוונה, ראו ראש `index.ts`).
+- [ ] בדיקה: הגדרות ← Strava ← "חיבור ל-Strava" ← אישור ← ריצה מהשעון מופיעה ב-/cardio עם "מ-Strava".
+
+---
+
 ## שלב 0–2 — בוצע ב-28.07.2026
 
 Migrations ו-Edge Functions נפרסו מול הפרויקט החי `qxhgmqxiomidmimpnjvs`

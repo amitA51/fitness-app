@@ -55,14 +55,25 @@ export interface CardioSplit {
   distanceKm: number;
   /** Elapsed seconds for this split. */
   seconds: number;
+  /** Average heart rate over this split, when the watch recorded it. */
+  avgHr?: number;
 }
 
 /** A recorded GPS route, simplified for storage. */
 export interface CardioRoute {
   /** [latitude, longitude] pairs, simplified to a few hundred points. */
   points: [number, number][];
-  /** Where the route came from. */
-  source: 'gps';
+  /** Where the route came from: the app's own GPS, or a Strava import. */
+  source: 'gps' | 'strava';
+}
+
+/** The outside record an imported exercise came from. */
+export interface ExternalActivityRef {
+  provider: 'strava';
+  /** The provider's activity id. */
+  activityId: number;
+  /** Whether the per-activity detail (calories, km splits) has been fetched yet. */
+  detailed: boolean;
 }
 
 export interface WorkoutSet {
@@ -141,6 +152,8 @@ export interface WorkoutExercise {
   runType?: RunType;
   /** Recorded GPS route of a live-tracked effort. */
   route?: CardioRoute;
+  /** Set when the effort was imported (e.g. from Strava) rather than logged here. */
+  external?: ExternalActivityRef;
 }
 
 export interface WorkoutSession {

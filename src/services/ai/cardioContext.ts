@@ -22,6 +22,7 @@ import {
   formatPace,
   longRunSpike,
   longestInPrior30Days,
+  weeklyCardio,
 } from '../../utils/cardio';
 import { toLocalDateStr } from '../../utils/dateUtils';
 
@@ -95,6 +96,22 @@ export interface LongRunSpikeWarning extends RunMark {
   overPercent: number;
 }
 
+/** One effort of the window, listed on its own so the model can read a single run. */
+export interface RecentEffort {
+  daysAgo: number;
+  discipline: CardioDiscipline;
+  distanceKm: number;
+  durationSec: number;
+  avgHr: number | null;
+  maxHr: number | null;
+  elevationGainM: number;
+  /** Fastest and slowest whole kilometre, s/km — from the splits; null without them. */
+  fastestKmSec: number | null;
+  slowestKmSec: number | null;
+  /** Average HR of the second half of the splits minus the first half, bpm (cardiac drift). */
+  hrDriftBpm: number | null;
+}
+
 export interface CardioSummary {
   /** All cardio of the last 7 days — the week the weekly-volume figure covers. */
   last7Days: CardioTotals;
@@ -103,6 +120,10 @@ export interface CardioSummary {
   runPace: RunPace | null;
   longestRun: RunMark | null;
   longRunSpike: LongRunSpikeWarning | null;
+  /** The latest efforts of the window, newest first. */
+  recentEfforts: RecentEffort[];
+  /** Running km per Sunday-based week, oldest → newest (this week last); null with under 2 weeks of runs. */
+  weeklyRunKm: number[] | null;
 }
 
 /** YYYY-MM-DD of `days` days before `now`, local — the way trainingLoad cuts weeks. */
@@ -170,6 +191,45 @@ function longestRunOf(runs: readonly DatedEffort[], now: Date): RunMark | null {
   return longest ? markOf(longest, now) : null;
 }
 
+/** Efforts listed one by one in the prompt. */
+export const RECENT_EFFORTS_LISTED = 5;
+/** Weeks of running distance shown as a trend — longer than the window, to show the build. */
+export const RUN_TREND_WEEKS = 8;
+/** Splits needed before a drift or a fastest/slowest km means anything. */
+const MIN_SPLITS_FOR_SHAPE = 4;
+
+function recentEffortOf(effort: DatedEffort, now: Date): RecentEffort {
+  const whole = effort.splits.filter((s) => Math.abs(s.distanceKm - 1) < 0.001 && s.seconds > 0);
+  const shaped = whole.length >= MIN_SPLITS_FOR_SHAPE;
+  const withHr = whole.filter((s) => (s.avgHr ?? 0) > 0);
+  let hrDriftBpm: number | null = null;
+  if (withHr.length >= MIN_SPLITS_FOR_SHAPE) {
+    const half = Math.floor(withHr.length / 2);
+    const avg = (list: typeof withHr) =>
+      list.reduce((sum, s) => sum + (s.avgHr ?? 0), 0) / list.length;
+    hrDriftBpm = Math.round(avg(withHr.slice(withHr.length - half)) - avg(withHr.slice(0, half)));
+  }
+  return {
+    daysAgo: daysAgoOf(effort, now),
+    discipline: effort.discipline,
+    distanceKm: effort.distanceKm,
+    durationSec: effort.durationSec,
+    avgHr: effort.avgHr,
+    maxHr: effort.maxHr,
+    elevationGainM: effort.elevationGainM,
+    fastestKmSec: shaped ? Math.min(...whole.map((s) => s.seconds)) : null,
+    slowestKmSec: shaped ? Math.max(...whole.map((s) => s.seconds)) : null,
+    hrDriftBpm,
+  };
+}
+
+function weeklyRunKmOf(sessions: readonly WorkoutSession[], now: Date): number[] | null {
+  const weeks = weeklyCardio(sessions, RUN_TREND_WEEKS, now, 'running').map(
+    (w) => Math.round(w.distanceKm * 10) / 10
+  );
+  return weeks.filter((km) => km > 0).length >= 2 ? weeks : null;
+}
+
 /** A long-run spike is worth mentioning for this many days after the run. */
 const SPIKE_RELEVANT_DAYS = 7;
 
@@ -215,6 +275,11 @@ export function buildCardioSummary(
     runPace: runPaceOf(runs),
     longestRun: longestRunOf(runs, now),
     longRunSpike: spikeOf(sessions, runs, now),
+    recentEfforts: efforts
+      .slice(-RECENT_EFFORTS_LISTED)
+      .reverse()
+      .map((e) => recentEffortOf(e, now)),
+    weeklyRunKm: weeklyRunKmOf(sessions, now),
   };
 }
 
@@ -255,6 +320,25 @@ function paceLine(pace: RunPace): string {
   return line;
 }
 
+function recentEffortLine(e: RecentEffort): string {
+  // Compact on purpose: the whole context rides in one ai-chat message, capped
+  // at 4,000 characters. The legend in the heading explains the short forms.
+  let line = `${daysAgoText(e.daysAgo)}: ${DISCIPLINE_LABEL[e.discipline]}`;
+  if (e.distanceKm > 0) line += ` ${distanceText(e.discipline, e.distanceKm)}`;
+  const parts = [`${line} ב-${minutesText(e.durationSec)}`];
+  if (e.discipline === 'running' && e.distanceKm >= MIN_PACE_RUN_KM) {
+    const pace = formatPace(e.durationSec / e.distanceKm);
+    if (pace) parts.push(`קצב ${pace}`);
+  }
+  if (e.avgHr) parts.push(`דופק ${e.avgHr}${e.maxHr ? ` (שיא ${e.maxHr})` : ''}`);
+  if (e.elevationGainM >= 10) parts.push(`טיפוס ${Math.round(e.elevationGainM)} מ׳`);
+  const fastest = formatPace(e.fastestKmSec);
+  const slowest = formatPace(e.slowestKmSec);
+  if (fastest && slowest) parts.push(`ק״מ מהיר ${fastest}, איטי ${slowest}`);
+  if (e.hrDriftBpm !== null) parts.push(`סחף ${e.hrDriftBpm > 0 ? '+' : ''}${e.hrDriftBpm}`);
+  return parts.join(' | ');
+}
+
 /**
  * The cardio block of the prompt: totals per discipline, run pace, longest run,
  * the spike warning, and a note that tells the model cardio is training even
@@ -284,6 +368,17 @@ export function describeCardioForPrompt(summary: CardioSummary | null): string {
     lines.push(
       `• הריצה הארוכה ביותר: ${kmText(r.distanceKm)} ב-${minutesText(r.durationSec)}, ${daysAgoText(r.daysAgo)}`
     );
+  }
+  if (summary.weeklyRunKm) {
+    lines.push(
+      `• ק״מ ריצה בשבוע, ${summary.weeklyRunKm.length} השבועות האחרונים (מהישן לחדש, האחרון הוא השבוע הנוכחי): ${summary.weeklyRunKm.map((km) => formatKm(km)).join(' → ')}`
+    );
+  }
+  if (summary.recentEfforts.length > 0) {
+    lines.push(
+      `• האימונים האחרונים, מהחדש לישן (קצב ב${UNIT_PACE_KM}; סחף = הדופק בחצי השני פחות בחצי הראשון):`
+    );
+    for (const e of summary.recentEfforts) lines.push(`  - ${recentEffortLine(e)}`);
   }
   if (summary.longRunSpike) {
     const s = summary.longRunSpike;
