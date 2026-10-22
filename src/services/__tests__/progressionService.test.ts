@@ -381,7 +381,7 @@ interface SetSpec {
 
 let uid = 0;
 // A saved session exactly as the live workout writes one: the exercise id is a
-// fresh random id every workout (WorkoutActions maps exerciseId from the live
+// fresh random id every workout (workoutSessionBuilder maps exerciseId from the live
 // exercise's minted `ex-<uuid>`), and only the sets that were done are kept.
 const savedSession = (date: string, name: string, sets: SetSpec[]): WorkoutSession => {
   uid += 1;

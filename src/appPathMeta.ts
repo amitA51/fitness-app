@@ -23,6 +23,7 @@ const PATH_LABEL_MAP: Array<[RegExp, string]> = [
   [/^\/workout/, 'אימון'],
   [/^\/cardio\/live/, 'אירובי פעיל'],
   [/^\/cardio\/log/, 'רישום אירובי'],
+  [/^\/cardio\/coach/, 'מאמן הריצה'],
   [/^\/cardio/, 'ריצה ואירובי'],
   [/^\/nutrition/, 'תזונה'],
   [/^\/progress/, 'התקדמות'],

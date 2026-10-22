@@ -2,8 +2,13 @@
 // CardioDetail — the detail screen of a cardio session (/detail/:id).
 // ============================================================================
 // WorkoutDetail hands cardio sessions here. Right after saving (`justSaved`) it
-// doubles as the "done" moment: personal records in the celebration lime, and
-// an honest note when a run jumped far past the recent longest.
+// doubles as the "done" moment: personal records in the celebration lime. For
+// a run, the coach card follows the numbers — what the run says, what to do
+// now, and the AI coach's full review on request.
+//
+// A session may hold several cardio parts. The hero and the stats add up every
+// part; splits, the route and the coach notes always read ONE part (each part
+// on its own card when there are several, the running part for the coach).
 
 import { Share2 } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
@@ -11,6 +16,7 @@ import { ActivityIcon } from '../../components/cardio/ActivityIcon';
 import PageHeader from '../../components/ui/PageHeader';
 import { useData } from '../../contexts/DataContext';
 import { readAthleteProfile } from '../../services/intelligence/profile';
+import { effectiveHrMax, useCardioPrefs } from '../../services/running/cardioPrefs';
 import type { WorkoutSession } from '../../types';
 import {
   type CardioEffort,
@@ -20,60 +26,34 @@ import {
   cardioDistance,
   cardioEffortsOf,
   cardioPace,
-  effortCalories,
   formatClock,
-  formatPace,
   hrZoneOf,
   hrZones,
-  longRunSpike,
-  longestInPrior30Days,
   recordsHeldBy,
 } from '../../utils/cardio';
 import { formatHebrewDate, formatHebrewTime } from '../../utils/dateUtils';
 import { logger } from '../../utils/logger';
 import { shareWorkoutCard } from '../../utils/workoutShareCard';
-import { effectiveHrMax, useCardioPrefs } from './cardioPrefs';
 import { RouteMap } from './components/RouteMap';
+import { CardioParts } from './detail/CardioParts';
+import { CardioStats } from './detail/CardioStats';
+import { RunCoachCard } from './detail/RunCoachCard';
+import { SplitList } from './detail/SplitList';
+import {
+  insightsForRun,
+  isLatestRun,
+  partsLabel,
+  primaryEffort,
+  summarizeEfforts,
+} from './detail/detailModel';
+import { reviewCacheKey } from './detail/runReviewCache';
 import './cardio.css';
-
-const ZONE_NAMES = ['', 'התאוששות', 'קל', 'בינוני', 'מאומץ', 'מקסימלי'] as const;
-
-const EFFORT_NAMES: Record<number, string> = {
-  2: 'קל מאוד',
-  4: 'קל',
-  6: 'בינוני',
-  8: 'קשה',
-  10: 'מקסימלי',
-};
-
-function effortName(rpe: number): string {
-  return EFFORT_NAMES[rpe] ?? `${rpe} מתוך 10`;
-}
-
-interface StatProps {
-  label: string;
-  value: string;
-  unit?: string;
-  note?: string;
-}
-
-function Stat({ label, value, unit, note }: StatProps) {
-  return (
-    <div className="cardio-stat">
-      <span className="cardio-stat-label">{label}</span>
-      <span>
-        <span className="cardio-stat-value kinetic-number">{value}</span>
-        {unit && <span className="cardio-stat-unit"> {unit}</span>}
-      </span>
-      {note && <span className="cardio-stat-unit">{note}</span>}
-    </div>
-  );
-}
+import './detail/detail.css';
 
 /** One line for sharing: "ריצה · 5.2 ק״מ · 28:40 · 5:31 דק׳/ק״מ". */
-export function cardioShareText(effort: CardioEffort): string {
+export function cardioShareText(effort: CardioEffort, label?: string): string {
   const config = cardioActivityConfig(effort.activity);
-  const parts = [config.label];
+  const parts = [label || config.label];
   const dist = cardioDistance(effort.activity, effort.distanceKm);
   if (dist) parts.push(`${dist.value} ${dist.unit}`);
   parts.push(formatClock(effort.durationSec));
@@ -88,56 +68,88 @@ interface CardioDetailProps {
   onBack: () => void;
 }
 
-export default function CardioDetail({ session, justSaved, onBack }: CardioDetailProps) {
+export default function CardioDetail(props: CardioDetailProps) {
+  const efforts = useMemo(() => cardioEffortsOf(props.session), [props.session]);
+  const primary = useMemo(() => primaryEffort(efforts), [efforts]);
+  // WorkoutDetail only routes real cardio sessions here; nothing recorded → nothing to show.
+  if (!primary) return null;
+  return <CardioDetailView {...props} efforts={efforts} primary={primary} />;
+}
+
+interface CardioDetailViewProps extends CardioDetailProps {
+  efforts: CardioEffort[];
+  primary: CardioEffort;
+}
+
+function CardioDetailView({ session, justSaved, onBack, efforts, primary }: CardioDetailViewProps) {
   const { sessions } = useData();
   const prefs = useCardioPrefs();
-  const efforts = useMemo(() => cardioEffortsOf(session), [session]);
-  const effort = efforts[0] as CardioEffort;
-  const config = cardioActivityConfig(effort.activity);
+  const config = cardioActivityConfig(primary.activity);
+  const multi = efforts.length > 1;
 
-  const totalKm = efforts.reduce((s, e) => s + e.distanceKm, 0);
-  const totalSec = efforts.reduce((s, e) => s + e.durationSec, 0);
-  const weightKg = readAthleteProfile().weightKg;
-  const calories = session.caloriesBurned ?? effortCalories(effort, weightKg);
+  const summary = useMemo(
+    () => summarizeEfforts(efforts, readAthleteProfile().weightKg, session.caloriesBurned),
+    [efforts, session.caloriesBurned]
+  );
+  // Records of the part the screen is about, not of whichever part came first.
+  const records = useMemo(
+    () => recordsHeldBy(session.id, sessions, primary.discipline),
+    [session.id, primary.discipline, sessions]
+  );
+  const hrMax = useMemo(() => effectiveHrMax(prefs, readAthleteProfile().age), [prefs]);
+  const zones = useMemo(
+    () => (hrMax ? hrZones(hrMax.hrMax, prefs.restingHr) : []),
+    [hrMax, prefs.restingHr]
+  );
 
-  const records = useMemo(() => recordsHeldBy(session.id, sessions), [session.id, sessions]);
-  const spike = useMemo(() => {
-    if (effort.discipline !== 'running' || effort.distanceKm <= 0) return null;
-    const start = new Date(session.startTime).getTime();
-    return longRunSpike(effort.distanceKm, longestInPrior30Days(sessions, start, 'running'));
-  }, [effort, session.startTime, sessions]);
+  // The coach reads the running part; a ride or a swim gets no running notes.
+  const runPart = primary.discipline === 'running' ? primary : null;
+  const insights = useMemo(
+    () => (runPart ? insightsForRun(runPart, session, sessions, hrMax?.hrMax ?? null) : []),
+    [runPart, session, sessions, hrMax]
+  );
+  const latest = useMemo(
+    () => (runPart ? isLatestRun(session, sessions) : false),
+    [runPart, session, sessions]
+  );
 
-  const zones = useMemo(() => {
-    const max = effectiveHrMax(prefs, readAthleteProfile().age);
-    return max ? hrZones(max.hrMax, prefs.restingHr) : [];
-  }, [prefs]);
-  const zone = hrZoneOf(effort.avgHr, zones);
-
-  const dist = cardioDistance(effort.activity, totalKm);
-  const pace = cardioPace(effort.activity, totalKm, totalSec);
-  const splits = effort.splits;
-  const fastestSplit = splits.length
-    ? Math.min(...splits.map((s) => s.seconds / s.distanceKm))
+  // Totals add up only when every part is the same kind of effort; a walk +
+  // run session shows its time, and each part's distance below.
+  const dist = summary.uniform ? cardioDistance(primary.activity, summary.distanceKm) : null;
+  const pace = summary.uniform
+    ? cardioPace(primary.activity, summary.distanceKm, summary.durationSec)
     : null;
-  const slowestSplit = splits.length
-    ? Math.max(...splits.map((s) => s.seconds / s.distanceKm))
-    : null;
+  const when = formatHebrewDate(session.date || session.startTime);
+  const reviewKey = reviewCacheKey(session.id, session.updatedAt);
+  // Parts of different kinds (a walk and a run): the screen is named after all
+  // of them, so the total time is not read as the run's.
+  const mixed = multi && !summary.uniform;
+  const title = mixed ? partsLabel(efforts) : config.label;
+  const runParts = efforts.filter((e) => e.discipline === 'running').length;
+  const partNote = !multi
+    ? null
+    : runParts > 1
+      ? 'על חלק הריצה הארוך באימון.'
+      : 'על חלק הריצה באימון.';
 
   const handleShare = useCallback(async () => {
-    const text = cardioShareText({ ...effort, distanceKm: totalKm, durationSec: totalSec });
+    const shared: CardioEffort = {
+      ...primary,
+      distanceKm: summary.uniform ? summary.distanceKm : 0,
+      durationSec: summary.durationSec,
+    };
+    const text = cardioShareText(shared, title);
     // The designed image first (distance as the hero), plain text as fallback.
-    const heroDist = cardioDistance(effort.activity, totalKm);
-    const heroPace = cardioPace(effort.activity, totalKm, totalSec);
-    if (heroDist) {
+    if (dist) {
       const result = await shareWorkoutCard({
         totalVolume: 0,
-        totalSets: effort.sets,
-        durationSec: totalSec,
+        totalSets: efforts.reduce((n, e) => n + e.sets, 0),
+        durationSec: summary.durationSec,
         prsCount: records.length,
         hero: {
-          value: heroDist.value,
-          label: `${heroDist.unit} ${config.label}`,
-          secondary: heroPace ? { value: heroPace.value, label: heroPace.unit } : undefined,
+          value: dist.value,
+          label: `${dist.unit} ${title}`,
+          secondary: pace ? { value: pace.value, label: pace.unit } : undefined,
         },
       }).catch(() => 'unsupported' as const);
       if (result !== 'unsupported') return;
@@ -149,16 +161,15 @@ export default function CardioDetail({ session, justSaved, onBack }: CardioDetai
       if (err instanceof Error && err.name !== 'AbortError')
         logger.workout.error('cardio share failed', err);
     }
-  }, [effort, totalKm, totalSec, records.length, config.label]);
+  }, [primary, summary, dist, pace, efforts, records.length, title]);
 
   return (
     <div style={{ background: 'var(--fs-bg)', minHeight: '100%' }} dir="rtl">
       <PageHeader
-        title={config.label}
+        title={title}
         eyebrow={
           <span>
-            {formatHebrewDate(session.date || session.startTime)} ·{' '}
-            <span dir="ltr">{formatHebrewTime(session.startTime)}</span>
+            {when} · <span dir="ltr">{formatHebrewTime(session.startTime)}</span>
           </span>
         }
         onBack={onBack}
@@ -190,177 +201,94 @@ export default function CardioDetail({ session, justSaved, onBack }: CardioDetai
               role={justSaved ? 'status' : undefined}
             >
               <strong>{justSaved ? 'שיא אישי חדש!' : 'שיא אישי'}</strong>
-              {records.map((r) => (
-                <span key={`${r.kind}-${r.distanceKm}`}>
-                  {r.kind === 'longest' ? (
-                    <>
-                      המרחק הארוך ביותר שלך: <span className="kinetic-number">{dist?.value}</span>{' '}
-                      {dist?.unit ?? UNIT_KM}
-                    </>
-                  ) : (
-                    <>
-                      {r.label} ב־<span className="kinetic-number">{formatClock(r.seconds)}</span>
-                    </>
-                  )}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {spike !== null && (
-            <div className="cardio-banner" data-tone="warn">
-              <strong>
-                ארוכה ב־<span className="kinetic-number">{Math.round(spike * 100)}%</span> מהריצה
-                הארוכה ביותר שלך בחודש שלפניה
-              </strong>
-              <span>
-                קפיצה חדה במרחק של ריצה אחת קשורה לסיכון גבוה יותר לפציעה. עדיף להאריך בהדרגה, עד
-                כ־10% בכל פעם.
-              </span>
+              {records.map((r) => {
+                const longest = cardioDistance(primary.activity, r.distanceKm);
+                return (
+                  <span key={`${r.kind}-${r.distanceKm}`}>
+                    {r.kind === 'longest' ? (
+                      <>
+                        המרחק הארוך ביותר שלך:{' '}
+                        <span className="kinetic-number">{longest?.value}</span>{' '}
+                        {longest?.unit ?? UNIT_KM}
+                      </>
+                    ) : (
+                      <>
+                        {r.label} ב־<span className="kinetic-number">{formatClock(r.seconds)}</span>
+                      </>
+                    )}
+                  </span>
+                );
+              })}
             </div>
           )}
 
           <section className="cardio-detail-hero" aria-label="סיכום">
             <span className="cardio-detail-kicker">
-              <ActivityIcon activity={effort.activity} size={18} />
-              {config.label}
-              {effort.runType && ` · ${RUN_TYPE_LABELS[effort.runType]}`}
+              <ActivityIcon activity={primary.activity} size={18} />
+              {title}
+              {!mixed && primary.runType && ` · ${RUN_TYPE_LABELS[primary.runType]}`}
               {session.exercises.some((ex) => ex.external?.provider === 'strava') && ' · מ-Strava'}
             </span>
             <p className="cardio-detail-big">
               <span className="cardio-detail-big-value kinetic-number">
-                {dist ? dist.value : formatClock(totalSec)}
+                {dist ? dist.value : formatClock(summary.durationSec)}
               </span>
               {dist && <span className="cardio-detail-big-unit">{dist.unit}</span>}
             </p>
-            {dist && (
+            {!dist && multi && (
               <p className="cardio-detail-sub">
-                <span className="kinetic-number">{formatClock(totalSec)}</span>
-                {pace && (
-                  <>
-                    {' · '}
-                    <span className="kinetic-number">{pace.value}</span> {pace.unit}
-                  </>
-                )}
+                <span className="kinetic-number">{efforts.length}</span> חלקים
               </p>
             )}
           </section>
 
-          <div className="cardio-stats">
-            <Stat label="זמן" value={formatClock(totalSec)} />
-            {pace && (
-              <Stat
-                label={config.paceStyle === 'speed' ? 'מהירות ממוצעת' : 'קצב ממוצע'}
-                value={pace.value}
-                unit={pace.unit}
-              />
-            )}
-            {calories !== null && calories > 0 && (
-              <Stat
-                label="קלוריות"
-                value={String(calories)}
-                note={effort.typedCalories !== null ? 'מהשעון' : 'הערכה'}
-              />
-            )}
-            {effort.avgHr !== null && (
-              <Stat
-                label="דופק ממוצע"
-                value={String(effort.avgHr)}
-                unit="bpm"
-                note={zone ? `אזור ${zone} · ${ZONE_NAMES[zone]}` : undefined}
-              />
-            )}
-            {effort.maxHr !== null && (
-              <Stat label="דופק מרבי" value={String(effort.maxHr)} unit="bpm" />
-            )}
-            {effort.elevationGainM > 0 && (
-              <Stat
-                label="עלייה מצטברת"
-                value={String(Math.round(effort.elevationGainM))}
-                unit="מ׳"
-              />
-            )}
-            {effort.effort !== null && <Stat label="מאמץ" value={effortName(effort.effort)} />}
-            {effort.sets > 1 && <Stat label="מקטעים" value={String(effort.sets)} />}
-          </div>
+          <CardioStats
+            summary={summary}
+            pace={pace}
+            paceLabel={config.paceStyle === 'speed' ? 'מהירות ממוצעת' : 'קצב ממוצע'}
+            showTime={dist !== null}
+            zone={hrZoneOf(summary.avgHr, zones)}
+            sets={multi ? 1 : primary.sets}
+          />
 
-          {effort.route && effort.route.points.length >= 2 && (
-            <section aria-labelledby="cardio-route-title">
-              <h2 id="cardio-route-title" className="cardio-section-title">
-                המסלול
-              </h2>
-              <RouteMap points={effort.route.points} label={`צורת המסלול של ה${config.label}`} />
-            </section>
+          {runPart && (
+            <RunCoachCard
+              // A new run, or an edit of this one, starts the review afresh.
+              key={reviewKey}
+              sessionId={session.id}
+              cacheKey={reviewKey}
+              effort={runPart}
+              when={when}
+              insights={insights}
+              isLatest={latest}
+              partNote={partNote}
+            />
           )}
 
-          {splits.length > 0 && fastestSplit !== null && slowestSplit !== null && (
-            <section aria-labelledby="cardio-splits-title">
-              <h2 id="cardio-splits-title" className="cardio-section-title">
-                קילומטרים
-              </h2>
-              <div style={{ display: 'grid', gap: 4 }}>
-                {splits.map((s) => {
-                  const perKm = s.seconds / s.distanceKm;
-                  // Faster = longer bar; the slowest still shows a sliver.
-                  const range = slowestSplit - fastestSplit || 1;
-                  const width = 35 + 65 * ((slowestSplit - perKm) / range);
-                  return (
-                    <div
-                      key={s.index}
-                      className="cardio-split-row"
-                      data-best={perKm === fastestSplit && splits.length > 1 ? 'true' : undefined}
-                    >
-                      <span>
-                        {s.distanceKm < 1 ? (
-                          <span className="kinetic-number">
-                            {Math.round(s.distanceKm * 1000)} מ׳
-                          </span>
-                        ) : (
-                          <>
-                            ק״מ <span className="kinetic-number">{s.index}</span>
-                          </>
-                        )}
-                      </span>
-                      <span className="cardio-split-bar" aria-hidden="true">
-                        <span style={{ width: `${width}%` }} />
-                      </span>
-                      <span className="kinetic-number" style={{ textAlign: 'end' }}>
-                        {formatPace(perKm)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-
-          {efforts.length > 1 && (
-            <section aria-labelledby="cardio-parts-title">
-              <h2 id="cardio-parts-title" className="cardio-section-title">
-                חלקי האימון
-              </h2>
-              <div style={{ display: 'grid', gap: 8 }}>
-                {efforts.map((e) => {
-                  const d = cardioDistance(e.activity, e.distanceKm);
-                  return (
-                    <div key={e.exerciseId} className="cardio-stat">
-                      <span className="cardio-stat-label">
-                        {cardioActivityConfig(e.activity).label}
-                      </span>
-                      <span>
-                        <span className="kinetic-number">{formatClock(e.durationSec)}</span>
-                        {d && (
-                          <>
-                            {' · '}
-                            <span className="kinetic-number">{d.value}</span> {d.unit}
-                          </>
-                        )}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
+          {multi ? (
+            <CardioParts efforts={efforts} />
+          ) : (
+            <>
+              {primary.route && primary.route.points.length >= 2 && (
+                <section aria-labelledby="cardio-route-title">
+                  <h2 id="cardio-route-title" className="cardio-section-title">
+                    המסלול
+                  </h2>
+                  <RouteMap
+                    points={primary.route.points}
+                    label={`צורת המסלול של ה${config.label}`}
+                  />
+                </section>
+              )}
+              {primary.splits.length > 0 && (
+                <section aria-labelledby="cardio-splits-title">
+                  <h2 id="cardio-splits-title" className="cardio-section-title">
+                    קילומטרים
+                  </h2>
+                  <SplitList splits={primary.splits} />
+                </section>
+              )}
+            </>
           )}
 
           {session.notes && (

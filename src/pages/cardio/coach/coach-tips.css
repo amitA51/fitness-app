@@ -1,0 +1,101 @@
+/* ============================================================================
+   Running coach — tips (TipsSection.tsx).
+   Tokens only (tokens.css); logical properties only (RTL-first).
+   ============================================================================ */
+
+/* ---- tips -------------------------------------------------------------------- */
+
+.rc-tips {
+  display: grid;
+  gap: 10px;
+}
+
+.rc-tip {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--fs-surface);
+}
+
+.rc-tip-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rc-tip-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fs-ink);
+}
+
+.rc-tag {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fs-muted);
+  white-space: nowrap;
+}
+
+.rc-topic {
+  border-bottom: 1px solid var(--fs-surface-2);
+}
+
+.rc-topic:last-child {
+  border-bottom: 0;
+}
+
+.rc-topic > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fs-ink);
+  cursor: pointer;
+  list-style: none;
+}
+
+.rc-topic > summary::-webkit-details-marker {
+  display: none;
+}
+
+.rc-topic-chevron {
+  color: var(--fs-muted);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.rc-topic[open] .rc-topic-chevron {
+  transform: rotate(180deg);
+}
+
+.rc-topic-body {
+  display: grid;
+  gap: 14px;
+  padding-block: 2px 16px;
+}
+
+/* Inside the "all tips" list the topic already frames each tip. */
+.rc-topic-body .rc-tip {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rc-topic-chevron {
+    transition: none;
+  }
+}

@@ -79,6 +79,7 @@ const WorkoutDetail = lazy(() => import('./pages/WorkoutDetail'));
 const CardioPage = lazy(() => import('./pages/cardio/CardioPage'));
 const CardioLogPage = lazy(() => import('./pages/cardio/CardioLogPage'));
 const CardioLivePage = lazy(() => import('./pages/cardio/CardioLivePage'));
+const RunningCoachPage = lazy(() => import('./pages/cardio/RunningCoachPage'));
 
 // Coach platform pages
 const CoachHome = lazy(() => import('./pages/coach/CoachHome'));
@@ -532,6 +533,14 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
         }
       />
       <Route
+        path="/cardio/coach"
+        element={
+          <PageErrorBoundary pageLabel="מאמן הריצה">
+            <RunningCoachPage />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
         path="/detail/:id"
         element={
           <PageErrorBoundary pageLabel="פרטי האימון">
@@ -848,9 +857,12 @@ function AppShell() {
   const prevPathRef = useRef<string | null>(null);
 
   // Focused flows hide the bottom nav: an active workout, and the cardio log /
-  // live screens (the /cardio picker itself keeps it).
+  // live screens. The /cardio picker and the running coach keep it — the coach
+  // is a place runners browse, not a flow they are in the middle of.
   const isWorkoutActive =
-    location.pathname.startsWith('/workout') || location.pathname.startsWith('/cardio/');
+    location.pathname.startsWith('/workout') ||
+    location.pathname.startsWith('/cardio/log') ||
+    location.pathname.startsWith('/cardio/live');
 
   const pageAccent = useMemo(() => getPageAccent(location.pathname), [location.pathname]);
 

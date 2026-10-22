@@ -115,6 +115,75 @@ describe('localStateMirror', () => {
     expect(localStorage.getItem(PROFILE_KEY)).toBe(localRaw);
   });
 
+  it('uploads a local value that never had a cloud copy — only after a full settings pull', async () => {
+    const dbPut = vi.fn().mockResolvedValue(undefined);
+    const queueMutation = vi.fn().mockResolvedValue(undefined);
+    vi.doMock('../indexedDBCore', () => ({
+      STORES: { USER_SETTINGS: 'user_settings' },
+      dbPut,
+      dbGetAll: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('../offlineQueue', () => ({ queueMutation }));
+    // Saved before this key was mirrored: on the device, nowhere else.
+    localStorage.setItem('cardio_prefs_v1', JSON.stringify({ hrMax: 188 }));
+
+    const { restoreMirroredLocalKeys } = await import('../localStateMirror');
+
+    // The settings fetch failed: "no cloud row" proves nothing, upload nothing.
+    await restoreMirroredLocalKeys();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(dbPut).not.toHaveBeenCalled();
+
+    await restoreMirroredLocalKeys({ backfillMissing: true });
+    await vi.waitFor(() =>
+      expect(queueMutation).toHaveBeenCalledWith(
+        'setting:update',
+        expect.objectContaining({ key: 'mirror:cardio_prefs_v1' })
+      )
+    );
+    expect(localStorage.getItem('cardio_prefs_v1')).toBe(JSON.stringify({ hrMax: 188 }));
+  });
+
+  it('never uploads a key that is saved without mirroring (its snapshot would come back)', async () => {
+    const dbPut = vi.fn().mockResolvedValue(undefined);
+    vi.doMock('../indexedDBCore', () => ({
+      STORES: { USER_SETTINGS: 'user_settings' },
+      dbPut,
+      dbGetAll: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('../offlineQueue', () => ({ queueMutation: vi.fn() }));
+    localStorage.setItem('appSettings', JSON.stringify({ theme: 'dark' }));
+
+    const { restoreMirroredLocalKeys } = await import('../localStateMirror');
+    await restoreMirroredLocalKeys({ backfillMissing: true });
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(dbPut).not.toHaveBeenCalled();
+  });
+
+  it('tells open screens which key a restore changed', async () => {
+    const raw = JSON.stringify({ distanceKm: 10 });
+    vi.doMock('../indexedDBCore', () => ({
+      STORES: { USER_SETTINGS: 'user_settings' },
+      dbPut: vi.fn().mockResolvedValue(undefined),
+      dbGetAll: vi.fn().mockResolvedValue([
+        {
+          key: 'mirror:running_goal_v1',
+          value: { __mirroredAt: '2026-10-20T10:00:00.000Z', raw },
+        },
+      ]),
+    }));
+    const heard: (string | null)[] = [];
+    const onStorage = (e: StorageEvent) => heard.push(e.key);
+    window.addEventListener('storage', onStorage);
+
+    const { restoreMirroredLocalKeys } = await import('../localStateMirror');
+    await restoreMirroredLocalKeys();
+    window.removeEventListener('storage', onStorage);
+
+    expect(heard).toEqual(['running_goal_v1']);
+  });
+
   it('ignores rows that are not mirror envelopes', async () => {
     vi.doMock('../indexedDBCore', () => ({
       STORES: { USER_SETTINGS: 'user_settings' },

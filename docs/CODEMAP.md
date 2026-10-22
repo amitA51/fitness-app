@@ -202,7 +202,6 @@ Stateless pieces consumed by `ActiveWorkoutNew`. Key ones:
 | `SwipeComplete.tsx` / `SlideToComplete.tsx` | Swipe-to-complete gestures |
 | `TrendLineOverlay.tsx` | Trend graph overlay |
 | `WaterReminderHandler.tsx` | Triggers water reminders |
-| `WorkoutActions.tsx` | Action buttons row |
 | `AlternativesSheet.tsx` | "Swap exercise" picker |
 | `DeleteConfirmDialog.tsx` | Confirm delete prompt |
 | `ExerciseSuggestionLoader.tsx` | Loading skeleton for AI suggestions |
@@ -294,8 +293,7 @@ Pure-function modules that talk to storage / network. Components should call ser
 | `workoutService.ts` | Template list + workout-flow helpers |
 | `prService.ts` | Personal-record detection / queries; exports `PersonalRecord` + `getExerciseNames()` |
 | `progressionService.ts` | Rule-based next-set progression |
-| `aiProgressionService.ts` | AI-assisted progression |
-| `aiWorkoutInsightService.ts` | AI insight generation for dashboard/workouts |
+| `running/` | Running coach: goals, personal paces, load, next run, run insights, tips |
 | `ai.ts` + `ai/` | AI client(s) for the Supabase `ai-chat` edge function |
 | `analyticsService.ts` | Aggregations for Progress page |
 | `bodyStatsService.ts` | Body-weight / measurements |

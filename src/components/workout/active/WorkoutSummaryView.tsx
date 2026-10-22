@@ -17,7 +17,7 @@ interface WorkoutSummaryViewProps {
 // "save as template" and "חזרו על האימון" (do it again) actions so the two can
 // never drift. `isFavorite` surfaces the template in the PreWorkoutScreen
 // "התבניות שלך" row — exactly where the repeat affordance wants the user to land
-// next time. Mirrors buildTemplatePayload in the useWorkoutFinish overlay path.
+// next time.
 const buildTemplatePayload = (
   completedSession: WorkoutSession,
   isFavorite: boolean
@@ -84,8 +84,7 @@ const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({ completedSessio
   // (best-effort, fire and forget) so it surfaces in the PreWorkoutScreen
   // "התבניות שלך" row. WorkoutSummary.handleRepeat already runs onClose() right
   // after this, and onClose clears the active-workout draft + calls onExit — so
-  // we must NOT exit here (that would double-fire). Mirrors the onRepeatWorkout
-  // handler in the useWorkoutFinish overlay path, minus the redundant onExit.
+  // we must NOT exit here (that would double-fire).
   const handleRepeatWorkout = useCallback(() => {
     createWorkoutTemplate(buildTemplatePayload(completedSession, true)).catch((err) => {
       logger.workout?.warn?.('Repeat-workout template seed failed; session continues', err);

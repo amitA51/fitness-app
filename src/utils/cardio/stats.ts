@@ -10,7 +10,7 @@
 
 import type { WorkoutSession } from '../../types';
 import { getWeekStart, toLocalDateStr } from '../dateUtils';
-import type { CardioDiscipline } from './activities';
+import { CARDIO_DISCIPLINE_ORDER, type CardioDiscipline } from './activities';
 import { type CardioEffort, cardioEffortsOf } from './session';
 
 export interface RecordDistance {
@@ -49,6 +49,41 @@ export function datedEfforts(sessions: readonly WorkoutSession[]): DatedEffort[]
     }
   }
   return out.sort((a, b) => a.at - b.at);
+}
+
+/** Cardio of one discipline, summed over a set of efforts. */
+export interface DisciplineTotal {
+  discipline: CardioDiscipline;
+  /** Recorded efforts (a run, a ride, a treadmill block inside a gym session). */
+  count: number;
+  distanceKm: number;
+  durationSec: number;
+}
+
+/**
+ * Sums `efforts` per discipline: one row per discipline that has any, in
+ * `order`. The caller picks the window (filter the efforts first). Pure.
+ */
+export function totalsByDiscipline(
+  efforts: readonly Pick<CardioEffort, 'discipline' | 'distanceKm' | 'durationSec'>[],
+  order: readonly CardioDiscipline[] = CARDIO_DISCIPLINE_ORDER
+): DisciplineTotal[] {
+  const totals = new Map<CardioDiscipline, DisciplineTotal>();
+  for (const e of efforts) {
+    const t = totals.get(e.discipline) ?? {
+      discipline: e.discipline,
+      count: 0,
+      distanceKm: 0,
+      durationSec: 0,
+    };
+    totals.set(e.discipline, {
+      ...t,
+      count: t.count + 1,
+      distanceKm: t.distanceKm + e.distanceKm,
+      durationSec: t.durationSec + e.durationSec,
+    });
+  }
+  return order.flatMap((d) => totals.get(d) ?? []);
 }
 
 /** Fastest seconds over `km` inside one effort, or null if it cannot say. */
@@ -134,10 +169,19 @@ export interface RecordHit {
  * The records a given session holds right now (it set them and nothing beat
  * them since). The first effort ever is not a "record" — there was nothing to
  * beat — so a discipline needs an earlier effort before anything is claimed.
+ *
+ * `discipline` picks the part to judge in a multi-part session (a warm-up walk
+ * before a run must not speak for the run); without it, the first part.
  */
-export function recordsHeldBy(sessionId: string, sessions: readonly WorkoutSession[]): RecordHit[] {
+export function recordsHeldBy(
+  sessionId: string,
+  sessions: readonly WorkoutSession[],
+  discipline?: CardioDiscipline
+): RecordHit[] {
   const efforts = datedEfforts(sessions);
-  const mine = efforts.find((e) => e.sessionId === sessionId);
+  const mine = efforts.find(
+    (e) => e.sessionId === sessionId && (!discipline || e.discipline === discipline)
+  );
   if (!mine) return [];
   const hadEarlier = efforts.some((e) => e.discipline === mine.discipline && e.at < mine.at);
   if (!hadEarlier) return [];
@@ -251,6 +295,7 @@ export function bestRecentRun(
     if (
       e.discipline !== 'running' ||
       e.at < from ||
+      e.at > now.getTime() ||
       e.distanceKm < 3 ||
       e.distanceKm > 21.1 ||
       e.durationSec <= 0

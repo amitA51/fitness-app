@@ -25,6 +25,11 @@ import {
 import { getInviteContinuationCleanupOptions } from '../services/authContinuation';
 import { isUnreachableAuthError } from '../services/authErrors';
 import { transitionAuthSession } from '../services/authSessionTransition';
+import {
+  clearGuestClaimPending,
+  isGuestClaimPending,
+  markGuestClaimPending,
+} from '../services/guestClaim';
 import { logger } from '../utils/logger';
 
 // ----------------------------------------------------------------------------
@@ -157,11 +162,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // guest has no owner marker yet, so without this branch execution used
         // to fall through to the destructive cleanup below and destroy every
         // local record at exactly the moment signup promised "כדי לשמור את
-        // הנתונים שלכם". Only fires when this device was in guest mode.
+        // הנתונים שלכם". Only fires when this device was in guest mode — or
+        // left it a moment ago to reach the Login screen (services/guestClaim).
         const baseCleanupOptions = nextUserId ? (getInviteContinuationCleanupOptions() ?? {}) : {};
+        const claimGuestData = Boolean(nextUserId && (isGuestRef.current || isGuestClaimPending()));
         await transitionAuthSession(nextUserId, {
           ...baseCleanupOptions,
-          ...(nextUserId && isGuestRef.current ? { claimGuestData: true } : {}),
+          ...(claimGuestData ? { claimGuestData: true } : {}),
         });
       } catch (err) {
         logger.auth.error('Auth transition cleanup failed; refusing to load the session', err);
@@ -198,6 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch {
           // ignore
         }
+        clearGuestClaimPending();
         setIsGuest(false);
         setStatus('authenticated');
 
@@ -343,6 +351,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session]);
 
   const clearGuest = useCallback(() => {
+    // Leaving guest mode to sign in: the first account adopts what the guest
+    // saved here, instead of the sign-in wiping it (services/guestClaim).
+    if (isGuestRef.current) markGuestClaimPending();
     try {
       localStorage.removeItem(SKIP_AUTH_STORAGE_KEY);
     } catch {

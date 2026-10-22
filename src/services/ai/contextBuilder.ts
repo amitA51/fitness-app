@@ -77,7 +77,8 @@ export function buildSystemPrompt(context: AIContext): string {
       .slice(0, 60)
       .trim();
 
-  // ה-persona הגלובלי מוזרק אוטומטית ב-RemoteProvider (ראה ai/config.ts::withPersona).
+  // ה-persona יושב בשרת (SYSTEM_PROMPT ב-ai-chat); RemoteProvider מעביר את הבלוק הזה
+  // כהקשר מסומן בהודעת user (ראה ai/config.ts::withPersona).
   // כאן רק מוסיפים את ההקשר הדינמי של המשתמש.
   let prompt = `נתוני המתאמן (התייחס אליהם בתשובה):
 - פרופיל: ${describeProfile(context.profile)}

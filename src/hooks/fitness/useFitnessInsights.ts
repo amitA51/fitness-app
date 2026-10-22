@@ -5,7 +5,6 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { generateAIWorkoutInsight } from '../../services/aiWorkoutInsightService';
 import type {
   LastWorkoutSummary,
   MuscleGroupLastTrained,
@@ -50,12 +49,8 @@ export interface FitnessInsightsData {
   /** Week-over-week volume deltas for ALL exercises (locally aggregated). */
   weekOverWeekDeltas: ProgressDelta[];
 
-  aiInsight: string | null;
-  aiInsightLoading: boolean;
-
   refresh: () => Promise<void>;
   selectExercise: (name: string) => void;
-  generateAIInsight: () => Promise<void>;
 }
 
 // ============================================================
@@ -67,8 +62,6 @@ export function useFitnessInsights(externalSessions?: WorkoutSession[]): Fitness
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
-  const [aiInsight, setAiInsight] = useState<string | null>(null);
-  const [aiInsightLoading, setAiInsightLoading] = useState(false);
 
   const sessions = externalSessions ?? localSessions;
 
@@ -143,20 +136,6 @@ export function useFitnessInsights(externalSessions?: WorkoutSession[]): Fitness
     }
   }, [computedData.exerciseNames, selectedExercise]);
 
-  const generateInsight = useCallback(async () => {
-    if (aiInsightLoading) return;
-    try {
-      setAiInsightLoading(true);
-      const insight = await generateAIWorkoutInsight(sessions);
-      setAiInsight(insight);
-    } catch (e) {
-      logger.ai.error('Failed to generate AI insight', e);
-      setAiInsight(null);
-    } finally {
-      setAiInsightLoading(false);
-    }
-  }, [aiInsightLoading, sessions]);
-
   return useMemo(
     () => ({
       loading: externalSessions ? false : loading,
@@ -165,11 +144,8 @@ export function useFitnessInsights(externalSessions?: WorkoutSession[]): Fitness
       workoutSessions: sessions,
       selectedExerciseProgress,
       selectedExerciseDelta,
-      aiInsight,
-      aiInsightLoading,
       refresh: loadSessions,
       selectExercise: setSelectedExercise,
-      generateAIInsight: generateInsight,
     }),
     [
       externalSessions,
@@ -179,10 +155,7 @@ export function useFitnessInsights(externalSessions?: WorkoutSession[]): Fitness
       sessions,
       selectedExerciseProgress,
       selectedExerciseDelta,
-      aiInsight,
-      aiInsightLoading,
       loadSessions,
-      generateInsight,
     ]
   );
 }

@@ -10,6 +10,7 @@ import type { NutritionLog, PersonalRecordRow } from '../../../services/supabase
 import type { BodyWeightEntry, CardioActivity, WorkoutSession } from '../../../types';
 import type { Assignment } from '../../../types/coach';
 import {
+  CARDIO_DISCIPLINE_LABELS,
   type CardioDiscipline,
   type ValueWithUnit,
   cardioDistance,
@@ -76,7 +77,6 @@ export function computeCardioSummary(
 }
 
 interface DisciplineCopy {
-  label: string;
   /** Activity whose distance unit the discipline reports in (km, or m in the pool). */
   unitOf: CardioActivity;
   /** What one effort is called when counted: "3 ריצות", "2 אימונים". */
@@ -84,20 +84,12 @@ interface DisciplineCopy {
 }
 
 const DISCIPLINE_COPY: Record<CardioDiscipline, DisciplineCopy> = {
-  running: { label: 'ריצה', unitOf: 'run', noun: { one: 'ריצה', many: 'ריצות', oneWord: 'אחת' } },
-  walking: {
-    label: 'הליכה',
-    unitOf: 'walk',
-    noun: { one: 'הליכה', many: 'הליכות', oneWord: 'אחת' },
-  },
-  cycling: {
-    label: 'רכיבה',
-    unitOf: 'cycle',
-    noun: { one: 'רכיבה', many: 'רכיבות', oneWord: 'אחת' },
-  },
-  rowing: { label: 'חתירה', unitOf: 'row', noun: HE_NOUNS.workout },
-  swimming: { label: 'שחייה', unitOf: 'swim', noun: HE_NOUNS.workout },
-  other: { label: 'אירובי אחר', unitOf: 'other', noun: HE_NOUNS.workout },
+  running: { unitOf: 'run', noun: { one: 'ריצה', many: 'ריצות', oneWord: 'אחת' } },
+  walking: { unitOf: 'walk', noun: { one: 'הליכה', many: 'הליכות', oneWord: 'אחת' } },
+  cycling: { unitOf: 'cycle', noun: { one: 'רכיבה', many: 'רכיבות', oneWord: 'אחת' } },
+  rowing: { unitOf: 'row', noun: HE_NOUNS.workout },
+  swimming: { unitOf: 'swim', noun: HE_NOUNS.workout },
+  other: { unitOf: 'other', noun: HE_NOUNS.workout },
 };
 
 /** One discipline's period total, split so the numbers can render LTR. */
@@ -114,7 +106,7 @@ export function cardioTotalParts(total: CardioPeriodTotal): CardioTotalParts {
   const copy = DISCIPLINE_COPY[total.discipline];
   const counted = pluralizeHe(total.count, copy.noun);
   return {
-    label: copy.label,
+    label: CARDIO_DISCIPLINE_LABELS[total.discipline],
     distance: cardioDistance(copy.unitOf, total.distanceKm),
     // The prefix joins a word directly ("בריצה") and a numeral with a maqaf ("ב־3").
     countText: total.count === 1 ? `ב${counted}` : `ב־${counted}`,

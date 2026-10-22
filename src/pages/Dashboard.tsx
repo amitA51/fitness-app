@@ -20,6 +20,7 @@ import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { InsightCard } from '../components/dashboard/InsightCard';
 import { LastWorkoutCard } from '../components/dashboard/LastWorkoutCard';
 import { ProgramCard } from '../components/dashboard/ProgramCard';
+import { RunningNextRow } from '../components/dashboard/RunningNextRow';
 import { StartWorkoutSheet } from '../components/dashboard/StartWorkoutSheet';
 import { TemplateStrip } from '../components/dashboard/TemplateQuickStart';
 import { TodaysWorkoutCard } from '../components/dashboard/TodaysWorkoutCard';
@@ -410,6 +411,7 @@ export default function Dashboard() {
             above, outside this branch so a coached first-run user still sees it)
             takes precedence over the self-guided program. */}
         {!hasCoachSchedule && <ProgramCard />}
+        <RunningNextRow />
 
         {/* 3. AM I PROGRESSING — the last session, one tap from its detail. */}
         {homeStats.lastWorkout && <LastWorkoutCard recap={homeStats.lastWorkout} />}

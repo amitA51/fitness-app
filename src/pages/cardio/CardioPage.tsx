@@ -11,17 +11,17 @@ import { useNavigate } from 'react-router-dom';
 import { ActivityIcon } from '../../components/cardio/ActivityIcon';
 import PageHeader from '../../components/ui/PageHeader';
 import { useData } from '../../contexts/DataContext';
+import { readLastActivity, rememberLastActivity } from '../../services/running/cardioPrefs';
 import type { CardioActivity } from '../../types';
 import {
   CARDIO_ACTIVITIES,
   type CardioGroup,
   UNIT_KM,
   cardioActivityConfig,
-  cardioEffortsOf,
   formatKm,
+  weeklyCardio,
 } from '../../utils/cardio';
-import { sessionsInWeek, weekStartAt } from '../../utils/trainingWeek';
-import { readLastActivity, rememberLastActivity } from './cardioPrefs';
+import { CoachHubCard } from './coach/CoachHubCard';
 import { pendingLiveActivity } from './live/useLiveTracker';
 import './cardio.css';
 
@@ -31,19 +31,12 @@ const GROUPS: readonly { id: CardioGroup; title: string }[] = [
   { id: 'other', title: 'עוד' },
 ];
 
-/** Cardio done this week: distance + number of efforts. */
+/** Cardio done this week (completed sessions only): distance + number of efforts. */
 function useWeekCardio(): { distanceKm: number; count: number } {
   const { sessions } = useData();
   return useMemo(() => {
-    let distanceKm = 0;
-    let count = 0;
-    for (const s of sessionsInWeek(sessions, weekStartAt(new Date()))) {
-      for (const e of cardioEffortsOf(s)) {
-        distanceKm += e.distanceKm;
-        count += 1;
-      }
-    }
-    return { distanceKm, count };
+    const [week] = weeklyCardio(sessions, 1, new Date());
+    return { distanceKm: week?.distanceKm ?? 0, count: week?.count ?? 0 };
   }, [sessions]);
 }
 
@@ -100,6 +93,7 @@ export default function CardioPage() {
               <ChevronLeft size={20} aria-hidden="true" style={{ color: 'var(--fs-muted)' }} />
             </button>
           )}
+          <CoachHubCard />
           {GROUPS.map((group) => (
             <section
               key={group.id}

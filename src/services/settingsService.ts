@@ -9,6 +9,7 @@ import { logger } from '../utils/logger';
 import { calculateTDEE, getMacroGoalsForGoal } from '../utils/tdee';
 import { exportWorkoutHistoryCSV } from './exportService';
 import { STORES, dbGetAll, dbPut } from './indexedDBCore';
+import { MIRRORED_LOCAL_KEYS, mirrorLocalKey } from './localStateMirror';
 import { markRecordUnsynced } from './sessionDb';
 import { getCurrentUser } from './supabaseAuth';
 import { clearUserScopedLocalData } from './userScopedLocalData';
@@ -162,8 +163,8 @@ const BACKUP_SETTINGS_TO_LS: Record<string, string> = {
   // PROGRESS_KEY in services/programProgressService.ts — duplicated as a literal
   // so this module stays free of a service dependency. Keep the two in sync.
   programProgress: 'bbt_program_progress_v1',
-  // Heart-rate settings + weekly distance goal (pages/cardio/cardioPrefs.ts,
-  // CARDIO_PREFS_KEY) — local-only, so the backup is their only copy.
+  // Heart-rate settings + weekly distance goal (services/running/cardioPrefs.ts,
+  // CARDIO_PREFS_KEY) — also mirrored to the cloud.
   cardioPrefs: 'cardio_prefs_v1',
 };
 
@@ -350,6 +351,9 @@ export async function importFullBackup(text: string): Promise<RestoreResult> {
       try {
         localStorage.setItem(lsKey, value);
         settings++;
+        // A restored value is the newest one: mirror it, or the next pull puts
+        // the older cloud copy back over it.
+        if ((MIRRORED_LOCAL_KEYS as readonly string[]).includes(lsKey)) mirrorLocalKey(lsKey);
       } catch (err) {
         logger.app.warn(`restore: failed to set localStorage "${lsKey}"`, err);
       }

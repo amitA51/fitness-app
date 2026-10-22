@@ -1,0 +1,379 @@
+/* ============================================================================
+   Running coach — /cardio/coach and its hub card.
+   Tokens only (tokens.css); logical properties only (RTL-first).
+   ============================================================================ */
+
+.rc-card {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  background: var(--fs-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.rc-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.rc-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--fs-heading);
+}
+
+.rc-kicker {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fs-link);
+}
+
+.rc-body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--fs-ink);
+}
+
+.rc-muted {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fs-muted);
+}
+
+.rc-edit {
+  min-height: 44px;
+  padding-inline: 8px;
+  gap: 6px;
+}
+
+.rc-card[hidden] {
+  display: none;
+}
+
+/* ---- hero: the next run ----------------------------------------------------- */
+
+.rc-hero {
+  gap: 14px;
+  padding: 20px;
+  background: color-mix(in srgb, var(--fs-accent) 9%, var(--fs-surface));
+  border-color: color-mix(in srgb, var(--fs-accent) 32%, var(--color-border));
+}
+
+.rc-hero-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--fs-heading);
+}
+
+.rc-guides {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.rc-guide {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--radius-lg);
+  background: var(--fs-surface);
+  border: 1px solid var(--color-border);
+}
+
+.rc-guide-label {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fs-muted);
+}
+
+.rc-guide-value {
+  /* Sits at the inline start (right, in RTL) like its label, though it is LTR. */
+  justify-self: start;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--fs-ink);
+}
+
+.rc-guide-unit {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--fs-muted);
+}
+
+.rc-actions {
+  display: grid;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+/* ---- numbers, chips, bars --------------------------------------------------- */
+
+.rc-big {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+}
+
+.rc-big-value {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--fs-ink);
+}
+
+.rc-big-sub {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--fs-muted);
+}
+
+.rc-big-unit {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--fs-muted);
+}
+
+.rc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.rc-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  background: var(--fs-surface-2);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fs-ink);
+  white-space: nowrap;
+}
+
+.rc-chip[data-tone="good"] {
+  background: color-mix(in srgb, var(--fs-accent) 24%, var(--fs-surface));
+}
+
+.rc-chip[data-tone="warn"] {
+  background: color-mix(in srgb, var(--fs-warn) 20%, var(--fs-surface));
+}
+
+.rc-meter {
+  display: grid;
+  gap: 6px;
+}
+
+.rc-meter-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--fs-ink);
+}
+
+.rc-meter-head > span:first-child {
+  font-weight: 600;
+}
+
+/* Fills from inline-start, so in RTL it grows right → left. */
+.rc-bar {
+  position: relative;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--fs-surface-2);
+  overflow: hidden;
+}
+
+.rc-bar-fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  border-radius: inherit;
+  background: var(--fs-accent);
+}
+
+/* The recommended range, drawn over the fill so it shows either way. */
+.rc-bar-band {
+  position: absolute;
+  inset-block: 0;
+  background: color-mix(in srgb, var(--fs-accent-2) 45%, transparent);
+}
+
+.rc-rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding-block: 8px;
+  border-bottom: 1px solid var(--fs-surface-2);
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--fs-ink);
+}
+
+.rc-row:last-child {
+  border-bottom: 0;
+}
+
+.rc-row-label {
+  display: grid;
+  gap: 1px;
+}
+
+.rc-row-hint {
+  font-size: 13px;
+  color: var(--fs-muted);
+}
+
+.rc-row-value {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ---- notices ------------------------------------------------------------------ */
+
+.rc-error {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-error) 9%, var(--fs-surface));
+  border: 1px solid color-mix(in srgb, var(--color-error) 35%, transparent);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fs-ink);
+}
+
+/* ---- hub card on /cardio ----------------------------------------------------- */
+
+.rc-hub {
+  align-items: center;
+}
+
+.rc-hub-text {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rc-hub-kicker {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fs-link);
+}
+
+.rc-hub-title {
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--fs-ink);
+}
+
+.rc-hub-sub {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--fs-muted);
+}
+
+/* ---- stepper (weekly goal) ---------------------------------------------------- */
+
+.rc-stepper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  direction: ltr;
+}
+
+.rc-stepper .input {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.rc-step-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background: var(--fs-surface);
+  color: var(--fs-ink);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.rc-step-btn:active {
+  transform: scale(0.96);
+}
+
+.rc-step-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.rc-confirm {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-error) 8%, var(--fs-surface));
+  border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent);
+}
+
+.rc-danger {
+  color: var(--color-error);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rc-step-btn:active {
+    transform: none;
+  }
+}

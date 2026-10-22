@@ -13,6 +13,7 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { SettingsToggle } from '../../components/ui/SettingsToggle';
 import { useData } from '../../contexts/DataContext';
 import { requestReminderPermission } from '../../services/localRemindersSync';
+import { readLastActivity, rememberLastActivity } from '../../services/running/cardioPrefs';
 import { saveWorkoutSession } from '../../services/sessionDb';
 import type { CardioActivity, CardioSplit } from '../../types';
 import {
@@ -27,7 +28,6 @@ import {
   paceByStyle,
 } from '../../utils/cardio';
 import { logger } from '../../utils/logger';
-import { readLastActivity, rememberLastActivity } from './cardioPrefs';
 import { CardioEntryForm, type CardioFormValues } from './components/CardioEntryForm';
 import { secToDurationParts } from './components/DurationField';
 import { simplifyRoute } from './live/geo';

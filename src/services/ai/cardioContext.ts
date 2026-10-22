@@ -11,6 +11,7 @@
 
 import type { WorkoutSession } from '../../types';
 import {
+  CARDIO_DISCIPLINE_LABELS,
   type CardioDiscipline,
   type DatedEffort,
   UNIT_KM,
@@ -22,6 +23,7 @@ import {
   formatPace,
   longRunSpike,
   longestInPrior30Days,
+  totalsByDiscipline,
   weeklyCardio,
 } from '../../utils/cardio';
 import { toLocalDateStr } from '../../utils/dateUtils';
@@ -38,25 +40,6 @@ const MIN_RUNS_FOR_PACE_DIRECTION = 4;
 const PACE_STEADY_FRACTION = 0.02;
 /** Shorter runs have no meaningful pace (the same floor as runPaceTrend). */
 const MIN_PACE_RUN_KM = 1;
-
-/** Display order — the common disciplines first. */
-const DISCIPLINE_ORDER: readonly CardioDiscipline[] = [
-  'running',
-  'walking',
-  'cycling',
-  'swimming',
-  'rowing',
-  'other',
-];
-
-const DISCIPLINE_LABEL: Readonly<Record<CardioDiscipline, string>> = {
-  running: 'ריצה',
-  walking: 'הליכה',
-  cycling: 'רכיבה',
-  swimming: 'שחייה',
-  rowing: 'חתירה',
-  other: 'אירובי אחר',
-};
 
 /** The pool and the rower are written in metres, like the log sheet does. */
 const METRE_DISCIPLINES: ReadonlySet<CardioDiscipline> = new Set(['swimming', 'rowing']);
@@ -268,10 +251,7 @@ export function buildCardioSummary(
   const runs = efforts.filter((e) => e.discipline === 'running');
   return {
     last7Days: totalsOf(efforts.filter((e) => e.date >= acuteStart)),
-    disciplines: DISCIPLINE_ORDER.map((discipline) => ({
-      discipline,
-      ...totalsOf(efforts.filter((e) => e.discipline === discipline)),
-    })).filter((d) => d.efforts > 0),
+    disciplines: totalsByDiscipline(efforts).map(({ count, ...t }) => ({ ...t, efforts: count })),
     runPace: runPaceOf(runs),
     longestRun: longestRunOf(runs, now),
     longRunSpike: spikeOf(sessions, runs, now),
@@ -291,10 +271,6 @@ const effortsText = (n: number): string => (n === 1 ? 'אימון אחד' : `${n
 const runsText = (n: number): string => (n === 1 ? 'ריצה אחת' : `${n} ריצות`);
 const minutesText = (sec: number): string => `${Math.round(sec / 60)} דק׳`;
 const kmText = (km: number): string => `${formatKm(km)} ${UNIT_KM}`;
-
-/** "3 אימונים, 145 דק׳" — a week of cardio in one phrase, for short prose. */
-export const cardioTotalsText = (t: CardioTotals): string =>
-  `${effortsText(t.efforts)}, ${minutesText(t.durationSec)}`;
 
 function distanceText(discipline: CardioDiscipline, km: number): string {
   return METRE_DISCIPLINES.has(discipline) ? `${formatMeters(km * 1000)} ${UNIT_M}` : kmText(km);
@@ -323,7 +299,7 @@ function paceLine(pace: RunPace): string {
 function recentEffortLine(e: RecentEffort): string {
   // Compact on purpose: the whole context rides in one ai-chat message, capped
   // at 4,000 characters. The legend in the heading explains the short forms.
-  let line = `${daysAgoText(e.daysAgo)}: ${DISCIPLINE_LABEL[e.discipline]}`;
+  let line = `${daysAgoText(e.daysAgo)}: ${CARDIO_DISCIPLINE_LABELS[e.discipline]}`;
   if (e.distanceKm > 0) line += ` ${distanceText(e.discipline, e.distanceKm)}`;
   const parts = [`${line} ב-${minutesText(e.durationSec)}`];
   if (e.discipline === 'running' && e.distanceKm >= MIN_PACE_RUN_KM) {
@@ -357,7 +333,7 @@ export function describeCardioForPrompt(summary: CardioSummary | null): string {
     const parts = [effortsText(d.efforts)];
     if (d.distanceKm > 0) parts.push(distanceText(d.discipline, d.distanceKm));
     parts.push(minutesText(d.durationSec));
-    lines.push(`• ${DISCIPLINE_LABEL[d.discipline]}: ${parts.join(' | ')}`);
+    lines.push(`• ${CARDIO_DISCIPLINE_LABELS[d.discipline]}: ${parts.join(' | ')}`);
   }
   if (summary.runPace) {
     const line = paceLine(summary.runPace);

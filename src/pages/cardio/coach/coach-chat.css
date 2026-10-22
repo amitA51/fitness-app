@@ -1,0 +1,117 @@
+/* ============================================================================
+   Running coach — the AI chat (CoachChat.tsx).
+   Tokens only (tokens.css); logical properties only (RTL-first).
+   ============================================================================ */
+
+/* ---- chat -------------------------------------------------------------------- */
+
+.rc-chat-log {
+  display: grid;
+  gap: 10px;
+}
+
+.rc-msg {
+  max-width: 92%;
+  padding: 12px 14px;
+  border-radius: var(--radius-xl);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--fs-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.rc-msg[data-role="user"] {
+  justify-self: end;
+  background: color-mix(in srgb, var(--fs-accent) 18%, var(--fs-surface));
+  border-end-end-radius: var(--radius-sm);
+}
+
+.rc-msg[data-role="assistant"] {
+  justify-self: start;
+  width: 100%;
+  max-width: 100%;
+  background: var(--fs-surface-2);
+  border-end-start-radius: var(--radius-sm);
+  white-space: normal;
+}
+
+.rc-msg-text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.rc-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: start;
+  padding: 12px 14px;
+  border-radius: var(--radius-xl);
+  background: var(--fs-surface-2);
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--fs-muted);
+}
+
+.rc-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.rc-dots > span {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--fs-muted);
+  animation: rc-dot 1.2s var(--ease-out) infinite;
+}
+
+.rc-dots > span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.rc-dots > span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes rc-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+.rc-form {
+  display: grid;
+  gap: 8px;
+}
+
+.rc-consent {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--fs-accent) 10%, var(--fs-surface));
+  border: 1px solid color-mix(in srgb, var(--fs-accent) 28%, transparent);
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--fs-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rc-dots > span {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+html.reduce-motion .rc-dots > span {
+  animation: none;
+  opacity: 0.6;
+}

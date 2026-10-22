@@ -304,3 +304,23 @@ export function cardioDiscipline(
       return 'other';
   }
 }
+
+/** Hebrew name of each discipline, for totals and headings. */
+export const CARDIO_DISCIPLINE_LABELS: Readonly<Record<CardioDiscipline, string>> = {
+  running: 'ריצה',
+  walking: 'הליכה',
+  cycling: 'רכיבה',
+  rowing: 'חתירה',
+  swimming: 'שחייה',
+  other: 'אירובי אחר',
+};
+
+/** Display order of per-discipline totals — the common disciplines first. */
+export const CARDIO_DISCIPLINE_ORDER: readonly CardioDiscipline[] = [
+  'running',
+  'walking',
+  'cycling',
+  'rowing',
+  'swimming',
+  'other',
+];

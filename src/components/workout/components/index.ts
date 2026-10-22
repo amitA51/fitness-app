@@ -34,5 +34,4 @@ export { PRHighlights } from './PRHighlights';
 
 // Handlers & hooks
 export { default as WorkoutAriaLive } from './WorkoutAriaLive';
-export { default as useWorkoutFinish } from './WorkoutActions';
 export { default as useExerciseSuggestions } from './ExerciseSuggestionLoader';

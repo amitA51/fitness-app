@@ -1,38 +1,55 @@
 # AI Integration — SPARKOS Fitness
 
 מסמך מלא של אופן פעולת ה-AI באפליקציה, איך הוא מוגדר, ואיך לשנות אותו.
+עודכן 2026-10-22: הספק הוא PoloAI (תואם OpenAI) דרך ה-Edge Function `ai-chat`.
 
 ---
 
 ## 1. סקירה ברמה גבוהה
 
-האפליקציה משתמשת ב-AI במספר פיצ'רים (צ'אט מאמן, ניתוח אימון, המלצות פרוגרסיה, סיכום שבועי, תובנות). יש שכבת-אבסטרקציה אחת — `AIProvider` — עם שני מימושים:
+שני משטחי AI חיים באפליקציה:
+
+| משטח | איפה | קוד |
+|------|------|-----|
+| שאלה על תרגיל באמצע אימון | כפתור "מאמן AI" במסך האימון | `src/services/ai.ts` (`askExerciseQuestion`) ← `ExerciseTutorial.tsx` |
+| מאמן הריצה: צ'אט + ניתוח ריצה | `/cardio/coach` ודף הריצה (`/detail/:id`) | `src/services/ai/runningCoach.ts` |
+
+לפני השאלה הראשונה המשתמש מאשר במפורש שליחת נתונים לספק חיצוני (`ai/aiConsent.ts`, App Store 5.1.2(i)),
+וכל תשובה מסומנת "נכתב בבינה מלאכותית" עם כפתור דיווח (`ai/aiFeedback.ts` → טבלת `ai_feedback`, מדיניות GenAI של Google Play).
+
+יש שכבת-אבסטרקציה אחת — `AIProvider` — עם שני מימושים:
 
 | Provider | מתי פעיל | תלות |
 |----------|----------|------|
-| `RemoteProvider` | כש-Supabase מוגדר (ברירת מחדל בפרוד) | Supabase Edge Function → OpenRouter |
-| `LocalFallbackProvider` | כש-Supabase לא מוגדר, או fallback בשגיאה | ללא — תשובות מבוססות-חוקים |
+| `RemoteProvider` | כש-Supabase מוגדר (ברירת מחדל בפרוד) | Supabase Edge Function `ai-chat` → PoloAI |
+| `LocalFallbackProvider` | כש-Supabase לא מוגדר | ללא — תשובות מבוססות-חוקים |
 
 הבחירה נעשית פעם אחת ב-`initAI()` שנקרא ב-`main.tsx`.
 
 ### זרימה עיקרית
 
 ```
-UI component (AICoach, Progression, וכו')
-  ↓  קורא פונקציית-פיצ'ר
-src/services/ai/features.ts  |  src/services/ai.ts  |  aiProgressionService.ts
-  ↓  getAIProvider().chat(messages)
-src/services/ai/core.ts · RemoteProvider
-  ↓  withPersona() מוסיף את ה-persona הגלובלי
+UI (ExerciseTutorial / RunningCoachPage / CardioDetail)
+  ↓  askExerciseQuestion · askRunningCoach · reviewRun
+src/services/ai/core.ts · RemoteProvider.chat()
+  ↓  withPersona() מקפל את הודעות ה-system להודעת "הקשר" אחת (עד 4,000 תווים)
   ↓  supabase.functions.invoke('ai-chat', { body })
-Supabase Edge Function · supabase/functions/ai-chat/index.ts
-  ↓  Authorization: Bearer OPENROUTER_API_KEY (מ-Supabase secrets)
-OpenRouter API
+supabase/functions/ai-chat/index.ts
+  ↓  ה-persona והכללים (SYSTEM_PROMPT) חיים בשרת; system מהדפדפן נדחה
+  ↓  Authorization: Bearer POLOAI_API_KEY (מ-Supabase secrets)
+PoloAI (OpenAI-compatible)
   ↓
 response → חזרה במעלה → UI
 ```
 
 חשוב: **המפתח של ספק ה-AI לעולם לא נכנס ל-bundle של הדפדפן.** הוא יושב ב-Supabase Secrets, נגיש רק ל-Edge Function.
+
+### מאמן הריצה
+
+החישובים דטרמיניסטיים ונעשים באפליקציה (`src/services/running/`): קצבי אימון אישיים מהריצה הטובה האחרונה
+(Riegel → שווה ערך 5 ק״מ → פסים לפי VDOT), עומס שבועי, המלצה לריצה הבאה, הערות על ריצה בודדת ומטרת מרוץ.
+ה-AI רק מסביר ומתאים: `runningBrief()` מכין תקציר נתונים קומפקטי, `COACH_RULES` את עקרונות האימון (מבוססי
+מחקר — ראו `src/services/running/knowledge.ts`), ושניהם נכנסים להודעת ההקשר בתוך תקציב של 3,900 תווים (`fitContext`).
 
 ---
 
@@ -42,23 +59,27 @@ response → חזרה במעלה → UI
 src/
 ├── main.tsx                          # קורא ל-initAI() באתחול
 ├── lib/supabase.ts                   # Supabase client (VITE_SUPABASE_URL/ANON_KEY)
+├── hooks/useRunningCoach.ts          # כל נתוני מאמן הריצה, מחושבים פעם אחת
 └── services/
-    ├── ai.ts                         # Facade לקריאה מהקומפוננטות (backward compat)
-    ├── aiProgressionService.ts       # המלצות פרוגרסיה + סיכום שבועי
-    ├── aiWorkoutInsightService.ts    # תובנות אימון
+    ├── ai.ts                         # שאלה על תרגיל (askExerciseQuestion, buildExerciseGrounding)
+    ├── running/                      # מאמן הריצה הדטרמיניסטי: goals, paceBands, trainingLoad,
+    │                                 #   nextRun, runInsights, goalProgress, knowledge, cardioPrefs
     └── ai/
         ├── config.ts                 # ★ כל ההגדרות במקום אחד
         ├── core.ts                   # AIProvider, RemoteProvider, LocalFallbackProvider, AIError
         ├── bootstrap.ts              # initAI() — קורא פעם אחת
-        ├── contextBuilder.ts         # buildContext() — נתוני משתמש לשימוש בפרומפט
-        ├── features.ts               # getWorkoutAdvice / suggestWeight / suggestExercises / getFormTips
-        ├── chat.ts                   # ניהול שיחות (IndexedDB history)
+        ├── runningCoach.ts           # runningBrief, askRunningCoach, reviewRun, fitContext
+        ├── aiConsent.ts              # הסכמה לשליחת נתונים ל-AI
+        ├── aiFeedback.ts             # דיווח על תשובה → ai_feedback
+        ├── contextBuilder.ts         # buildContext() — הקשר כללי (כרגע בשימוש בבדיקות בלבד)
+        ├── cardioContext.ts          # סיכום אירובי לפרומפט הכללי
+        ├── chat.ts                   # ניהול שיחות (IndexedDB + ai_conversations) — אין לו מסך כרגע
         └── errorMessages.ts          # humanizeAIError() — ממפה AIError להודעה בעברית
 
 supabase/
 └── functions/
     └── ai-chat/
-        └── index.ts                  # Edge Function (Deno) שמתווכת ל-OpenRouter
+        └── index.ts                  # Edge Function (Deno) שמתווכת ל-PoloAI
 ```
 
 ---
@@ -72,24 +93,24 @@ supabase/
 | קבוע | ערך ברירת מחדל | תפקיד |
 |------|----------------|-------|
 | `AI_FUNCTION_NAME` | `'ai-chat'` | שם ה-Edge Function ב-Supabase |
-| `AI_DEFAULT_MODEL` | `'openai/gpt-4o-mini'` | מודל ברירת המחדל (מזהה של OpenRouter) |
+| `AI_DEFAULT_MODEL` | `'gpt-5.4-mini'` | מודל ברירת המחדל (חייב להיות ב-ALLOWED_MODELS בשרת) |
 | `AI_REQUEST_TIMEOUT_MS` | `30000` | timeout לבקשה |
 | `AI_MAX_TOKENS` | `1024` | מקסימום טוקנים לתשובה |
 | `AI_TEMPERATURE` | `0.7` | temperature |
 | `AI_PERSONA` | טקסט ארוך | ה-system prompt הגלובלי (אופי המאמן) |
 
-**החלפת מודל:** שנה את `AI_DEFAULT_MODEL`. רשימת מודלים: https://openrouter.ai/models
+**החלפת מודל:** שנה את `AI_DEFAULT_MODEL`, ובשרת את `ALLOWED_MODELS` ב-`ai-chat/index.ts`.
 
 **שינוי האופי של המאמן:** ערוך את `AI_PERSONA`. הוא מוזרק אוטומטית לכל בקשה (ראה §5).
 
 ### 3.2 `supabase/functions/ai-chat/index.ts` — החלפת ספק
 
-ברירת מחדל: OpenRouter. כדי לעבור לספק אחר (OpenAI ישיר, Anthropic ישיר, Groq, וכו'):
+ברירת מחדל: PoloAI. כדי לעבור לספק אחר (OpenAI ישיר, Anthropic ישיר, Groq, וכו'):
 
 1. שנה את `PROVIDER_URL` לנקודת-הקצה של הספק.
 2. שנה את `PROVIDER_SECRET_NAME` אם אתה רוצה שם סוד אחר.
 3. אם הספק לא תומך בפורמט של OpenAI (Anthropic למשל) — תצטרך גם להתאים את ה-`payload` ואת ה-parsing של `choices[0].message.content`.
-4. `EXTRA_HEADERS` — דרישה של OpenRouter; ברוב הספקים אפשר להשאיר ריק.
+4. `EXTRA_HEADERS` — כותרות מיוחדות לספק; ל-PoloAI ריק.
 5. פרוס מחדש: `supabase functions deploy ai-chat`.
 
 ### 3.3 משתני סביבה
@@ -101,11 +122,11 @@ supabase/
 אין משתני `VITE_` ל-AI. המפתח לא יושב בקליינט.
 
 **Supabase Secrets (שרת):**
-- `OPENROUTER_API_KEY` · חובה לפעולת ה-Edge Function
+- `POLOAI_API_KEY` · חובה לפעולת ה-Edge Function
 
 הגדרה:
 ```bash
-supabase secrets set OPENROUTER_API_KEY=sk-or-v1-xxxxx
+supabase secrets set POLOAI_API_KEY=sk-xxxxx
 ```
 
 ---
@@ -114,7 +135,7 @@ supabase secrets set OPENROUTER_API_KEY=sk-or-v1-xxxxx
 
 ```bash
 # 1. הגדר את המפתח בצד שרת
-supabase secrets set OPENROUTER_API_KEY=sk-or-v1-xxxxx
+supabase secrets set POLOAI_API_KEY=sk-xxxxx
 
 # 2. פרוס את הפונקציה
 supabase functions deploy ai-chat

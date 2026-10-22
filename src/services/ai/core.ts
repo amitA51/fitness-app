@@ -4,7 +4,7 @@
 //
 // יש שני providers:
 //   - LocalFallbackProvider: תשובות מבוססות-חוקים, לא דורש חיבור
-//   - RemoteProvider: קורא ל-Supabase Edge Function שמתווכת ל-OpenRouter
+//   - RemoteProvider: קורא ל-Edge Function ai-chat ב-Supabase, שמתווכת ל-PoloAI
 //
 // הבחירה מי פעיל נעשית ב-src/services/ai/bootstrap.ts
 // ============================================================================

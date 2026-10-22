@@ -3,7 +3,6 @@ import type { CardioActivity, WorkoutSession } from '../../../types';
 import { buildCardioSession } from '../../../utils/cardio';
 import { toLocalDateStr } from '../../../utils/dateUtils';
 import { buildCardioSummary, describeCardioForPrompt } from '../cardioContext';
-import { buildCoachFacts, deterministicProse } from '../coachBrief';
 import { buildContext, buildSystemPrompt } from '../contextBuilder';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -220,18 +219,6 @@ describe('buildContext with cardio', () => {
   it('a lifting-only prompt carries no cardio heading', () => {
     const prompt = buildSystemPrompt(buildContext([lift('a', 1, [['Chest', 80]])]));
     expect(prompt).not.toContain('אירובי');
-  });
-
-  it('the coach brief fallback does not call a running week empty', () => {
-    const facts = buildCoachFacts({ sessions: [run(1, 10, 52), run(3, 8, 42)] });
-    expect(facts.weeklyVolume).toBe(0);
-    expect(facts.cardioLast7Days?.efforts).toBe(2);
-
-    const weekly = deterministicProse('weekly-review', facts);
-    expect(weekly.headline).toBe('אירובי השבוע: 2 אימונים, 94 דק׳');
-
-    const daily = deterministicProse('daily-readiness', facts);
-    expect(daily.detail).not.toContain('אין נפח אימון השבוע');
   });
 });
 

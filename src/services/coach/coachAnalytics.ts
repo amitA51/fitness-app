@@ -7,7 +7,12 @@
 
 import type { WorkoutSession } from '../../types';
 import type { CoachClient } from '../../types/coach';
-import { type CardioDiscipline, type DatedEffort, datedEfforts } from '../../utils/cardio';
+import {
+  type DatedEffort,
+  type DisciplineTotal,
+  datedEfforts,
+  totalsByDiscipline,
+} from '../../utils/cardio';
 import { logger } from '../../utils/logger';
 import { listCoachAssignments } from './assignmentService';
 import { getClientNutrition, getClientSessions, getClientsActivity } from './coachApi';
@@ -44,49 +49,17 @@ export interface ClientAnalytics {
 // same period is reported here as distance + time instead.
 
 /** Cardio of one discipline over a period. */
-export interface CardioPeriodTotal {
-  discipline: CardioDiscipline;
-  /** Recorded efforts (a run, a ride, a treadmill block inside a gym session). */
-  count: number;
-  distanceKm: number;
-  durationSec: number;
-}
-
-/** Display order: the disciplines a coach asks about most come first. */
-const DISCIPLINE_ORDER: readonly CardioDiscipline[] = [
-  'running',
-  'walking',
-  'cycling',
-  'rowing',
-  'swimming',
-  'other',
-];
+export type CardioPeriodTotal = DisciplineTotal;
 
 /**
  * Sum the completed cardio efforts that pass `include`, one row per discipline
- * that has any, in DISCIPLINE_ORDER. Pure.
+ * that has any, the disciplines a coach asks about most first. Pure.
  */
 export function summarizeCardio(
   sessions: readonly WorkoutSession[],
   include: (effort: DatedEffort) => boolean
 ): CardioPeriodTotal[] {
-  const totals = new Map<CardioDiscipline, CardioPeriodTotal>();
-  for (const e of datedEfforts(sessions)) {
-    if (!include(e)) continue;
-    const t = totals.get(e.discipline) ?? {
-      discipline: e.discipline,
-      count: 0,
-      distanceKm: 0,
-      durationSec: 0,
-    };
-    totals.set(e.discipline, {
-      ...t,
-      count: t.count + 1,
-      distanceKm: t.distanceKm + e.distanceKm,
-      durationSec: t.durationSec + e.durationSec,
-    });
-  }
-  return DISCIPLINE_ORDER.flatMap((d) => totals.get(d) ?? []);
+  return totalsByDiscipline(datedEfforts(sessions).filter((e) => include(e)));
 }
 
 /** Cardio of the trailing `weeks` × 7 days — the same window as `volumeByWeek`. */

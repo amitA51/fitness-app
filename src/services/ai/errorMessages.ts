@@ -7,14 +7,14 @@
 import { AIError, type AIErrorCode } from './core';
 
 const MESSAGES: Record<AIErrorCode, string> = {
-  config_error: 'שירות ה-AI לא מוגדר. נסה שוב מאוחר יותר.',
-  auth_error: 'בעיית הרשאה בשירות ה-AI. נסה שוב מאוחר יותר.',
-  rate_limit: 'יותר מדי בקשות. המתן רגע ונסה שוב.',
-  network_error: 'אין חיבור לאינטרנט. בדוק את החיבור ונסה שוב.',
-  timeout: 'הבקשה ארכה זמן רב מדי. נסה שוב.',
-  provider_down: 'שירות ה-AI אינו זמין כרגע. נסה שוב בעוד רגע.',
-  bad_response: 'התקבלה תשובה לא תקינה. נסה שוב.',
-  unknown: 'משהו השתבש. נסה שוב.',
+  config_error: 'שירות ה-AI לא מוגדר. נסו שוב מאוחר יותר.',
+  auth_error: 'בעיית הרשאה בשירות ה-AI. נסו שוב מאוחר יותר.',
+  rate_limit: 'יותר מדי בקשות. חכו רגע ונסו שוב.',
+  network_error: 'אין חיבור לאינטרנט. בדקו את החיבור ונסו שוב.',
+  timeout: 'הבקשה ארכה זמן רב מדי. נסו שוב.',
+  provider_down: 'שירות ה-AI אינו זמין כרגע. נסו שוב בעוד רגע.',
+  bad_response: 'התקבלה תשובה לא תקינה. נסו שוב.',
+  unknown: 'משהו השתבש. נסו שוב.',
 };
 
 /** Convert any thrown value into a friendly Hebrew message. */

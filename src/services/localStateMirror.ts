@@ -66,7 +66,19 @@ export const MIRRORED_LOCAL_KEYS = [
   // Daily hydration goal + glass size. Written by waterService.saveWaterSettings
   // and wiped by clearUserScopedLocalData, with no cloud copy until now.
   'water_settings',
+  // Running: heart-rate settings + weekly km goal, and the race goal
+  // (services/running/cardioPrefs.ts, services/running/goals.ts).
+  'cardio_prefs_v1',
+  'running_goal_v1',
 ] as const;
+
+/**
+ * Keys a pull may upload when the cloud has no copy yet. Only keys whose every
+ * writer mirrors on save: a key saved without mirroring (appSettings, the
+ * warm-up and cool-down selections) would get a one-time snapshot in the cloud,
+ * and the next restore would put that old snapshot back over newer changes.
+ */
+const BACKFILL_KEYS: ReadonlySet<string> = new Set(['cardio_prefs_v1', 'running_goal_v1']);
 
 /** Cloud `user_settings.key` for a mirrored localStorage key. */
 const cloudKeyFor = (localKey: string): string => `mirror:${localKey}`;
@@ -115,6 +127,26 @@ export const mirrorAllLocalKeys = (): void => {
   for (const key of MIRRORED_LOCAL_KEYS) mirrorLocalKey(key);
 };
 
+export interface RestoreMirroredOptions {
+  /**
+   * The settings store holds a complete, fresh copy of the cloud rows (the
+   * user_settings fetch and merge both landed). Only then does "no cloud row"
+   * mean the key was never mirrored — a key added to MIRRORED_LOCAL_KEYS after
+   * the value was saved — so the local value is uploaded once instead of being
+   * lost at the next sign-out. Limited to BACKFILL_KEYS.
+   */
+  backfillMissing?: boolean;
+}
+
+/** Tell open screens a key changed under them (the same event another tab sends). */
+const announceRestored = (localKey: string): void => {
+  try {
+    window.dispatchEvent(new StorageEvent('storage', { key: localKey }));
+  } catch {
+    // No window (tests, workers): nothing on screen to refresh.
+  }
+};
+
 /**
  * Rehydrate mirrored keys from the cloud-synced settings store.
  *
@@ -124,7 +156,9 @@ export const mirrorAllLocalKeys = (): void => {
  *
  * @returns the local keys that were actually restored.
  */
-export const restoreMirroredLocalKeys = async (): Promise<string[]> => {
+export const restoreMirroredLocalKeys = async ({
+  backfillMissing = false,
+}: RestoreMirroredOptions = {}): Promise<string[]> => {
   const restored: string[] = [];
   try {
     const rows = await dbGetAll<{ key: string; value: unknown }>(STORES.USER_SETTINGS);
@@ -132,6 +166,15 @@ export const restoreMirroredLocalKeys = async (): Promise<string[]> => {
 
     for (const localKey of MIRRORED_LOCAL_KEYS) {
       const cloudValue = byKey.get(cloudKeyFor(localKey));
+      if (
+        cloudValue === undefined &&
+        backfillMissing &&
+        BACKFILL_KEYS.has(localKey) &&
+        localStorage.getItem(localKey) != null
+      ) {
+        mirrorLocalKey(localKey);
+        continue;
+      }
       if (!isMirroredValue(cloudValue)) continue;
 
       const localRaw = localStorage.getItem(localKey);
@@ -159,6 +202,7 @@ export const restoreMirroredLocalKeys = async (): Promise<string[]> => {
       try {
         localStorage.setItem(localKey, cloudValue.raw);
         restored.push(localKey);
+        announceRestored(localKey);
       } catch (err) {
         logger.app.warn('Failed to write restored mirrored value', { localKey, err });
       }

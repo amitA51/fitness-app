@@ -47,6 +47,12 @@ export const USER_SCOPED_STORAGE_REGISTRY = {
     'date_prefs',
     'app_locale',
     'ai_share_consent_v1',
+    'ai_share_consent_running_v1',
+    // Running: settings, goal, last activity, and a live run still in progress.
+    'cardio_prefs_v1',
+    'running_goal_v1',
+    'cardio_last_activity',
+    'cardio_live_v1',
   ] as const,
   localStorageKeyPrefixes: [
     'ai_tutorial_',
@@ -56,8 +62,18 @@ export const USER_SCOPED_STORAGE_REGISTRY = {
     'consent_status_lkg:',
     'age_status_lkg:',
   ] as const,
-  sessionStorageKeys: ['onboarding_step', 'onboarding_draft', 'sparkos_prewo_started'] as const,
-  sessionStorageKeyPrefixes: ['scroll:'] as const,
+  sessionStorageKeys: [
+    'onboarding_step',
+    'onboarding_draft',
+    'sparkos_prewo_started',
+    // The running-coach chat (pages/cardio/coach/useCoachChat.ts).
+    'running_coach_chat_v1',
+  ] as const,
+  sessionStorageKeyPrefixes: [
+    'scroll:',
+    // AI run reviews cached per run (pages/cardio/detail/runReviewCache.ts).
+    'run_review_v1:',
+  ] as const,
 } as const;
 
 export type UserScopedDataCleanupOptions = {

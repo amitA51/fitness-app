@@ -615,12 +615,14 @@ const pullAllDataImpl = async (userId: string, forceFull: boolean): Promise<Sync
       ...(cursors?.tables ?? {}),
     };
     let everyTableLanded = true;
+    let settingsLanded = false;
     tables.forEach((spec, i) => {
       const fetched = fetchResults[i];
       const landed = fetched?.status === 'fulfilled' && mergeResults[i]?.status === 'fulfilled';
       if (spec.countKey && fetched?.status === 'fulfilled') {
         counts[spec.countKey] = fetched.value.length;
       }
+      if (landed && spec.table === 'user_settings') settingsLanded = true;
       if (!landed) {
         // The cursor stays where it was, so the next pull asks for these rows again.
         everyTableLanded = false;
@@ -660,7 +662,9 @@ const pullAllDataImpl = async (userId: string, forceFull: boolean): Promise<Sync
     // (body profile, workout prefs, nutrition goals, app settings). See ./localStateMirror.
     try {
       const { restoreMirroredLocalKeys } = await import('./localStateMirror');
-      const restoredKeys = await restoreMirroredLocalKeys();
+      // A key with no cloud copy is uploaded only when the settings table just
+      // landed in full; after a failed fetch, "no row" proves nothing.
+      const restoredKeys = await restoreMirroredLocalKeys({ backfillMissing: settingsLanded });
       if (restoredKeys.length > 0) {
         logger.sync.info('Restored mirrored local settings from the cloud', { restoredKeys });
       }

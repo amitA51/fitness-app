@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import type { CardioActivity } from '../../types';
 import { hrMaxFromAge, isCardioActivity } from '../../utils/cardio';
+import { mirrorLocalKey } from '../localStateMirror';
 
 const LAST_ACTIVITY_KEY = 'cardio_last_activity';
 
@@ -26,8 +27,9 @@ export function rememberLastActivity(activity: CardioActivity): void {
 }
 
 // ---------------------------------------------------------------------------
-// Heart-rate settings + weekly distance goal. Device-local (included in the
-// full backup); the age-predicted HRmax is the fallback when none is set.
+// Heart-rate settings + weekly distance goal. Mirrored to the cloud
+// (localStateMirror) so a new device keeps them; the age-predicted HRmax is
+// the fallback when none is set.
 // ---------------------------------------------------------------------------
 
 export const CARDIO_PREFS_KEY = 'cardio_prefs_v1';
@@ -65,6 +67,7 @@ export function readCardioPrefs(): CardioPrefs {
 export function writeCardioPrefs(next: CardioPrefs): void {
   try {
     localStorage.setItem(CARDIO_PREFS_KEY, JSON.stringify(next));
+    mirrorLocalKey(CARDIO_PREFS_KEY);
     window.dispatchEvent(new Event(PREFS_EVENT));
   } catch {
     // preference only
