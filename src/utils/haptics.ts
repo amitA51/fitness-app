@@ -3,6 +3,7 @@
 // gates every vibration path (modern + legacy) without each call site knowing about it.
 
 import { logger } from './logger';
+import { hasNativePlugin, loadCapacitorPlugin } from './platform';
 
 let _hapticsEnabled = true;
 
@@ -12,11 +13,55 @@ export const setHapticsEnabled = (enabled: boolean): void => {
 
 const supportsVibration = (): boolean => typeof navigator !== 'undefined' && 'vibrate' in navigator;
 
-const canVibrate = () => _hapticsEnabled && supportsVibration();
+// ----------------------------------------------------------------------------
+// Native apps: the iOS WebView has no Vibration API at all, so inside the
+// Capacitor shells every pattern is played on @capacitor/haptics instead —
+// one impact per pulse, at the pulse's offset, heavier for longer pulses.
+// ----------------------------------------------------------------------------
+
+type ImpactStyle = 'LIGHT' | 'MEDIUM' | 'HEAVY';
+
+interface HapticsPlugin {
+  impact(options: { style: ImpactStyle }): Promise<void>;
+}
+
+const hasNativeHaptics = (): boolean => hasNativePlugin('Haptics');
+
+let nativeHaptics: Promise<HapticsPlugin | undefined> | null = null;
+
+const getNativeHaptics = (): Promise<HapticsPlugin | undefined> => {
+  nativeHaptics ??= loadCapacitorPlugin<HapticsPlugin>('Haptics')
+    .then((loaded) => loaded?.plugin)
+    .catch(() => undefined);
+  return nativeHaptics;
+};
+
+const impactStyleFor = (ms: number): ImpactStyle =>
+  ms <= 15 ? 'LIGHT' : ms <= 45 ? 'MEDIUM' : 'HEAVY';
+
+const playNative = (pattern: number[]): void => {
+  void getNativeHaptics().then((plugin) => {
+    if (!plugin) return;
+    let offset = 0;
+    pattern.forEach((ms, index) => {
+      // Even entries vibrate, odd entries are pauses (Vibration API format).
+      if (index % 2 === 0 && ms > 0) {
+        const style = impactStyleFor(ms);
+        const fire = () => void plugin.impact({ style }).catch(() => undefined);
+        if (offset === 0) fire();
+        else setTimeout(fire, offset);
+      }
+      offset += ms;
+    });
+  });
+};
+
+const canVibrate = () => _hapticsEnabled && (hasNativeHaptics() || supportsVibration());
 
 /**
  * iOS Safari does not support the Vibration API (the Taptic Engine needs
- * native code), so effect-based vibration is skipped on iOS.
+ * native code), so effect-based vibration is skipped in the iOS browser and
+ * played through @capacitor/haptics in the iOS app.
  */
 export const isIOSDevice = (): boolean =>
   typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -28,6 +73,10 @@ export const isIOSDevice = (): boolean =>
  */
 const vibrate = (pattern: number | number[]): void => {
   if (!canVibrate()) return;
+  if (hasNativeHaptics()) {
+    playNative(Array.isArray(pattern) ? pattern : [pattern]);
+    return;
+  }
   try {
     navigator.vibrate(pattern);
   } catch (e) {
@@ -91,7 +140,8 @@ export const triggerHapticEffect = (
   intensity: HapticIntensity = 'medium'
 ): void => {
   if (!canVibrate()) return;
-  if (isIOSDevice()) return; // iOS lacks Vibration API support.
+  // The iOS browser lacks the Vibration API; the iOS app plays it natively.
+  if (isIOSDevice() && !hasNativeHaptics()) return;
   vibrate(applyIntensity(EFFECT_PATTERNS[effect], intensity));
 };
 

@@ -11,7 +11,7 @@
 // sent here only so a mistyped confirmation fails before anything is destroyed.
 // ============================================================================
 
-import { supabase } from '../lib/supabase';
+import { clearStoredAuthSession, supabase } from '../lib/supabase';
 import { logger } from '../utils/logger';
 import { clearUserScopedLocalData } from './userScopedLocalData';
 
@@ -95,10 +95,14 @@ export async function deleteAccount(confirmEmail: string): Promise<DeleteAccount
   }
 
   try {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
   } catch (err) {
     logger.auth.warn('deleteAccount: sign-out after deletion failed', err);
   }
+  // The account no longer exists, so nothing of its session may stay on the
+  // device whatever the sign-out call answered: the app paints a stored session
+  // at start-up, before the server is asked, and would show the deleted user.
+  clearStoredAuthSession();
 
   return { ok: true, storageObjectsRemoved: res.storageObjectsRemoved ?? 0 };
 }

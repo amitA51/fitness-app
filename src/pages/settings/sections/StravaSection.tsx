@@ -16,7 +16,10 @@ import {
   rememberStravaLinked,
   syncStrava,
 } from '../../../services/strava/stravaSync';
+import { openExternalLink } from '../../../utils/externalLink';
 import { logger } from '../../../utils/logger';
+import { isNativePlatform } from '../../../utils/platform';
+import { PUBLIC_SITE_ORIGIN } from '../../../utils/publicSite';
 import { Divider } from '../components/Divider';
 import { IconBox } from '../components/IconBox';
 
@@ -128,9 +131,14 @@ export function StravaSection() {
   const connect = async () => {
     setBusy('connect');
     setMessage(null);
+    // In the native apps Strava cannot return to the shell's own origin: the
+    // connect runs in the system browser and comes back to the website's
+    // return page, which finishes it. Back in the app, the visibility refresh
+    // below sees the new link and starts the import.
+    const native = isNativePlatform();
     const res = await startStravaConnect(
-      `${window.location.origin}/strava/callback`,
-      isMobileDevice()
+      `${native ? PUBLIC_SITE_ORIGIN : window.location.origin}/strava/callback`,
+      native || isMobileDevice()
     );
     if (!res.ok) {
       setBusy(null);
@@ -142,6 +150,10 @@ export function StravaSection() {
       return;
     }
     localStorage.setItem(STRAVA_PENDING_KEY, String(Date.now() + PENDING_MS));
+    if (native) {
+      await openExternalLink(res.url);
+      return;
+    }
     window.location.assign(res.url);
   };
 

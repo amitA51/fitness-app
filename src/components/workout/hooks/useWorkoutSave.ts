@@ -230,12 +230,13 @@ export function useWorkoutSave({
       // Persist genuine PRs from this session into the personal_records store
       // (cloud-synced inside savePR). Identity is the normalized exercise name
       // and the checker diffs against existing records, so a retry can't
-      // duplicate. Never blocks or fails the save.
-      try {
-        await persistSessionPRs(session);
-      } catch (prError) {
+      // duplicate. Never blocks or fails the save — and is not awaited: each
+      // savePR asks auth for the user, which on a slow server can take as long
+      // as a token refresh, and the summary must not wait for that. The summary
+      // computes its own PR count from session history, not from this store.
+      void persistSessionPRs(session).catch((prError) => {
         logger.workout?.warn?.('Failed to persist session PRs (non-fatal)', prError);
-      }
+      });
 
       // Ghost values cache previous-session sets for up to 5 minutes — drop it
       // so the workout just saved becomes the "previous" data immediately.

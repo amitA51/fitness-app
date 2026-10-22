@@ -3,7 +3,9 @@
  * SPARKOS Fitness App - push/pull of the entire local store to/from the cloud.
  *
  * Extracted from supabaseSync.ts to keep that module focused on per-record CRUD.
- * The per-record fetch helpers it composes live in ./supabaseSync.
+ * The per-record fetch helpers it composes live in ./supabaseSync. The pull
+ * side (incremental pulls, cursors, targeted pulls) lives in ./supabaseSyncPull
+ * and is re-exported from here, so `pullAllData` keeps its old import paths.
  */
 
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
@@ -24,49 +26,19 @@ import {
   toTemplateRow,
   toWaterRow,
 } from './supabaseRowMappers';
-import {
-  fetchAIConversations,
-  fetchBodyMeasurements,
-  fetchBodyWeight,
-  fetchNutritionLogs,
-  fetchPersonalExercises,
-  fetchPersonalRecords,
-  fetchRecoveryLogs,
-  fetchUserSettings,
-  fetchWorkoutSessions,
-  fetchWorkoutTemplates,
-} from './supabaseSync';
-import {
-  type AIConversation,
-  type BodyMeasurement,
-  type BodyWeightEntry,
-  type NutritionLog,
-  type PersonalExercise,
-  type PersonalRecordRow,
-  type RecoveryLog,
-  type UserSetting,
-  type WorkoutSession,
-  type WorkoutTemplate,
-  toCanonicalBodyMeasurement,
-  toCanonicalBodyWeight,
-  toCanonicalNutritionLog,
-  toCanonicalPersonalExercise,
-  toCanonicalSession,
-  toCanonicalTemplate,
+import type {
+  AIConversation,
+  BodyMeasurement,
+  BodyWeightEntry,
+  NutritionLog,
+  PersonalExercise,
+  PersonalRecordRow,
+  RecoveryLog,
+  UserSetting,
+  WorkoutSession,
+  WorkoutTemplate,
 } from './supabaseSyncMappers';
-import { BUSY, withSyncLock } from './syncLock';
-import {
-  mergeAIConversationsFromCloud,
-  mergeBodyMeasurementsFromCloud,
-  mergeBodyWeightFromCloud,
-  mergeNutritionLogsFromCloud,
-  mergePersonalExercisesFromCloud,
-  mergePersonalRecordsFromCloud,
-  mergeRecoveryLogsFromCloud,
-  mergeUserSettingsFromCloud,
-  mergeWorkoutSessionsFromCloud,
-  mergeWorkoutTemplatesFromCloud,
-} from './workoutDb';
+import { BUSY, SYNC_LOCK_BUSY_ERROR, withSyncLock } from './syncLock';
 
 const getUserId = async (): Promise<string | null> => {
   const user = await getCurrentUser();
@@ -81,6 +53,8 @@ export interface SyncResult {
   syncedItems?: number;
   /** Records that failed to push (a rejected upsert batch). >0 means silent data loss was avoided. */
   failedItems?: number;
+  /** True when a routine pull was not run because the local store is fresh enough. */
+  skipped?: boolean;
   counts?: {
     templates?: number;
     sessions?: number;
@@ -118,13 +92,13 @@ export interface FullSyncCounts {
 // to B before it resolves, and B's auto-pull received A's in-flight promise. B
 // therefore never pulled its own data, and A's response merged into the store
 // AFTER the wipe. Keying means a different identity always starts its own pass.
+// (The pull's guard lives with the pull, in ./supabaseSyncPull.)
 let syncAllInFlight: { userId: string; promise: Promise<SyncResult> } | null = null;
-let pullAllInFlight: { userId: string; promise: Promise<SyncResult> } | null = null;
 
 /** Uniform result when another tab owns the sync lock: not a failure, just deferred. */
 const LOCK_BUSY_RESULT: SyncResult = {
   success: false,
-  error: 'sync_in_progress_in_another_tab',
+  error: SYNC_LOCK_BUSY_ERROR,
 };
 
 export const syncAllData = async (): Promise<SyncResult> => {
@@ -431,210 +405,9 @@ const syncAllDataImpl = async (userId: string): Promise<SyncResult> => {
   }
 };
 
-export const pullAllData = async (): Promise<SyncResult> => {
-  // Identity is resolved BEFORE coalescing. Sharing an un-keyed promise across an
-  // account change meant the incoming user received the outgoing user's pull:
-  // they never fetched their own data, and the old response merged in after the
-  // wipe had already run.
-  const userId = await getUserId();
-  if (!userId) return { success: false, error: 'Not authenticated' };
-
-  if (pullAllInFlight?.userId === userId) return pullAllInFlight.promise;
-
-  // Pull merges cloud rows into IndexedDB, so it must not interleave with another
-  // tab's push of the same stores.
-  const promise = withSyncLock(() => pullAllDataImpl(userId)).then((outcome) => {
-    if (outcome === BUSY) {
-      logger.sync.info('Another tab is syncing, skipping pull');
-      return LOCK_BUSY_RESULT;
-    }
-    return outcome;
-  });
-  pullAllInFlight = { userId, promise };
-  try {
-    return await promise;
-  } finally {
-    if (pullAllInFlight?.promise === promise) pullAllInFlight = null;
-  }
-};
-
-const pullAllDataImpl = async (userId: string): Promise<SyncResult> => {
-  if (!isSupabaseConfigured() || !supabase) {
-    return { success: false, error: 'Supabase not configured' };
-  }
-
-  // Same one-time legacy-id repair as the push path — pull is the first sync
-  // entry point on sign-in (AuthContext auto-pull), so this guarantees the
-  // pass runs before any later push. Never throws (logs inside).
-  await normalizeLegacyLocalIds();
-
-  try {
-    // Fetch each store independently: a single failed fetch must not discard
-    // the stores that succeeded (DA fix #2). Fetch funcs now throw on a real
-    // error, so a rejected result means a genuine failure — distinct from an
-    // empty (but successful) result.
-    const fetchSpecs = [
-      { store: 'templates', run: () => fetchWorkoutTemplates(userId) },
-      { store: 'sessions', run: () => fetchWorkoutSessions(userId) },
-      { store: 'exercises', run: () => fetchPersonalExercises(userId) },
-      { store: 'bodyWeight', run: () => fetchBodyWeight(userId) },
-      { store: 'bodyMeasurements', run: () => fetchBodyMeasurements(userId) },
-      { store: 'personalRecords', run: () => fetchPersonalRecords(userId) },
-      { store: 'recoveryLogs', run: () => fetchRecoveryLogs(userId) },
-      { store: 'nutritionLogs', run: () => fetchNutritionLogs(userId) },
-      { store: 'userSettings', run: () => fetchUserSettings(userId) },
-      { store: 'aiConversations', run: () => fetchAIConversations(userId) },
-      {
-        store: 'waterLogs',
-        run: () => import('./waterService').then((m) => m.fetchWaterLogs(userId)),
-      },
-    ] as const;
-
-    const fetchResults = await Promise.allSettled(fetchSpecs.map((spec) => spec.run()));
-
-    const failedStores: string[] = [];
-    fetchResults.forEach((result, i) => {
-      if (result.status === 'rejected') {
-        const spec = fetchSpecs[i];
-        if (spec) {
-          failedStores.push(spec.store);
-          logger.sync.error(`Fetch failed for ${spec.store} during pull`, result.reason);
-        }
-      }
-    });
-
-    const pickResult = <T>(i: number): T[] => {
-      const r = fetchResults[i];
-      return r && r.status === 'fulfilled' ? (r.value as T[]) : [];
-    };
-    const templates = pickResult<WorkoutTemplate>(0);
-    const sessions = pickResult<WorkoutSession>(1);
-    const exercises = pickResult<PersonalExercise>(2);
-    const bodyWeight = pickResult<BodyWeightEntry>(3);
-    const bodyMeasurements = pickResult<BodyMeasurement>(4);
-    const personalRecords = pickResult<PersonalRecordRow>(5);
-    const recoveryLogs = pickResult<RecoveryLog>(6);
-    const nutritionLogs = pickResult<NutritionLog>(7);
-    const userSettings = pickResult<UserSetting>(8);
-    const aiConversations = pickResult<AIConversation>(9);
-    const waterLogs = pickResult<{
-      id: string;
-      date: string;
-      amountMl: number;
-      createdAt: string;
-    }>(10);
-
-    // Identity re-check, immediately before anything touches local storage.
-    //
-    // The fetches above are network round-trips. If the account changed while
-    // they were in flight — sign-out, account switch, expiry — then the wipe has
-    // already run and merging these rows would write the PREVIOUS user's data
-    // back into a store that is now supposed to belong to someone else. Keying
-    // the in-flight promise stops the wrong caller from receiving this pull; this
-    // check stops the pull itself from writing after the ground moved.
-    const stillCurrentUser = await getUserId();
-    if (stillCurrentUser !== userId) {
-      logger.sync.warn('Identity changed during pull; discarding fetched rows without merging', {
-        startedAs: userId,
-        nowIs: stillCurrentUser,
-      });
-      return { success: false, error: 'identity_changed_during_pull' };
-    }
-
-    // Merge each store independently: one failed merge must not discard the
-    // others (they have already been fetched from the cloud). A store whose
-    // fetch failed yields an empty array above, so nothing is merged for it —
-    // crucially we do NOT treat that as success.
-    const mergeResults = await Promise.allSettled([
-      mergeWorkoutTemplatesFromCloud(templates.map(toCanonicalTemplate)),
-      mergeWorkoutSessionsFromCloud(sessions.map(toCanonicalSession)),
-      mergePersonalExercisesFromCloud(exercises.map(toCanonicalPersonalExercise)),
-      mergeBodyWeightFromCloud(bodyWeight.map(toCanonicalBodyWeight)),
-      mergeBodyMeasurementsFromCloud(bodyMeasurements.map(toCanonicalBodyMeasurement)),
-      mergePersonalRecordsFromCloud(personalRecords),
-      mergeRecoveryLogsFromCloud(recoveryLogs),
-      mergeNutritionLogsFromCloud(nutritionLogs.map(toCanonicalNutritionLog)),
-      mergeUserSettingsFromCloud(userSettings),
-      mergeAIConversationsFromCloud(aiConversations),
-      import('./waterService').then((m) => m.mergeWaterLogsFromCloud(waterLogs)),
-    ]);
-    const mergeFailed = mergeResults.filter((r) => r.status === 'rejected');
-    if (mergeFailed.length) {
-      logger.sync.error(
-        `${mergeFailed.length} merge operations failed during pull`,
-        mergeFailed.map((f) => (f as PromiseRejectedResult).reason)
-      );
-    }
-
-    const counts = {
-      templates: templates.length,
-      sessions: sessions.length,
-      exercises: exercises.length,
-      bodyWeight: bodyWeight.length,
-      bodyMeasurements: bodyMeasurements.length,
-      personalRecords: personalRecords.length,
-      recoveryLogs: recoveryLogs.length,
-      nutritionLogs: nutritionLogs.length,
-      userSettings: userSettings.length,
-      aiConversations: aiConversations.length,
-    };
-
-    // The 12-week program keeps its pointer in localStorage, which sign-out and
-    // session-expiry both wipe (USER_SCOPED_STORAGE_REGISTRY). Now that the
-    // cloud copy has been merged into the user_settings store, rehydrate it —
-    // otherwise the trainee is silently restarted at week 1. Last-write-wins, so
-    // a newer local copy is preserved. Best-effort: a failure here must not
-    // downgrade an otherwise successful pull.
-    try {
-      const { restoreProgramProgressFromCloud } = await import('./programProgressService');
-      if (await restoreProgramProgressFromCloud()) {
-        logger.sync.info('Restored program progress from the cloud');
-      }
-    } catch (err) {
-      logger.sync.warn('Could not restore program progress from the cloud', err);
-    }
-
-    // Same treatment for the other localStorage-only state that an account switch
-    // destroys: body profile (drives TDEE and every macro target), workout
-    // preferences, nutrition goals, app settings. See ./localStateMirror.
-    try {
-      const { restoreMirroredLocalKeys } = await import('./localStateMirror');
-      const restoredKeys = await restoreMirroredLocalKeys();
-      if (restoredKeys.length > 0) {
-        logger.sync.info('Restored mirrored local settings from the cloud', { restoredKeys });
-      }
-    } catch (err) {
-      logger.sync.warn('Could not restore mirrored local settings', err);
-    }
-
-    const totalItems = Object.values(counts).reduce((sum, count) => sum + count, 0);
-
-    logger.sync.info('Pulled data from cloud and saved to IndexedDB', {
-      userId,
-      counts,
-    });
-
-    // A partial pull (any fetch or merge failure) is NOT a success — reporting
-    // it as such let callers believe the local store mirrors the cloud.
-    const errorParts: string[] = [];
-    if (failedStores.length > 0) {
-      errorParts.push(`fetch failed: ${failedStores.join(', ')}`);
-    }
-    if (mergeFailed.length > 0) {
-      errorParts.push(`${mergeFailed.length} merge operations failed`);
-    }
-
-    return {
-      success: failedStores.length === 0 && mergeFailed.length === 0,
-      syncedItems: totalItems,
-      counts,
-      ...(errorParts.length > 0 && { error: errorParts.join('; ') }),
-    };
-  } catch (error) {
-    logger.sync.error('Error pulling all data', error);
-    return { success: false, error: String(error) };
-  }
-};
+// ==================== PULL ====================
+// pullAllData / pullAllDataIfStale / pullTableRows / prepareTemplateForStart.
+export * from './supabaseSyncPull';
 
 // ==================== CONNECTION TEST ====================
 

@@ -69,7 +69,7 @@ SparkOS – יומן אימונים
 ■ עברית מלאה
 האפליקציה נבנתה מההתחלה בעברית ומימין לשמאל, עם מצב כהה מובנה.
 
-הרשאות: הרשאת אינטרנט בלבד. אין הרשאת מיקום, אנשי קשר או מיקרופון. תמונות נבחרות על ידכם דרך בוחר התמונות של המכשיר.
+הרשאות: אינטרנט, התראות לתזכורות, ומיקום מדויק רק בזמן ריצה או הליכה שהתחלתם, כדי למדוד מרחק וקצב. אין גישה לאנשי קשר או למיקרופון. תמונות נבחרות על ידכם דרך בוחר התמונות של המכשיר.
 
 הנתונים שלכם: אפשר לייצא את היסטוריית האימונים לקובץ בכל רגע, ולמחוק את החשבון וכל המידע מתוך ההגדרות.
 
@@ -158,8 +158,10 @@ the AI feature could contain health details.
   this explicitly and a wrong answer here is a policy violation, not a typo.
 - **Target audience.** 16+ or 18+, to match the terms. Not "13-15".
 - **Ads.** No.
-- **Health apps declaration.** Only required if you integrate Health Connect or
-  claim a medical function. Neither is in the repo → No.
+- **Health apps declaration.** Required for EVERY app (the form asks every
+  developer). Declare the category **Activity and Fitness** (workout logging, run
+  tracking, heart rate imported from Strava); no medical function, no Health
+  Connect. Source: support.google.com/googleplay/android-developer/answer/14738291
 - **Foreground service declaration (added 2026-10-11).** Live run tracking runs a
   foreground service of type `location`. App content → "Foreground service
   permissions" → declare **Location**, use case "Fitness: tracking a run the user

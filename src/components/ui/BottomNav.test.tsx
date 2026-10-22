@@ -26,8 +26,26 @@ vi.mock('../../contexts/CoachContext', () => ({
 // app_admins membership — the only thing that still surfaces the תזונה tab
 // while the nutrition surface is hidden.
 let mockIsAppAdmin = false;
+const useIsAppAdminSpy = vi.fn(() => ({ isAdmin: mockIsAppAdmin, loading: false }));
 vi.mock('../../hooks/useIsAppAdmin', () => ({
-  useIsAppAdmin: () => ({ isAdmin: mockIsAppAdmin, loading: false }),
+  useIsAppAdmin: () => useIsAppAdminSpy(),
+}));
+
+// The coach-link probe the chat entry reads (shared with the unread badge).
+let mockCoachIds: string[] = [];
+vi.mock('../../services/coach', () => ({
+  getCoachLinkState: async () => ({
+    links: mockCoachIds.map((coachId) => ({ coachId, clientId: 'user-1' })),
+    coachIds: mockCoachIds,
+    hasClients: false,
+    hasGroups: false,
+  }),
+}));
+
+// Who is signed in, as stored on the device — keys the app_admins answer.
+let mockStoredUserId: string | null = null;
+vi.mock('../../lib/supabase', () => ({
+  readStoredAuthSession: () => (mockStoredUserId ? { user: { id: mockStoredUserId } } : null),
 }));
 
 let mockUnread = 0;
@@ -55,6 +73,8 @@ beforeEach(() => {
   mockIsCoach = false;
   mockIsAppAdmin = false;
   mockUnread = 0;
+  mockCoachIds = [];
+  mockStoredUserId = null;
 });
 
 describe('BottomNav per role', () => {
@@ -140,5 +160,64 @@ describe('BottomNav per role', () => {
     renderNav('/me');
 
     expect(screen.getByRole('button', { name: 'עוד' })).toHaveAttribute('aria-current', 'page');
+  });
+});
+
+describe('BottomNav start-up requests', () => {
+  it('links the trainee chat entry straight to the single coach thread', async () => {
+    mockCoachIds = ['coach-1'];
+    const user = userEvent.setup();
+    renderNav('/');
+
+    await user.click(screen.getByRole('button', { name: 'עוד' }));
+    expect(await screen.findByRole('link', { name: 'הודעות' })).toHaveAttribute(
+      'href',
+      '/my-coach/messages/coach-1'
+    );
+  });
+
+  it('omits the chat entry for a trainee without a coach', async () => {
+    const user = userEvent.setup();
+    renderNav('/');
+
+    await user.click(screen.getByRole('button', { name: 'עוד' }));
+    await screen.findByRole('link', { name: 'המאמן שלי' });
+    expect(screen.queryByRole('link', { name: 'הודעות' })).toBeNull();
+  });
+
+  it('asks app_admins once per user, not on every remount after a workout', () => {
+    mockStoredUserId = 'user-admin-cache';
+    mockIsAppAdmin = true;
+
+    const first = renderNav('/');
+    expect(screen.getByRole('link', { name: 'תזונה' })).toBeInTheDocument();
+    first.unmount();
+    useIsAppAdminSpy.mockClear();
+
+    renderNav('/');
+    expect(useIsAppAdminSpy).not.toHaveBeenCalled();
+    // The remembered answer still shows the tab.
+    expect(screen.getByRole('link', { name: 'תזונה' })).toBeInTheDocument();
+  });
+
+  it('asks again after a while when the answer was "no" (it may have been a failed lookup)', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      mockStoredUserId = 'user-no-cache';
+      mockIsAppAdmin = false;
+
+      renderNav('/').unmount();
+      useIsAppAdminSpy.mockClear();
+      renderNav('/').unmount();
+      expect(useIsAppAdminSpy).not.toHaveBeenCalled();
+
+      vi.setSystemTime(Date.now() + 11 * 60_000);
+      mockIsAppAdmin = true;
+      renderNav('/');
+      expect(useIsAppAdminSpy).toHaveBeenCalled();
+      expect(screen.getByRole('link', { name: 'תזונה' })).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

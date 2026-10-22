@@ -36,7 +36,9 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     # camera=(self): BarcodeScanner uses getUserMedia — an empty allowlist
     # disabled it for ALL origins, silently forcing every scan to manual entry.
-    Permissions-Policy = "camera=(self), microphone=(), geolocation=()"
+    # geolocation=(self): the live run tracker uses watchPosition on the web
+    # (geoSource.ts); the empty allowlist blocked GPS for the installed PWA.
+    Permissions-Policy = "camera=(self), microphone=(), geolocation=(self)"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
 
 # Hashed assets are content-addressed: cache them forever at the CDN edge.

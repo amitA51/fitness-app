@@ -22,7 +22,11 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../lib/supabase', () => ({ isSupabaseConfigured: () => true, supabase: null }));
+vi.mock('../../lib/supabase', () => ({
+  isSupabaseConfigured: () => true,
+  supabase: null,
+  readStoredAuthSession: () => null,
+}));
 vi.mock('../supabaseAuth', () => {
   const getCurrentUser = vi.fn(async () => null);
   return {

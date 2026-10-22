@@ -5,6 +5,7 @@
  */
 
 import { logger } from '../utils/logger';
+import { isTimeoutError, withTimeout } from '../utils/withTimeout';
 import { BUSY, withSyncLock } from './syncLock';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -54,7 +55,20 @@ interface QueuedMutation {
   // those ties deterministically. Optional for backward compat with rows
   // written before this field existed (they sort first, as the oldest).
   seq?: number;
+  /** Failures that count toward MAX_RETRIES — the server answered and refused. */
   retryCount: number;
+  /**
+   * Failures that do NOT count: the server could not be reached or could not
+   * answer (network, timeout, 5xx, 429). They only space the next attempt out.
+   * Optional for rows written before it existed.
+   */
+  transientFailures?: number;
+  /**
+   * When this revision first failed to sync (ms epoch). Bounds how long a write
+   * the server never answers keeps being retried (see MAX_UNREACHABLE_MS).
+   * Optional for rows written before it existed.
+   */
+  firstFailedAt?: number;
   lastError?: string;
   // Earliest time this entry may be attempted again (ms epoch). Set on every
   // retriable failure using exponential backoff, so a failing entry no longer
@@ -71,8 +85,12 @@ interface QueuedMutation {
 export interface DeadLetterMutation extends QueuedMutation {
   /** When the entry was moved out of the active queue. */
   failedAt: number;
-  /** Why it stopped being retried. */
-  reason: 'max_retries' | 'permanent_error' | 'ownerless';
+  /**
+   * Why it stopped being retried. `unreachable`: the server did not answer it
+   * for MAX_UNREACHABLE_MS — held so the user is told, instead of retrying
+   * silently forever.
+   */
+  reason: 'max_retries' | 'permanent_error' | 'ownerless' | 'unreachable';
 }
 
 /**
@@ -98,15 +116,61 @@ const STORE_NAME = 'mutation_queue';
 const DEAD_LETTER_STORE = 'dead_letter_queue';
 /** Cross-tab lease store, read/written by services/syncLock.ts. */
 const LEASE_STORE = 'sync_leases';
+/**
+ * Refusals (see `retryCount`) allowed before a change is moved to the held store.
+ * Transient failures never count: an outage of any length used to use up these
+ * five attempts in ~45 minutes and tell the user a change was not saved to the
+ * cloud, for a write the server would have accepted the moment it came back.
+ */
 const MAX_RETRIES = 5;
 
-/** Backoff schedule per retry attempt (ms): 5s, 30s, 2m, 10m, 30m. */
+/**
+ * How long a write may keep failing only because the server cannot be reached
+ * before it is moved to the held store. Transient failures never count toward
+ * MAX_RETRIES, so without this cap a write the server never answers was retried
+ * silently forever and nobody was ever told it had not been saved to the cloud.
+ * Held is not lost: the payload is kept and Settings can retry or export it.
+ */
+const MAX_UNREACHABLE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * ...and only after this many unanswered attempts in that time, so a write that
+ * failed once, a week before the app was next opened, is tried again rather
+ * than held on its second attempt.
+ */
+const MIN_UNREACHABLE_ATTEMPTS = MAX_RETRIES;
+
+/** Backoff per consecutive failure (ms): 5s, 30s, 2m, 10m, then every 30m. */
 const RETRY_BACKOFF_MS = [5_000, 30_000, 120_000, 600_000, 1_800_000];
 
-function backoffFor(retryCount: number): number {
-  const index = Math.min(Math.max(retryCount - 1, 0), RETRY_BACKOFF_MS.length - 1);
+function backoffFor(failures: number): number {
+  const index = Math.min(Math.max(failures - 1, 0), RETRY_BACKOFF_MS.length - 1);
   return RETRY_BACKOFF_MS[index] ?? 1_800_000;
 }
+
+/**
+ * Longest a single replayed write may take. The base fetch timeout (25 s, see
+ * lib/supabase.ts) covers the request itself; this also covers whatever runs
+ * around it, so one stuck write can never hold the sync lock - and with it every
+ * pull and push - indefinitely. A timed-out write stays queued (transient).
+ */
+const MUTATION_TIMEOUT_MS = 30_000;
+
+/**
+ * How long `queueMutation` waits for auth to name the owner. The lookup can run
+ * a token refresh against a slow server; the enqueue must not wait that out.
+ */
+const OWNER_LOOKUP_TIMEOUT_MS = 2_000;
+
+/** How long a queue pass waits for the signed-in user before deferring itself. */
+const PASS_USER_LOOKUP_TIMEOUT_MS = 10_000;
+
+/**
+ * After this many transient failures IN A ROW, a pass stops and leaves the rest
+ * for the next one: the server is not answering, and replaying every queued
+ * write against it only adds load and holds the sync lock longer.
+ */
+const MAX_CONSECUTIVE_TRANSIENT_PER_PASS = 2;
 
 /** True when the browser reports no connectivity. Conservative: unknown = online. */
 function isOffline(): boolean {
@@ -155,6 +219,9 @@ const RETRIABLE_SQLSTATES = new Set<string>([
   '08006', // connection_failure
   '08001', // sqlclient_unable_to_establish_sqlconnection
   '08004', // sqlserver_rejected_establishment_of_sqlconnection
+  '57P01', // admin_shutdown (database restarting)
+  '57P02', // crash_shutdown (database recovering from a crash)
+  '57P03', // cannot_connect_now (database starting up)
 ]);
 
 // ── Error classification ────────────────────────────────────────────────────
@@ -170,6 +237,9 @@ const RETRIABLE_SQLSTATES = new Set<string>([
  */
 export function isRetriableError(err: unknown): boolean {
   if (err == null) return true;
+  // Checked first: some transient failures carry a PGRST code that the generic
+  // "PGRST... is permanent" rule below would otherwise dead-letter.
+  if (isTransientError(err)) return true;
 
   const anyErr = err as {
     status?: unknown;
@@ -180,13 +250,8 @@ export function isRetriableError(err: unknown): boolean {
   };
 
   // Supabase PostgREST errors expose .status on the response; some wrappers
-  // expose .statusCode. Check both.
-  const status =
-    typeof anyErr.status === 'number'
-      ? anyErr.status
-      : typeof anyErr.statusCode === 'number'
-        ? anyErr.statusCode
-        : undefined;
+  // expose .statusCode, and gateway bodies name it in .code. Check all three.
+  const status = httpStatusOf(anyErr);
 
   // PostgREST returns string .code values like '23505' (unique violation),
   // 'PGRST301' (RLS), '42P01' (missing table). Most are permanent.
@@ -236,6 +301,100 @@ export function isRetriableError(err: unknown): boolean {
   // Unknown shape — default to retriable so we don't lose data on a transient
   // error we didn't recognize.
   return true;
+}
+
+/**
+ * PostgREST codes that mean "not now", never "not this write".
+ *
+ * PGRST000-003 are the database being unreachable or out of pooled connections
+ * - exactly what an overloaded instance answers (PGRST003 is a 504 "timed out
+ * acquiring connection from connection pool"). They used to fall under the
+ * blanket "PGRST... is permanent" rule and sent good writes straight to the held
+ * store. PGRST303 is an expired access token: the session refreshes and the same
+ * write then succeeds.
+ */
+const TRANSIENT_POSTGREST_CODES = new Set<string>([
+  'PGRST000',
+  'PGRST001',
+  'PGRST002',
+  'PGRST003',
+  'PGRST303',
+]);
+
+/**
+ * How a failed request reads once postgrest-js has wrapped it: browser network
+ * errors (Chrome "Failed to fetch", Safari "Load failed", Firefox
+ * "NetworkError..."), our fetch timeout, and what the gateways in front of the
+ * database answer when it is overloaded — plain-text pages (502/503/504,
+ * Cloudflare 52x) and JSON bodies with no code (Kong "An invalid response was
+ * received from the upstream server", Envoy "upstream connect error ... reset",
+ * "connection terminated", "too many connections"). postgrest-js hands such a
+ * body back as the error itself, WITHOUT the HTTP status, so the words are all
+ * there is to go on. Only consulted when the error carries no code.
+ */
+const TRANSIENT_MESSAGE =
+  /failed to fetch|load failed|networkerror|network ?error|network request failed|fetch failed|session could not be refreshed|token refresh is backing off|timeout|timed out|time-out|did not answer|gateway|upstream|temporarily|unavailable|overloaded|rate limit|too many (connections|requests|clients)|remaining connection slots|connection (reset|refused|terminated|closed|lost|failure|timed out)|econnreset|econnrefused|etimedout|server closed the connection|terminating connection|could not connect|error code: 52\d|jwt expired|^(AbortError|TimeoutError):/i;
+
+/** A 3-digit HTTP status written as a string — never a SQLSTATE (5) or a PGRST code. */
+const HTTP_STATUS_TEXT = /^[1-5]\d\d$/;
+
+interface ErrorShape {
+  status?: unknown;
+  statusCode?: unknown;
+  code?: unknown;
+  name?: unknown;
+  message?: unknown;
+  error?: unknown;
+}
+
+/**
+ * The HTTP status, wherever a wrapper put it: `status` / `statusCode`, or a
+ * gateway body that names it in `code` (`{"code":503,"message":...}`), as a
+ * number or as a string.
+ */
+function httpStatusOf(e: ErrorShape): number | undefined {
+  for (const value of [e.status, e.statusCode, e.code]) {
+    if (typeof value === 'number' && Number.isInteger(value) && value >= 100 && value <= 599) {
+      return value;
+    }
+    if (typeof value === 'string' && HTTP_STATUS_TEXT.test(value)) return Number(value);
+  }
+  return undefined;
+}
+
+/**
+ * True when a failure says nothing about the write itself - the server could not
+ * be reached or could not answer in time. Such a failure is retried with backoff
+ * but NEVER counts toward MAX_RETRIES, so an outage of any length cannot turn a
+ * good write into a held one. A failure with a SQLSTATE / PostgREST code is
+ * judged by that code alone, so validation and RLS refusals (22xxx, 23xxx,
+ * 42501, PGRST1xx/2xx) stay permanent whatever their message says.
+ */
+export function isTransientError(err: unknown): boolean {
+  if (err == null || typeof err !== 'object') return false;
+  const e = err as ErrorShape;
+  const message = typeof e.message === 'string' ? e.message : '';
+
+  const rawCode = typeof e.code === 'string' ? e.code : '';
+  const code = HTTP_STATUS_TEXT.test(rawCode) ? '' : rawCode;
+  if (code) {
+    if (TRANSIENT_POSTGREST_CODES.has(code)) return true;
+    // Older PostgREST answered an expired token with PGRST301.
+    if (code === 'PGRST301') return /jwt expired/i.test(message);
+    if (RETRIABLE_SQLSTATES.has(code)) return true;
+    return /^(40|08|53)[0-9A-Z]{3}$/.test(code);
+  }
+
+  const status = httpStatusOf(e);
+  if (status !== undefined) {
+    return status >= 500 || status === 429 || status === 408;
+  }
+
+  const name = typeof e.name === 'string' ? e.name : '';
+  if (name === 'AbortError' || name === 'TimeoutError') return true;
+  // Some gateways word the failure in `error` rather than `message`.
+  const text = typeof e.error === 'string' ? `${message} ${e.error}` : message;
+  return TRANSIENT_MESSAGE.test(text);
 }
 
 // ── IndexedDB helpers ───────────────────────────────────────────────────────
@@ -313,6 +472,16 @@ async function getAllMutations(): Promise<QueuedMutation[]> {
   // timestamps collide. Legacy rows without `seq` fall back to `timestamp`
   // (same scale) and sort as the oldest entries.
   return mutations.sort((a, b) => (a.seq ?? a.timestamp) - (b.seq ?? b.timestamp));
+}
+
+/** True while a row with this id is still in the active queue. */
+async function isStillQueued(id: string): Promise<boolean> {
+  const db = await openQueueDB();
+  return new Promise((resolve, reject) => {
+    const req = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).count(id);
+    req.onsuccess = () => resolve(req.result > 0);
+    req.onerror = () => reject(req.error);
+  });
 }
 
 async function putMutation(mutation: QueuedMutation): Promise<void> {
@@ -428,18 +597,38 @@ async function clearQueue(): Promise<void> {
 /**
  * Move a mutation out of the active queue into the dead-letter store in ONE
  * transaction, so a crash can never drop the payload without recording it.
+ *
+ * Only when the queue row is STILL THERE, at the revision that was replayed —
+ * read and write in the same transaction:
+ *   - Gone: the queue was cleared under the pass. Sign-out gives up waiting for
+ *     a flush after a few seconds and wipes the stores, but the abandoned pass
+ *     keeps running; an unconditional put let a 401 that arrived afterwards
+ *     write the PREVIOUS user's change back into the held store.
+ *   - A newer revision: the user edited the record while it was replaying, so
+ *     the newer payload stays queued (see deleteMutationIfUnchanged) instead of
+ *     being deleted and replaced by the stale snapshot.
+ *
+ * @returns true when the row was moved.
  */
 async function moveToDeadLetter(
   mutation: QueuedMutation,
   reason: DeadLetterMutation['reason']
-): Promise<void> {
+): Promise<boolean> {
   const db = await openQueueDB();
   const entry: DeadLetterMutation = { ...mutation, failedAt: Date.now(), reason };
   return new Promise((resolve, reject) => {
+    let moved = false;
     const tx = db.transaction([STORE_NAME, DEAD_LETTER_STORE], 'readwrite');
-    tx.objectStore(DEAD_LETTER_STORE).put(entry);
-    tx.objectStore(STORE_NAME).delete(mutation.id);
-    tx.oncomplete = () => resolve();
+    const queue = tx.objectStore(STORE_NAME);
+    const read = queue.get(mutation.id);
+    read.onsuccess = () => {
+      const current = read.result as QueuedMutation | undefined;
+      if (!current || current.seq !== mutation.seq) return;
+      tx.objectStore(DEAD_LETTER_STORE).put(entry);
+      queue.delete(mutation.id);
+      moved = true;
+    };
+    tx.oncomplete = () => resolve(moved);
     tx.onerror = () => reject(tx.error);
     tx.onabort = () => reject(tx.error);
   });
@@ -664,6 +853,54 @@ async function clearMarkerForMutation(type: MutationType, payload: unknown): Pro
   }
 }
 
+// ── Ownership ───────────────────────────────────────────────────────────────
+
+/** The account signed in on this device according to its stored session - no network. */
+async function storedSessionUserId(): Promise<string | null> {
+  try {
+    const { readStoredAuthSession } = await import('../lib/supabase');
+    return readStoredAuthSession()?.user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Who owns a mutation being queued now. Capped at OWNER_LOOKUP_TIMEOUT_MS: the
+ * auth lookup can sit behind a token refresh against a slow server, and the
+ * enqueue - often the only thing standing between a write and its loss - must
+ * not wait on it.
+ *
+ * Whenever auth does not NAME a user, the session stored on this device does:
+ * it is the account signed in here right now, read without the network, so it
+ * is not a guess. That covers a timeout, a rejection, and — the case that cost
+ * data — a plain "no user": `getCurrentUser()` answers null for about a minute
+ * after a failed token refresh (supabaseAuth's refresh cooldown) while the
+ * session is still stored. Stamping GUEST_OWNER there sent the change to
+ * quarantine on replay, and a quarantined DELETE meant the next pull brought
+ * the deleted workout back. Only with nothing stored is the entry GUEST_OWNER
+ * (auth said nobody is signed in) or UNKNOWN_OWNER (auth could not answer).
+ *
+ * Exported for callers that queue many writes at once (an import): resolve the
+ * owner once and pass it as `ownerId`, instead of one lookup per write.
+ */
+export async function resolveQueueOwner(): Promise<string> {
+  let authAnswered = false;
+  try {
+    const { getCurrentUser } = await import('./supabaseAuth');
+    const user = await withTimeout(getCurrentUser(), OWNER_LOOKUP_TIMEOUT_MS, 'queue owner lookup');
+    if (user?.id) return user.id;
+    authAnswered = true;
+  } catch (err) {
+    if (!isTimeoutError(err)) logger.sync.warn('Queue owner lookup failed', err);
+  }
+  const stored = await storedSessionUserId();
+  if (stored) return stored;
+  // Auth said "signed out" → a guest's change, adopted on a first sign-in.
+  // Auth could not answer → kept, but quarantined on replay instead of guessed.
+  return authAnswered ? GUEST_OWNER : UNKNOWN_OWNER;
+}
+
 // ── Public API ──────────────────────────────────────────────────────────────
 
 /**
@@ -676,7 +913,21 @@ async function clearMarkerForMutation(type: MutationType, payload: unknown): Pro
  * multiple times while offline. We dedup in memory only — the on-disk schema
  * is unchanged.
  */
-export async function queueMutation(type: MutationType, payload: unknown): Promise<void> {
+export interface QueueMutationOptions {
+  /**
+   * The account the change was made under, when the caller captured it at the
+   * moment of the write. Use it when the enqueue runs LATER than the write (a
+   * background hand-off): by then a sign-out or account switch may have changed
+   * who auth answers with, and the change must stay owned by whoever made it.
+   */
+  ownerId?: string;
+}
+
+export async function queueMutation(
+  type: MutationType,
+  payload: unknown,
+  options: QueueMutationOptions = {}
+): Promise<void> {
   const dedupKey = getDedupKey(type, payload);
 
   // Stamp the owner so the entry can never replay into another account on a
@@ -684,15 +935,9 @@ export async function queueMutation(type: MutationType, payload: unknown): Promi
   // owner" cases — because an entry with no owner used to be adopted by whoever
   // happened to be signed in at replay time, which silently wrote one person's
   // data into another person's account.
-  let userId: string;
-  try {
-    const { getCurrentUser } = await import('./supabaseAuth');
-    userId = (await getCurrentUser())?.id ?? GUEST_OWNER;
-  } catch {
-    // Auth genuinely unavailable (not "signed out"). The mutation is kept, but
-    // marked so replay quarantines it instead of guessing an owner.
-    userId = UNKNOWN_OWNER;
-  }
+  const userId = options.ownerId || (await resolveQueueOwner());
+  // A delete makes every pending create/update of the same record obsolete.
+  const obsolete = obsoletedByDelete(type, payload);
 
   const db = await openQueueDB();
 
@@ -700,6 +945,7 @@ export async function queueMutation(type: MutationType, payload: unknown): Promi
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
     let queueId: string = crypto.randomUUID();
+    let superseded = 0;
 
     function doPut() {
       store.put({
@@ -716,19 +962,34 @@ export async function queueMutation(type: MutationType, payload: unknown): Promi
     if (dedupKey) {
       const idx = store.index('timestamp');
       const cursorReq = idx.openCursor();
+      let matched = false;
       cursorReq.onsuccess = () => {
         const cursor = cursorReq.result;
-        if (cursor) {
-          const m = cursor.value as QueuedMutation;
-          if (getDedupKey(m.type, m.payload) === dedupKey) {
-            queueId = m.id;
+        if (!cursor) {
+          doPut();
+          return;
+        }
+        const m = cursor.value as QueuedMutation;
+        if (!matched && getDedupKey(m.type, m.payload) === dedupKey) {
+          queueId = m.id;
+          matched = true;
+          // Only a delete needs the rest of the queue; anything else is done.
+          if (!obsolete) {
             doPut();
             return;
           }
-          cursor.continue();
-        } else {
-          doPut();
+        } else if (
+          obsolete?.types.has(m.type) &&
+          getRecordId(m.type, m.payload) === obsolete.recordId
+        ) {
+          // Same transaction as the delete's own put, so there is never a moment
+          // in which both are queued. Left in place, an older update parked by
+          // outage backoff replayed AFTER the delete — which had matched 0 rows —
+          // and its upsert inserted the record live: the delete resurrected it.
+          cursor.delete();
+          superseded++;
         }
+        cursor.continue();
       };
       cursorReq.onerror = () => doPut();
     } else {
@@ -736,11 +997,70 @@ export async function queueMutation(type: MutationType, payload: unknown): Promi
     }
 
     tx.oncomplete = () => {
-      logger.sync.info('Queued offline mutation', { type, id: queueId });
+      logger.sync.info('Queued offline mutation', {
+        type,
+        id: queueId,
+        ...(superseded > 0 ? { supersededWrites: superseded } : {}),
+      });
       resolve();
     };
     tx.onerror = () => reject(tx.error);
   });
+}
+
+/**
+ * Drop the pending create/update writes a delete makes obsolete, for a delete
+ * that is pushed DIRECTLY rather than queued (syncEngine.syncWithRetry). A
+ * delete that reaches the cloud at once never enters the queue, so without
+ * this an older update parked there by outage backoff still replayed after it
+ * and brought the record back. Returns how many were dropped.
+ */
+export async function discardWritesObsoletedBy(
+  type: MutationType,
+  payload: unknown
+): Promise<number> {
+  const obsolete = obsoletedByDelete(type, payload);
+  if (!obsolete) return 0;
+  const db = await openQueueDB();
+  return new Promise<number>((resolve, reject) => {
+    let dropped = 0;
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const cursorReq = tx.objectStore(STORE_NAME).openCursor();
+    cursorReq.onsuccess = () => {
+      const cursor = cursorReq.result;
+      if (!cursor) return;
+      const m = cursor.value as QueuedMutation;
+      if (obsolete.types.has(m.type) && getRecordId(m.type, m.payload) === obsolete.recordId) {
+        cursor.delete();
+        dropped++;
+      }
+      cursor.continue();
+    };
+    tx.oncomplete = () => {
+      if (dropped > 0)
+        logger.sync.info('Dropped writes made obsolete by a delete', { type, dropped });
+      resolve(dropped);
+    };
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
+/**
+ * For `<entity>:delete` of one record, the pending writes of that record it makes
+ * obsolete: `<entity>:create` and `<entity>:update`. Generic over every entity
+ * that follows the naming (templates, sessions, exercises, body weight,
+ * measurements, records, recovery, nutrition, AI conversations, water).
+ */
+function obsoletedByDelete(
+  type: MutationType,
+  payload: unknown
+): { types: ReadonlySet<string>; recordId: string } | null {
+  if (!type.endsWith(':delete')) return null;
+  const recordId = getRecordId(type, payload);
+  if (!recordId) return null;
+  const entity = type.slice(0, -':delete'.length);
+  return { types: new Set([`${entity}:create`, `${entity}:update`]), recordId };
 }
 
 // ── User-facing feedback ─────────────────────────────────────────────────────
@@ -814,7 +1134,15 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
   }
 
   const { getCurrentUser } = await import('./supabaseAuth');
-  const user = await getCurrentUser();
+  let user: Awaited<ReturnType<typeof getCurrentUser>>;
+  try {
+    // Capped: the pass holds the sync lock, and a lookup stuck behind a token
+    // refresh would hold it - and every pull and push - for as long as that takes.
+    user = await withTimeout(getCurrentUser(), PASS_USER_LOOKUP_TIMEOUT_MS, 'queue user lookup');
+  } catch (err) {
+    logger.sync.warn('Could not resolve the signed-in user; deferring the queue pass', err);
+    return { success: 0, failed: 0 };
+  }
   if (!user?.id) {
     logger.sync.info('Not authenticated, skipping queue processing');
     return { success: 0, failed: 0 };
@@ -845,10 +1173,39 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
   // writable state for that record is already up.
   const processedKeys = new Set<string>();
 
-  for (const mutation of mutations) {
+  // Transient failures in a row in THIS pass - see MAX_CONSECUTIVE_TRANSIENT_PER_PASS.
+  let consecutiveTransient = 0;
+
+  // Writes that only an outage has delayed (never refused, just unreachable)
+  // and that are still inside their backoff. Once any write goes through in
+  // this pass the server is evidently back, so they are appended to the pass
+  // instead of waiting out a backoff of up to 30 minutes.
+  const delayedByOutage: QueuedMutation[] = [];
+  const backoffWaived = new Set<string>();
+  const order: QueuedMutation[] = [...mutations];
+  // Set by the first write that goes through: from then on an outage-delayed
+  // write later in the list is attempted right away, not parked again.
+  let serverAnswered = false;
+
+  for (let index = 0; index < order.length; index++) {
+    const mutation = order[index];
+    if (!mutation) continue;
+    if (consecutiveTransient >= MAX_CONSECUTIVE_TRANSIENT_PER_PASS) {
+      logger.sync.info('Server not answering; leaving the rest of the queue for the next pass', {
+        remaining: order.length - index,
+      });
+      break;
+    }
+
     // Respect the backoff window so a persistently failing entry is not retried
     // (and charged an attempt) on every tick.
-    if (mutation.nextAttemptAt && mutation.nextAttemptAt > Date.now()) {
+    if (
+      mutation.nextAttemptAt &&
+      mutation.nextAttemptAt > Date.now() &&
+      !backoffWaived.has(mutation.id) &&
+      !(serverAnswered && isDelayedOnlyByOutage(mutation))
+    ) {
+      if (isDelayedOnlyByOutage(mutation)) delayedByOutage.push(mutation);
       continue;
     }
 
@@ -863,8 +1220,7 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
         id: mutation.id,
         owner: mutation.userId ?? 'legacy',
       });
-      await moveToDeadLetter(mutation, 'ownerless');
-      quarantinedCount++;
+      if (await moveToDeadLetter(mutation, 'ownerless')) quarantinedCount++;
       continue;
     }
     if (mutation.userId !== user.id) {
@@ -886,6 +1242,18 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
       continue;
     }
 
+    // The list this pass works through is a snapshot, and a write can leave the
+    // queue under it — above all, a delete queued since then removes the
+    // record's pending create/update (see queueMutation). Replaying that removed
+    // write would undo the delete.
+    if (!(await isStillQueued(mutation.id))) {
+      logger.sync.info('Queued mutation was removed during the pass; not replaying it', {
+        type: mutation.type,
+        id: mutation.id,
+      });
+      continue;
+    }
+
     const syncFn = await getSyncFn(mutation.type, mutation.payload, user.id);
     if (!syncFn) {
       logger.sync.warn('Unknown mutation type, dropping', { type: mutation.type });
@@ -894,7 +1262,8 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
     }
 
     try {
-      await syncFn();
+      await withTimeout(syncFn(), MUTATION_TIMEOUT_MS, `queued ${mutation.type}`);
+      consecutiveTransient = 0;
       // The cloud has CONFIRMED this record, so the unsynced-ledger marker its
       // write path left behind must go. Nothing used to clear a marker on the
       // REPLAY path — only a same-call sync success, a local delete or a cloud
@@ -923,7 +1292,13 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
         });
       }
       success++;
+      serverAnswered = true;
       logger.sync.info('Synced queued mutation', { type: mutation.type, id: mutation.id });
+      if (delayedByOutage.length > 0) {
+        const resumed = delayedByOutage.splice(0);
+        for (const delayed of resumed) backoffWaived.add(delayed.id);
+        order.push(...resumed);
+      }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
 
@@ -934,36 +1309,61 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
           id: mutation.id,
           error: errMsg,
         });
-        mutation.lastError = errMsg;
-        await moveToDeadLetter(mutation, 'permanent_error');
-        droppedCount++;
+        consecutiveTransient = 0;
+        if (await moveToDeadLetter({ ...mutation, lastError: errMsg }, 'permanent_error')) {
+          droppedCount++;
+        }
         failed++;
         continue;
       }
 
-      mutation.retryCount++;
-      mutation.lastError = errMsg;
-      mutation.nextAttemptAt = Date.now() + backoffFor(mutation.retryCount);
+      // Transient (unreachable / timed out / 5xx / 429): back off, but do not
+      // count it - only an answer from the server that REFUSES the write may
+      // eventually hold it. Anything retriable but unrecognised still counts, as
+      // before, so a write that can never succeed is held in the end.
+      const transient = isTransientError(err);
+      consecutiveTransient = transient ? consecutiveTransient + 1 : 0;
+      const retryCount = transient ? mutation.retryCount : mutation.retryCount + 1;
+      const transientFailures = (mutation.transientFailures ?? 0) + (transient ? 1 : 0);
+      const now = Date.now();
+      const retried: QueuedMutation = {
+        ...mutation,
+        retryCount,
+        transientFailures,
+        firstFailedAt: firstFailureOf(mutation, now),
+        lastError: errMsg,
+        nextAttemptAt: now + backoffFor(retryCount + transientFailures),
+      };
 
-      if (mutation.retryCount >= MAX_RETRIES) {
+      if (retried.retryCount >= MAX_RETRIES) {
         logger.sync.error('Mutation exceeded max retries, moving to dead letter', {
-          type: mutation.type,
-          id: mutation.id,
-          errors: mutation.lastError,
+          type: retried.type,
+          id: retried.id,
+          errors: retried.lastError,
         });
-        await moveToDeadLetter(mutation, 'max_retries');
-        droppedCount++;
+        if (await moveToDeadLetter(retried, 'max_retries')) droppedCount++;
+      } else if (transient && isUnreachableTooLong(retried, now)) {
+        // Unanswered for a week: tell the user (held, with the payload kept)
+        // instead of retrying silently forever.
+        logger.sync.error('Server unreachable for this write for too long, moving to dead letter', {
+          type: retried.type,
+          id: retried.id,
+          firstFailedAt: retried.firstFailedAt,
+          transientFailures: retried.transientFailures,
+        });
+        if (await moveToDeadLetter(retried, 'unreachable')) droppedCount++;
       } else {
         // Also revision-guarded — writing the snapshot back unconditionally would
         // overwrite a newer payload queued during the failed attempt.
-        const written = await putMutationIfUnchanged(mutation, mutation.seq);
+        const written = await putMutationIfUnchanged(retried, mutation.seq);
         if (written) {
           logger.sync.warn('Mutation failed, will retry', {
-            type: mutation.type,
-            id: mutation.id,
-            retryCount: mutation.retryCount,
-            nextAttemptAt: mutation.nextAttemptAt,
-            error: mutation.lastError,
+            type: retried.type,
+            id: retried.id,
+            transient,
+            retryCount: retried.retryCount,
+            nextAttemptAt: retried.nextAttemptAt,
+            error: retried.lastError,
           });
         } else {
           logger.sync.info('Mutation failed but was superseded; newer revision kept', {
@@ -1006,6 +1406,54 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
   }
 
   return { success, failed };
+}
+
+/** Never refused — only the server being unreachable has delayed this write. */
+function isDelayedOnlyByOutage(mutation: QueuedMutation): boolean {
+  return mutation.retryCount === 0 && (mutation.transientFailures ?? 0) > 0;
+}
+
+/**
+ * When this revision first failed, for a failure happening at `now`. A row
+ * written before `firstFailedAt` existed that has already failed falls back to
+ * when it was queued — the earliest it can have failed.
+ */
+function firstFailureOf(mutation: QueuedMutation, now: number): number {
+  if (typeof mutation.firstFailedAt === 'number') return mutation.firstFailedAt;
+  const failedBefore = mutation.retryCount + (mutation.transientFailures ?? 0) > 0;
+  return failedBefore ? mutation.timestamp : now;
+}
+
+/** The server has not answered this write for MAX_UNREACHABLE_MS, over enough attempts. */
+function isUnreachableTooLong(mutation: QueuedMutation, now: number): boolean {
+  return (
+    typeof mutation.firstFailedAt === 'number' &&
+    now - mutation.firstFailedAt >= MAX_UNREACHABLE_MS &&
+    (mutation.transientFailures ?? 0) >= MIN_UNREACHABLE_ATTEMPTS
+  );
+}
+
+/**
+ * The server has just answered (a pull succeeded): writes that only an outage
+ * delayed need not wait out the rest of their backoff — up to 30 minutes — when
+ * every queued write is backing off and no replay is due to prove the server is
+ * back. Waives those backoffs (revision-guarded) and runs a pass. A no-op, with
+ * no pass and no lock, when nothing is waiting.
+ */
+export async function retryOutageDelayedNow(): Promise<void> {
+  const now = Date.now();
+  const waiting = (await getAllMutations()).filter(
+    (m) => isDelayedOnlyByOutage(m) && (m.nextAttemptAt ?? 0) > now
+  );
+  if (waiting.length === 0) return;
+  for (const mutation of waiting) {
+    await putMutationIfUnchanged({ ...mutation, nextAttemptAt: undefined }, mutation.seq);
+  }
+  logger.sync.info('Server answered; retrying writes the outage delayed', {
+    count: waiting.length,
+  });
+  const result = await processQueue();
+  if (result.failed > 0) await notifyRetriableFailures();
 }
 
 /**
@@ -1168,7 +1616,14 @@ export async function retryDeadLetter(id: string): Promise<boolean> {
     }
   }
 
-  await putMutation({ ...mutation, userId, retryCount: 0, nextAttemptAt: undefined });
+  await putMutation({
+    ...mutation,
+    userId,
+    retryCount: 0,
+    transientFailures: 0,
+    firstFailedAt: undefined,
+    nextAttemptAt: undefined,
+  });
 
   const db = await openQueueDB();
   await new Promise<void>((resolve, reject) => {
@@ -1210,6 +1665,55 @@ export async function exportDeadLetters(): Promise<string> {
   return JSON.stringify({ exportedAt: new Date().toISOString(), mutations: rows }, null, 2);
 }
 
+/**
+ * Ids of the records of one entity (`'session'` → session:create/update/delete)
+ * that have a write waiting in the active queue or held in the dead-letter
+ * store. Those are the queue's to deliver, or the user's to decide on.
+ */
+export async function getQueuedRecordIds(entity: string): Promise<Set<string>> {
+  const db = await openQueueDB();
+  const rows = await new Promise<QueuedMutation[]>((resolve, reject) => {
+    const found: QueuedMutation[] = [];
+    const tx = db.transaction([STORE_NAME, DEAD_LETTER_STORE], 'readonly');
+    for (const storeName of [STORE_NAME, DEAD_LETTER_STORE]) {
+      const req = tx.objectStore(storeName).getAll();
+      req.onsuccess = () => found.push(...((req.result ?? []) as QueuedMutation[]));
+    }
+    tx.oncomplete = () => resolve(found);
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+  const ids = new Set<string>();
+  for (const row of rows) {
+    if (!row.type.startsWith(`${entity}:`)) continue;
+    const recordId = getRecordId(row.type, row.payload);
+    if (recordId) ids.add(recordId);
+  }
+  return ids;
+}
+
+/**
+ * Hand the cloud the workouts that sit on the unsynced ledger but in no queue
+ * (sessionDb.drainUnsyncedSessions): a push that was cut short by closing the
+ * tab, a hand-off that never ran. Nothing reaches those otherwise — the queue
+ * cannot see them, and the "sync now" button and the sign-out guard were the
+ * only callers. It runs where sync already runs on its own: after the start-up
+ * queue pass (by then auth has answered or timed out), when the network comes
+ * back, and after a successful pull (supabaseSyncPull). Never throws.
+ */
+export async function drainUnsyncedLedger(): Promise<void> {
+  if (isOffline()) return;
+  try {
+    const { drainUnsyncedSessions } = await import('./sessionDb');
+    const result = await drainUnsyncedSessions();
+    if (result.pushed > 0 || result.queued > 0) {
+      logger.sync.info('Drained unsynced workouts from the ledger', result);
+    }
+  } catch (err) {
+    logger.sync.warn('Could not drain the unsynced-workout ledger', err);
+  }
+}
+
 // ── Online/offline detection ────────────────────────────────────────────────
 
 function setupOnlineListener() {
@@ -1229,6 +1733,7 @@ function setupOnlineListener() {
       // An async event listener that rejects becomes an unhandled rejection.
       logger.sync.error('Online-handler queue processing failed', err);
     }
+    await drainUnsyncedLedger();
   });
 
   window.addEventListener('offline', () => {
@@ -1253,7 +1758,9 @@ export function initOfflineSync() {
         void notifyRetriableFailures();
       }
     })
-    .catch((err) => logger.sync.error('Startup queue processing failed', err));
+    .catch((err) => logger.sync.error('Startup queue processing failed', err))
+    // After the pass, not before: it has waited for auth to answer (or time out).
+    .then(() => drainUnsyncedLedger());
 
   // DA-9: Periodic retry every 90s when online and queue has items
   setInterval(async () => {

@@ -15,6 +15,7 @@ import { initOfflineSync } from './services/offlineQueue';
 import { hasAnalyticsConsent, onTrackingConsentChange } from './services/tracking/trackingConsent';
 import { initWebVitals } from './services/webVitals';
 import { logger } from './utils/logger';
+import { isNativePlatform } from './utils/platform';
 import './styles/global.css';
 import './styles/tokens.css';
 import './styles/motion.css';
@@ -128,6 +129,26 @@ window.addEventListener('error', (event) => {
 
 initAI();
 
+// Native shells only: finish a Google sign-in that returns from the system
+// browser, and keep the status bar readable in both themes.
+if (isNativePlatform()) {
+  void import('./services/nativeOAuth').then((m) => m.installNativeAuthCallback());
+  void import('./services/nativeChrome').then((m) => m.installNativeChrome());
+  // Earlier test builds of the Android app registered the web service worker;
+  // left in place it would keep serving that build's cached files over the
+  // ones shipped inside this one. The app itself uses no Cache Storage.
+  void navigator.serviceWorker
+    ?.getRegistrations()
+    .then((registrations) => Promise.all(registrations.map((r) => r.unregister())))
+    .catch(() => undefined);
+  if (typeof caches !== 'undefined') {
+    void caches
+      .keys()
+      .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .catch(() => undefined);
+  }
+}
+
 // Activate the offline mutation queue: replays failed cloud writes on
 // startup and when the network comes back online.
 initOfflineSync();
@@ -148,8 +169,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       </LazyMotion>
       {/* Service-worker registration + "new version" toast. The hook self-
           registers the SW (production only; no-op in dev) so there is no manual
-          registerSW call here and no HMR-socket conflict. */}
-      <PWAUpdatePrompt />
+          registerSW call here and no HMR-socket conflict. Not in the native
+          apps: their files ship inside the app and update through the store, and
+          a service worker there would keep serving the previous version's
+          cached files after a store update. */}
+      {!isNativePlatform() && <PWAUpdatePrompt />}
     </RootErrorBoundary>
   </React.StrictMode>
 );

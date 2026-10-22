@@ -29,7 +29,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Cloud must read as CONFIGURED: with no cloud there is nothing to sync to and
 // nothing at risk, which is the one case where NOT queueing is correct.
-vi.mock('../../lib/supabase', () => ({ isSupabaseConfigured: () => true, supabase: null }));
+vi.mock('../../lib/supabase', () => ({
+  isSupabaseConfigured: () => true,
+  supabase: null,
+  readStoredAuthSession: () => null,
+}));
 vi.mock('../supabaseAuth', () => {
   const getCurrentUser = vi.fn(async () => null);
   return {

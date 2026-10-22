@@ -1,11 +1,25 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { isSupabaseConfigured } from '../../../lib/supabase';
 import { logger } from '../../../utils/logger';
+import { isTimeoutError, withTimeout } from '../../../utils/withTimeout';
 
 const LAST_SYNC_KEY = 'last_sync_time';
 
+/** How long Settings waits on the connection check before keeping what it knows. */
+export const CONNECTION_CHECK_TIMEOUT_MS = 5_000;
+/** Pending-count refresh, which doubles as the background re-check while disconnected. */
+const POLL_MS = 30_000;
+
+const deviceOnline = (): boolean => typeof navigator === 'undefined' || navigator.onLine !== false;
+
+/** What the device already knows without asking the server: a backend is
+ * configured and the network is up. */
+const likelyConnected = (): boolean => isSupabaseConfigured() && deviceOnline();
+
 export function useCloudSync() {
-  const [cloudConnected, setCloudConnected] = useState(false);
+  // Start from local knowledge instead of "לא מחובר" until the server answers;
+  // the check below corrects it either way.
+  const [cloudConnected, setCloudConnected] = useState(likelyConnected);
   const [isSyncingUp, setIsSyncingUp] = useState(false);
   const [isSyncingDown, setIsSyncingDown] = useState(false);
   const [isSyncingAll, setIsSyncingAll] = useState(false);
@@ -22,23 +36,51 @@ export function useCloudSync() {
     }
   }, []);
 
+  // Only the newest check may set the status: an older, slower one landing
+  // after an offline event (or a newer check) must not overwrite it.
+  const checkSeqRef = useRef(0);
+
+  const checkConnection = useCallback(async () => {
+    const seq = ++checkSeqRef.current;
+    if (!likelyConnected()) {
+      setCloudConnected(false);
+      return;
+    }
+    try {
+      const { testConnection } = await import('../../../services/supabaseSync');
+      const connected = await withTimeout(
+        testConnection(),
+        CONNECTION_CHECK_TIMEOUT_MS,
+        'testConnection'
+      );
+      if (seq === checkSeqRef.current) setCloudConnected(connected && deviceOnline());
+    } catch (err) {
+      // A check that is merely slow says the server is busy, not that the user
+      // is disconnected: keep the current state (a sync reports its own error).
+      if (seq === checkSeqRef.current && !isTimeoutError(err)) setCloudConnected(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const checkConnection = async () => {
-      if (!isSupabaseConfigured()) {
-        setCloudConnected(false);
-        return;
-      }
-      try {
-        const { testConnection } = await import('../../../services/supabaseSync');
-        const connected = await testConnection();
-        setCloudConnected(connected);
-      } catch {
-        setCloudConnected(false);
-      }
-    };
-    checkConnection();
+    void checkConnection();
     loadLastSyncTime();
-  }, [loadLastSyncTime]);
+  }, [checkConnection, loadLastSyncTime]);
+
+  // Follow the device's network: offline is known at once, and coming back
+  // online re-checks instead of waiting for the next poll.
+  useEffect(() => {
+    const handleOffline = () => {
+      checkSeqRef.current += 1; // a check still in flight is now stale
+      setCloudConnected(false);
+    };
+    const handleOnline = () => void checkConnection();
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [checkConnection]);
 
   const loadPendingCount = useCallback(async () => {
     try {
@@ -52,9 +94,17 @@ export function useCloudSync() {
 
   useEffect(() => {
     loadPendingCount();
-    const interval = setInterval(loadPendingCount, 30000);
+    const interval = setInterval(loadPendingCount, POLL_MS);
     return () => clearInterval(interval);
   }, [loadPendingCount]);
+
+  // While disconnected, re-check in the background so the status recovers on
+  // its own once the server does.
+  useEffect(() => {
+    if (cloudConnected || !isSupabaseConfigured()) return;
+    const interval = setInterval(() => void checkConnection(), POLL_MS);
+    return () => clearInterval(interval);
+  }, [cloudConnected, checkConnection]);
 
   const handleSyncToCloud = async () => {
     if (!cloudConnected) {
@@ -95,7 +145,9 @@ export function useCloudSync() {
     setSyncMessage('מביא נתונים מהענן...');
     try {
       const { pullAllData } = await import('../../../services/supabaseSync');
-      const result = await pullAllData();
+      // A button press asks for everything, not only what changed since the
+      // last pull — the user is usually checking that the cloud copy is whole.
+      const result = await pullAllData({ full: true });
       if (result.success) {
         const now = new Date().toLocaleString('he-IL');
         localStorage.setItem(LAST_SYNC_KEY, now);
@@ -129,7 +181,7 @@ export function useCloudSync() {
         setSyncMessage('שגיאה בסנכרון — נסו שוב');
         return;
       }
-      const pullResult = await pullAllData();
+      const pullResult = await pullAllData({ full: true });
       if (pullResult.success) {
         const now = new Date().toLocaleString('he-IL');
         localStorage.setItem(LAST_SYNC_KEY, now);

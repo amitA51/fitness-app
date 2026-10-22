@@ -166,6 +166,13 @@ async function withLease<T>(task: () => Promise<T>): Promise<T | typeof BUSY> {
 /** Returned when another tab already holds the lock and the caller should stand down. */
 export const BUSY = Symbol('sync-lock-busy');
 
+/**
+ * `SyncResult.error` for a pass that stood down because the lock was taken. Not a
+ * failure, just deferred. (Web Locks are per ORIGIN, so this tab's own queue
+ * replay holds the same lock — "another tab" is the common case, not the only one.)
+ */
+export const SYNC_LOCK_BUSY_ERROR = 'sync_in_progress_in_another_tab';
+
 export type LockOutcome<T> = T | typeof BUSY;
 
 /**

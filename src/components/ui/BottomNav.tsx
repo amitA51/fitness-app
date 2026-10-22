@@ -19,8 +19,9 @@ import { useCoach } from '../../contexts/CoachContext';
 import { useIsAppAdmin } from '../../hooks/useIsAppAdmin';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { useUnreadMessages } from '../../hooks/useUnreadMessages';
-import { listMyCoaches } from '../../services/coach';
-import type { CoachClient } from '../../types/coach';
+import { readStoredAuthSession } from '../../lib/supabase';
+import { getCoachLinkState } from '../../services/coach';
+import { COACH_LINK_STATE_EVENT } from '../../services/coach/coachLinkEvents';
 import { triggerHapticEffect } from '../../utils/haptics';
 import { prefetchRoute } from '../../utils/routePrefetch';
 import { Sheet } from './Sheet';
@@ -131,28 +132,62 @@ const COACHES_LIST_HASH = '#coaches';
  *   • two or more  → MyCoach scrolled to the coaches list (pick a coach there)
  *   • none / error → null, so the chat entry is omitted entirely (no coach to
  *                    message yet — "המאמן שלי" already covers the connect path)
- * Trainee-only, fetched once on mount; coach view never calls it.
+ * Trainee-only; coach view never calls it. Reads the shared, cached coach-link
+ * probe (the unread badge uses the same one) instead of its own listMyCoaches
+ * request on every mount — BottomNav remounts after every workout.
  */
 function useTraineeChatTarget(enabled: boolean): string | null {
-  const [coaches, setCoaches] = useState<CoachClient[]>([]);
+  const [coachIds, setCoachIds] = useState<readonly string[]>([]);
 
   useEffect(() => {
     if (!enabled) return;
     let active = true;
-    listMyCoaches('active')
-      .then((list) => {
-        if (active) setCoaches(list);
-      })
-      .catch(() => {
-        /* offline / pre-migration — chat entry stays hidden below */
-      });
+    const load = () => {
+      getCoachLinkState()
+        .then((link) => {
+          if (active && link) setCoachIds(link.coachIds);
+        })
+        .catch(() => {
+          /* offline / pre-migration — chat entry stays hidden below */
+        });
+    };
+    load();
+    // An invite accepted / a coach disconnected on this device, or a failed
+    // probe that now has an answer: show or hide the chat entry at once.
+    window.addEventListener(COACH_LINK_STATE_EVENT, load);
     return () => {
       active = false;
+      window.removeEventListener(COACH_LINK_STATE_EVENT, load);
     };
   }, [enabled]);
 
-  if (coaches.length === 1 && coaches[0]) return `/my-coach/messages/${coaches[0].coachId}`;
-  if (coaches.length > 1) return `/my-coach${COACHES_LIST_HASH}`;
+  if (coachIds.length === 1 && coachIds[0]) return `/my-coach/messages/${coachIds[0]}`;
+  if (coachIds.length > 1) return `/my-coach${COACHES_LIST_HASH}`;
+  return null;
+}
+
+/**
+ * app_admins answers per user. BottomNav is unmounted for every workout, and
+ * each remount used to ask the server again. A "yes" is kept for the page's
+ * lifetime; a "no" only for APP_ADMIN_NO_TTL_MS, because useIsAppAdmin also
+ * answers "no" when the lookup FAILED — one failure on a slow server must not
+ * hide the admin's tab until the next reload.
+ */
+const APP_ADMIN_NO_TTL_MS = 10 * 60_000;
+const appAdminByUser = new Map<string, { isAdmin: boolean; at: number }>();
+
+const knownAppAdminFor = (userId: string | null): boolean | undefined => {
+  const entry = userId ? appAdminByUser.get(userId) : undefined;
+  if (!entry) return undefined;
+  return entry.isAdmin || Date.now() - entry.at < APP_ADMIN_NO_TTL_MS ? entry.isAdmin : undefined;
+};
+
+/** Renders nothing: asks app_admins once (useIsAppAdmin) and reports the answer. */
+function AppAdminProbe({ onResolved }: { onResolved: (isAdmin: boolean) => void }) {
+  const { isAdmin, loading } = useIsAppAdmin();
+  useEffect(() => {
+    if (!loading) onResolved(isAdmin);
+  }, [isAdmin, loading, onResolved]);
   return null;
 }
 
@@ -268,7 +303,19 @@ function BottomNav() {
   // (constants/featureFlags.ts). A member of app_admins keeps it — the owner
   // cannot judge whether to keep the feature if he cannot reach the screen.
   // Until the lookup settles the tab is absent, which is the quiet default.
-  const { isAdmin: isAppAdmin } = useIsAppAdmin();
+  // The lookup is remembered per user (see appAdminByUser), and skipped
+  // entirely once the flag is on.
+  const [storedUserId] = useState(() => readStoredAuthSession()?.user?.id ?? null);
+  const knownAppAdmin = knownAppAdminFor(storedUserId);
+  const [isAppAdmin, setIsAppAdmin] = useState(knownAppAdmin ?? false);
+  const needsAppAdminProbe = !NUTRITION_TRAINEE_UI_ENABLED && knownAppAdmin === undefined;
+  const onAppAdminResolved = useCallback(
+    (isAdmin: boolean) => {
+      if (storedUserId) appAdminByUser.set(storedUserId, { isAdmin, at: Date.now() });
+      setIsAppAdmin(isAdmin);
+    },
+    [storedUserId]
+  );
   const showNutritionTab = NUTRITION_TRAINEE_UI_ENABLED || isAppAdmin;
 
   const mainTabs = useMemo(() => {
@@ -516,6 +563,7 @@ function BottomNav() {
 
   return (
     <>
+      {needsAppAdminProbe && <AppAdminProbe onResolved={onAppAdminResolved} />}
       <nav
         aria-label="ניווט ראשי"
         className="fixed bottom-0 inset-x-0 z-nav safe-area-bottom"

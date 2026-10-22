@@ -5,6 +5,7 @@
 import type { ClientGroup } from '../../types/coach';
 import { logger } from '../../utils/logger';
 import { getCurrentUser } from '../supabaseAuth';
+import { notifyCoachLinksChanged } from './coachLinkEvents';
 import { requireClient, toGroup } from './mappers';
 
 export const listGroups = async (): Promise<ClientGroup[]> => {
@@ -34,12 +35,14 @@ export const createGroup = async (name: string): Promise<ClientGroup> => {
     .select('*')
     .single();
   if (error) throw error;
+  notifyCoachLinksChanged();
   return toGroup(data);
 };
 
 export const deleteGroup = async (id: string): Promise<{ error: string | null }> => {
   const supabase = requireClient();
   const { error } = await supabase.from('client_groups').delete().eq('id', id);
+  if (!error) notifyCoachLinksChanged();
   return { error: error?.message ?? null };
 };
 
@@ -89,5 +92,6 @@ export const setGroupMembers = async (
     _group_id: groupId,
     _client_ids: clientIds,
   });
+  if (!error) notifyCoachLinksChanged();
   return { error: error?.message ?? null };
 };

@@ -13,9 +13,20 @@
 // `accept()` dismissed the gate even though no consent had been recorded. Either
 // path produced a user who had legally accepted nothing while the app behaved as
 // if they had — the exact opposite of what a consent record is for.
+//
+// What the GATE does with an unreadable status is decided one level up, in
+// getConsentGateStatus: the last answer the server gave this user (kept for
+// CONSENT_LKG_TTL_MS) stands in for a failed read, so an overloaded server no
+// longer walls off people who already accepted.
 // ============================================================================
 
 import { supabase } from '../../lib/supabase';
+import {
+  type AccountRef,
+  isNewAccount,
+  readLastKnownGood,
+  writeLastKnownGood,
+} from '../../utils/lastKnownGood';
 import { logger } from '../../utils/logger';
 import type { LegalDocType, LegalVersionStatus, RecordConsentOptions } from './types';
 
@@ -58,7 +69,16 @@ export interface ConsentStatusResult {
 export async function getLegalConsentStatus(locale = 'he'): Promise<ConsentStatusResult> {
   if (!supabase) return { statuses: [], unavailable: false };
 
-  const { data, error } = await supabase.rpc('current_legal_versions', { _locale: locale });
+  let data: unknown;
+  let error: { code?: string; message?: string } | null;
+  try {
+    ({ data, error } = await supabase.rpc('current_legal_versions', { _locale: locale }));
+  } catch (err) {
+    // A request that never got an answer (aborted by the fetch timeout, network
+    // gone) is as unknown as an error response.
+    logger.db.error('current_legal_versions threw', err);
+    return { statuses: [], unavailable: true };
+  }
   if (error) {
     if (isBackendMissing(error)) {
       logger.db.warn('current_legal_versions unavailable (migration not applied)', error);
@@ -80,6 +100,87 @@ export async function getLegalConsentStatus(locale = 'he'): Promise<ConsentStatu
     })),
     unavailable: false,
   };
+}
+
+/** How long a "nothing to accept" answer stands in for a failed consent read. */
+export const CONSENT_LKG_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+const consentLkgKey = (userId: string): string => `consent_status_lkg:${userId}`;
+
+/**
+ * The documents this user still had to accept at the server's last answer, or
+ * null when nothing usable is stored. A "nothing to accept" answer expires after
+ * CONSENT_LKG_TTL_MS; a "still needed" one never does — only a live answer may
+ * lift it, so neither time nor a moved clock lets a user past it.
+ */
+export function readCachedConsentPending(userId: string): LegalVersionStatus[] | null {
+  const key = consentLkgKey(userId);
+  const any = readLastKnownGood<unknown>(key, Number.POSITIVE_INFINITY);
+  if (!Array.isArray(any)) return null;
+  if (any.length > 0) return any as LegalVersionStatus[];
+  return readLastKnownGood<unknown>(key, CONSENT_LKG_TTL_MS) === null ? null : [];
+}
+
+/**
+ * Store a SERVER answer (never a fallback) as this user's last known status.
+ * `askedAt` is when the question was asked; see writeLastKnownGood for why an
+ * older question never overwrites a newer answer.
+ */
+export function cacheConsentPending(
+  userId: string,
+  pending: LegalVersionStatus[],
+  askedAt = Date.now()
+): void {
+  writeLastKnownGood(consentLkgKey(userId), pending, askedAt);
+}
+
+/** What the consent gate should act on. */
+export interface ConsentGateStatus {
+  /** Documents the user must accept before continuing. */
+  pending: LegalVersionStatus[];
+  /** The live read failed; `pending` is the last server answer, or empty. */
+  unavailable: boolean;
+  /**
+   * No answer at all — live or stored — for a NEW account: keep the gate up
+   * (it cannot list the documents) and re-check. See isNewAccount.
+   */
+  unverified: boolean;
+}
+
+/**
+ * The consent status the gate acts on, with a last-known-good fallback.
+ *
+ *   * Server answered → that answer, and it becomes the new last-known-good.
+ *   * Read failed, a stored answer exists → that answer. A user the server had
+ *     cleared (within the last 30 days) stays cleared; a user it had asked to
+ *     accept is still asked.
+ *   * Read failed, nothing stored, account older than a week → let the user in
+ *     (fail OPEN); ConsentContext re-checks while the read keeps failing.
+ *   * Read failed, nothing stored, NEW account → `unverified`: the gate stays up.
+ *
+ * Why failing open is acceptable for the older account: it was asked when it
+ * was new (a new account with no answer is held at the gate), and the gate only
+ * comes back when the terms change. It has nothing stored here because it was
+ * first seen on this device before answers were kept, or is on a new device or
+ * cleared storage. The server-side record in user_consents stays the record of
+ * truth, and the gate goes up as soon as a read answers "needed". Blocking on an
+ * outage, by contrast, walled off every user who had already accepted, for as
+ * long as the database was overloaded.
+ */
+export async function getConsentGateStatus(
+  account: AccountRef,
+  locale = 'he'
+): Promise<ConsentGateStatus> {
+  const askedAt = Date.now();
+  const live = await getLegalConsentStatus(locale);
+  if (!live.unavailable) {
+    const pending = live.statuses.filter((s) => s.needsConsent);
+    cacheConsentPending(account.id, pending, askedAt);
+    return { pending, unavailable: false, unverified: false };
+  }
+  const cached = readCachedConsentPending(account.id);
+  if (cached) return { pending: cached, unavailable: true, unverified: false };
+  return { pending: [], unavailable: true, unverified: isNewAccount(account) };
 }
 
 /**

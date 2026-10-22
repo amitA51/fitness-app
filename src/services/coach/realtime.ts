@@ -19,15 +19,46 @@ type Unsubscribe = () => void;
 // return a stale channel; each subscription removes exactly its own.
 let channelSeq = 0;
 
+/** One row-level change, as much of it as a subscriber needs to refetch just that row. */
+export interface UserTableChange {
+  /** 'INSERT' | 'UPDATE' | 'DELETE' as reported by Realtime. */
+  eventType: string;
+  /** The changed row's id, or null when the event does not name one. */
+  id: string | null;
+}
+
+const rowIdOf = (row: unknown): string | null => {
+  const id = (row as { id?: unknown } | null | undefined)?.id;
+  return typeof id === 'string' && id.length > 0 ? id : null;
+};
+
+/**
+ * Read the changed row's id off a postgres_changes payload: `new` for an insert
+ * or update, `old` (the primary key, under the default replica identity) for a
+ * delete. Exported for tests.
+ */
+export function toUserTableChange(payload: unknown): UserTableChange {
+  const p = payload as { eventType?: unknown; new?: unknown; old?: unknown } | null | undefined;
+  return {
+    eventType: typeof p?.eventType === 'string' ? p.eventType : 'UNKNOWN',
+    id: rowIdOf(p?.new) ?? rowIdOf(p?.old),
+  };
+}
+
 /**
  * Subscribe to changes on a trainee-owned table for the given user and invoke
- * `onChange` on any insert/update/delete. Returns an unsubscribe function.
- * Never throws — a realtime failure must not break the calling surface.
+ * `onChange` on any insert/update/delete, with the changed row's id when the
+ * event carries one. Returns an unsubscribe function. Never throws — a realtime
+ * failure must not break the calling surface.
+ *
+ * Each subscription is a Realtime channel the server has to evaluate on every
+ * write to the table, so open one only for a user who can actually receive
+ * changes from someone else (see getCoachLinkState in ./messageService).
  */
 export function subscribeToUserTable(
   table: string,
   userId: string,
-  onChange: () => void
+  onChange: (change: UserTableChange) => void
 ): Unsubscribe {
   if (!isSupabaseConfigured() || !supabase || !userId) return () => {};
 
@@ -37,7 +68,7 @@ export function subscribeToUserTable(
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table, filter: `user_id=eq.${userId}` },
-        () => onChange()
+        (payload) => onChange(toUserTableChange(payload))
       )
       .subscribe();
 

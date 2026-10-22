@@ -9,6 +9,7 @@
 import type { CoachInvite } from '../../types/coach';
 import { logger } from '../../utils/logger';
 import { getCurrentUser } from '../supabaseAuth';
+import { notifyCoachLinksChanged } from './coachLinkEvents';
 import { requireClient, toInvite } from './mappers';
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 30 chars, no ambiguous
@@ -125,9 +126,11 @@ export const acceptInvite = async (code: string): Promise<AcceptResult> => {
     return { ok: false, error: isOffline ? 'offline' : 'server' };
   }
   const res = data as AcceptResult;
-  return res?.ok
-    ? { ok: true, coachId: res.coachId }
-    : { ok: false, error: res?.error ?? 'unknown' };
+  if (!res?.ok) return { ok: false, error: res?.error ?? 'unknown' };
+  // A coach can now edit this user's data: open the live reflection now, not
+  // when the cached "no coach" answer expires.
+  notifyCoachLinksChanged();
+  return { ok: true, coachId: res.coachId };
 };
 
 /** Build a shareable invite link for the given code. */

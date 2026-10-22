@@ -5,9 +5,9 @@
 // promotion: nothing local may flip a user's shell or grant coach status.
 // ============================================================================
 
-import { render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CoachProvider, useCoach } from '../CoachContext';
+import { act, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CoachProvider, READ_WAIT_MS, useCoach } from '../CoachContext';
 
 const getMyCoachProfile = vi.fn();
 const getMySubscription = vi.fn();
@@ -125,6 +125,91 @@ describe('CoachContext role SSOT', () => {
     await waitFor(() => expect(screen.getByTestId('role')).toHaveTextContent('null'));
     expect(screen.getByTestId('isCoach')).toHaveTextContent('false');
     expect(getMyProfile).not.toHaveBeenCalled();
+  });
+});
+
+describe('CoachContext — a slow or failing server never holds the app', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it(`stops loading after ${READ_WAIT_MS} ms when the server never answers, keeping the cached role`, async () => {
+    vi.useFakeTimers();
+    localStorage.setItem('cached_role', 'coach');
+    const never = new Promise<never>(() => {});
+    getMyProfile.mockReturnValue(never);
+    getMyCoachProfile.mockReturnValue(never);
+    getMySubscription.mockReturnValue(never);
+
+    render(
+      <CoachProvider>
+        <Probe />
+      </CoachProvider>
+    );
+    expect(screen.getByText('loading')).toBeInTheDocument();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(READ_WAIT_MS + 1);
+    });
+
+    expect(screen.getByTestId('role')).toHaveTextContent('coach');
+    expect(screen.getByTestId('isCoach')).toHaveTextContent('true');
+  });
+
+  it('applies a server answer that lands after the cap', async () => {
+    vi.useFakeTimers();
+    let answer: (v: unknown) => void = () => {};
+    getMyProfile.mockReturnValue(
+      new Promise((resolve) => {
+        answer = resolve;
+      })
+    );
+    getMyCoachProfile.mockResolvedValue(null);
+
+    render(
+      <CoachProvider>
+        <Probe />
+      </CoachProvider>
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(READ_WAIT_MS + 1);
+    });
+    expect(screen.getByTestId('role')).toHaveTextContent('null');
+
+    await act(async () => {
+      answer({ id: 'u1', displayName: 'x', avatarUrl: null, role: 'coach' });
+    });
+
+    expect(screen.getByTestId('role')).toHaveTextContent('coach');
+    expect(localStorage.getItem('cached_role')).toBe('coach');
+  });
+
+  it('keeps the cached coach role when every read fails (the reads return null on error)', async () => {
+    localStorage.setItem('cached_role', 'coach');
+    getMyProfile.mockResolvedValue(null);
+    getMyCoachProfile.mockResolvedValue(null);
+
+    render(
+      <CoachProvider>
+        <Probe />
+      </CoachProvider>
+    );
+
+    await waitFor(() => expect(screen.getByTestId('role')).toHaveTextContent('coach'));
+    expect(localStorage.getItem('cached_role')).toBe('coach');
+  });
+
+  it('uses the reads that succeeded when another one throws', async () => {
+    getMyProfile.mockResolvedValue({ id: 'u1', displayName: 'x', avatarUrl: null, role: 'coach' });
+    getMyCoachProfile.mockRejectedValue(new Error('503'));
+
+    render(
+      <CoachProvider>
+        <Probe />
+      </CoachProvider>
+    );
+
+    await waitFor(() => expect(screen.getByTestId('isCoach')).toHaveTextContent('true'));
   });
 });
 

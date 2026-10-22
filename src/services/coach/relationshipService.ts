@@ -9,6 +9,7 @@
 import type { CoachClient, CoachProfile, CoachSubscription } from '../../types/coach';
 import { logger } from '../../utils/logger';
 import { getCurrentUser } from '../supabaseAuth';
+import { notifyCoachLinksChanged } from './coachLinkEvents';
 import { requireClient, toCoachClient, toCoachProfile, toSubscription } from './mappers';
 
 // Embed profiles via the FKs that target public.profiles (the *_id_fkey
@@ -144,6 +145,7 @@ export const setClientStatus = async (
   const supabase = requireClient();
   const { error } = await supabase.from('coach_clients').update({ status }).eq('id', linkId);
   if (error) return { error: error.message };
+  notifyCoachLinksChanged();
   return { error: null };
 };
 
@@ -176,5 +178,7 @@ export const disconnectCoach = async (linkId: string): Promise<{ error: string |
     .update({ status: 'ended' })
     .eq('id', linkId);
   if (error) return { error: error.message };
+  // The coach can no longer edit this user's data: close the live reflection now.
+  notifyCoachLinksChanged();
   return { error: null };
 };

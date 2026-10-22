@@ -25,6 +25,11 @@ export async function syncTemplatesFromCloud(): Promise<void> {
  * Trainee-side reflection of coach edits. Syncs templates on mount (to catch
  * edits made while away) and again whenever the row changes in realtime (a
  * coach editing the plan), so open screens reload via `TEMPLATES_CHANGED`.
+ *
+ * Only for a trainee with an active coach: nobody else can edit this user's
+ * templates, and the app-wide incremental pull already brings the user's own
+ * templates from other devices. A full fetch plus a Realtime channel for every
+ * user on every visit was needless load on a small database.
  */
 export function useCloudTemplateReflection(): void {
   useEffect(() => {
@@ -34,6 +39,9 @@ export function useCloudTemplateReflection(): void {
     void (async () => {
       const user = await getCurrentUser();
       if (!user || cancelled) return;
+      const { getCoachLinkState } = await import('../services/coach/messageService');
+      const links = await getCoachLinkState().catch(() => null);
+      if (cancelled || !links || links.coachIds.length === 0) return;
       await syncTemplatesFromCloud();
       if (cancelled) return;
       unsubscribe = subscribeToUserTable('workout_templates', user.id, () => {

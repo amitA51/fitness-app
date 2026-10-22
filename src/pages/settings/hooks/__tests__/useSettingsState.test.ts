@@ -17,10 +17,15 @@ vi.mock('../../../../contexts/SettingsContext', () => ({
   }),
 }));
 
-// Avoid hitting Supabase during the email-load effect.
-vi.mock('../../../../services/supabaseAuth', () => ({
-  getCurrentUser: vi.fn().mockResolvedValue(null),
+// The account email comes from the session AuthContext already holds.
+let authUser: { id: string; email?: string } | null = null;
+vi.mock('../../../../contexts/AuthContext', () => ({
+  useAuth: () => ({ user: authUser }),
 }));
+
+// Must stay unused: the email no longer waits on a separate session read.
+const getCurrentUser = vi.hoisted(() => vi.fn().mockResolvedValue(null));
+vi.mock('../../../../services/supabaseAuth', () => ({ getCurrentUser }));
 
 const UNIFIED_KEY = 'sparkos_notification_config';
 const LEGACY_KEY = 'notification_settings';
@@ -82,5 +87,34 @@ describe('useSettingsState · toggleNotification (bug #1 wiring)', () => {
     await waitFor(() => expect(result.current.profile.name).toBe('דנה'));
     expect(result.current.profile.weight).toBe(62);
     expect(result.current.profile.gender).toBe('female');
+  });
+});
+
+describe('useSettingsState · account email', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    authUser = null;
+    getCurrentUser.mockClear();
+  });
+
+  it('shows the signed-in email on the FIRST render, without a network round-trip', () => {
+    // A slow server used to leave "לא מחוברים לחשבון" up until a session read
+    // (which can refresh the token over the network) came back.
+    authUser = { id: 'u1', email: 'lifter@example.com' };
+
+    const { result } = renderHook(() => useSettingsState());
+
+    expect(result.current.authEmail).toBe('lifter@example.com');
+    expect(getCurrentUser).not.toHaveBeenCalled();
+  });
+
+  it('follows the session when it changes', () => {
+    const { result, rerender } = renderHook(() => useSettingsState());
+    expect(result.current.authEmail).toBeNull();
+
+    authUser = { id: 'u2', email: 'new@example.com' };
+    rerender();
+
+    expect(result.current.authEmail).toBe('new@example.com');
   });
 });

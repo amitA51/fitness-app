@@ -26,6 +26,7 @@ import {
   getWorkoutSession,
   getWorkoutSessions,
   saveWorkoutSession,
+  settleSessionCloudHandoffs,
 } from '../workoutDb';
 
 const makeSession = (id: string, overrides: Partial<WorkoutSession> = {}): WorkoutSession => ({
@@ -51,6 +52,8 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  // Saves hand off to the cloud after resolving; let that finish first.
+  await settleSessionCloudHandoffs();
   await clearDatabase();
 });
 

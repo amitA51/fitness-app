@@ -374,9 +374,19 @@ export const getGroupUnreadCount = async (): Promise<number> => {
   const coachEntries = new Map<string, string | null>();
   const memberEntries = new Map<string, string | null>();
 
+  // Background poll (the BottomNav badge): no automatic retries, so a failing
+  // server is asked once per tick rather than up to four times.
   const [coachResult, memberResult] = await Promise.all([
-    supabase.from('client_groups').select('id, coach_last_read_at').eq('coach_id', user.id),
-    supabase.from('client_group_members').select('group_id, last_read_at').eq('client_id', user.id),
+    supabase
+      .from('client_groups')
+      .select('id, coach_last_read_at')
+      .eq('coach_id', user.id)
+      .retry(false),
+    supabase
+      .from('client_group_members')
+      .select('group_id, last_read_at')
+      .eq('client_id', user.id)
+      .retry(false),
   ]);
 
   for (const row of (coachResult.data ?? []) as {
@@ -407,7 +417,8 @@ export const getGroupUnreadCount = async (): Promise<number> => {
     .select('group_id, sender_id, created_at')
     .in('group_id', groupIds)
     .order('created_at', { ascending: false })
-    .limit(500);
+    .limit(500)
+    .retry(false);
 
   if (error) {
     logger.db.error('getGroupUnreadCount failed', error);

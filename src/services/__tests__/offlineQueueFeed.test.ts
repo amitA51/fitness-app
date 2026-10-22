@@ -228,7 +228,9 @@ describe('offlineQueue replay vs concurrent enqueue (revision guard)', () => {
 
 describe('offlineQueue MAX_RETRIES exhaustion', () => {
   it('holds the mutation for recovery after 5 retriable failures instead of deleting it', async () => {
-    const err = new TypeError('failed to fetch');
+    // An unrecognised failure: retriable, and COUNTED. (A network error no
+    // longer counts at all — see offlineQueueTransient.test.ts.)
+    const err = new Error('unexpected replay failure');
     mockSyncWorkoutSession.mockRejectedValue(err);
     await queueMutation('session:update', { id: 's2', duration: 30 });
 

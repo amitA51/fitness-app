@@ -5,20 +5,27 @@
  */
 
 import { ValidationError } from '../errors';
-import { isSupabaseConfigured } from '../lib/supabase';
+import { isSupabaseConfigured, readStoredAuthSession } from '../lib/supabase';
 import type { WorkoutSession } from '../types';
 import { logger } from '../utils/logger';
+import { withTimeout } from '../utils/withTimeout';
 import { safeTimestamp } from './cloudMerge';
 import { emitWorkoutSaved } from './dataEvents';
 import { STORES, dbDelete, dbGetAll, dbPut, initDB } from './indexedDBCore';
-import { queueMutation } from './offlineQueue';
-import { getCurrentUser, resolveCurrentUserOrNull } from './supabaseAuth';
+import {
+  type MutationType,
+  getQueuedRecordIds,
+  queueMutation,
+  resolveQueueOwner,
+} from './offlineQueue';
+import { resolveCurrentUserOrNull } from './supabaseAuth';
 import {
   deleteCloudWorkoutSession,
   syncWorkoutSession,
   syncWorkoutSessionsBatch,
 } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
+import { LAST_SIGNED_IN_USER_ID_KEY } from './userScopedLocalData';
 
 /**
  * True when a record carries a soft-delete tombstone (deletedAt set).
@@ -27,6 +34,71 @@ import { syncWithRetry } from './syncEngine';
  */
 const isTombstoned = (record: unknown): boolean =>
   Boolean((record as { deletedAt?: string | null }).deletedAt);
+
+// ── Auth on the write path ──────────────────────────────────────────────────
+
+/**
+ * How long a write waits for auth to name the user before treating the answer
+ * as "no user" and queueing. `getCurrentUser()` can run a token refresh against
+ * the server, and on an overloaded day that took the whole request timeout —
+ * while a finished workout sat neither pushed nor queued. Queueing instead is
+ * safe: the queue stamps the owner itself (offlineQueue.resolveQueueOwner reads
+ * the session stored on this device whenever auth does not name a user) and
+ * replays the write once the server answers.
+ */
+const WRITE_AUTH_LOOKUP_TIMEOUT_MS = 2_000;
+
+type WriteUser = Awaited<ReturnType<typeof resolveCurrentUserOrNull>>;
+
+const resolveUserForWrite = async (): Promise<WriteUser> => {
+  try {
+    return await withTimeout(
+      resolveCurrentUserOrNull(),
+      WRITE_AUTH_LOOKUP_TIMEOUT_MS,
+      'write-path auth lookup'
+    );
+  } catch (err) {
+    // Only the timeout lands here: resolveCurrentUserOrNull never rejects.
+    logger.sync.warn('Auth did not answer in time on a write path; queueing instead', err);
+    return null;
+  }
+};
+
+/**
+ * The account signed in on this device right now, from the stored session —
+ * synchronous, no network. Null when nobody is stored or it cannot be read.
+ */
+const storedOwnerId = (): string | null => {
+  try {
+    return readStoredAuthSession()?.user?.id ?? null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * The account the LOCAL data belongs to: the owner marker authSessionTransition
+ * keeps, which moves only once an account switch has wiped the previous
+ * account's rows. Null when there is none (a guest, a legacy install).
+ */
+const localDataOwnerId = (): string | null => {
+  try {
+    return localStorage.getItem(LAST_SIGNED_IN_USER_ID_KEY);
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Queue a session write stamped with `ownerId` when the caller knows it. Without
+ * one, queueMutation resolves the owner itself (auth, then the stored session).
+ */
+const queueSessionWrite = (
+  type: MutationType,
+  payload: unknown,
+  ownerId: string | null
+): Promise<void> =>
+  ownerId ? queueMutation(type, payload, { ownerId }) : queueMutation(type, payload);
 
 // ── Unsynced-session ledger ─────────────────────────────────────────────────
 //
@@ -250,35 +322,78 @@ export const getUnsyncedSessionIds = async (): Promise<string[]> =>
 export const getUnsyncedSessionCount = async (): Promise<number> =>
   (await getUnsyncedSessionIds()).length;
 
-/**
- * Try to get every ledgered session to the cloud, and drop the markers that are
- * no longer real risk.
- *
- * This is what makes the new warning actionable instead of a dead end: a session
- * that is only in the ledger is in NO queue, so `processQueue` alone can never
- * push it. On failure the write is handed to the offline queue, which is where
- * the rest of the app's recovery machinery can finally see it.
- */
-export const flushUnsyncedSessions = async (): Promise<{ pushed: number; queued: number }> => {
-  if (!isSupabaseConfigured()) return { pushed: 0, queued: 0 };
+/** What one flush of the ledger did. */
+export interface FlushResult {
+  pushed: number;
+  queued: number;
+}
 
-  let sessionIds: string[];
+const NOTHING_FLUSHED: FlushResult = { pushed: 0, queued: 0 };
+
+/** Cloud hand-offs started by `saveWorkoutSession` that have not finished yet. */
+const pendingCloudHandoffs = new Set<Promise<void>>();
+
+/**
+ * Sessions whose save hand-off — or the direct push it started — is still
+ * running, with a count because the same workout can be saved twice in a row.
+ * A flush leaves them alone: the hand-off is already delivering them, and a
+ * second push of the same workout is only load on a struggling server.
+ */
+const sessionsHandingOff = new Map<string, number>();
+
+/** Mark a session as handing off; the returned function (idempotent) ends it. */
+const holdForHandoff = (sessionId: string): (() => void) => {
+  sessionsHandingOff.set(sessionId, (sessionsHandingOff.get(sessionId) ?? 0) + 1);
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    const left = (sessionsHandingOff.get(sessionId) ?? 1) - 1;
+    if (left > 0) sessionsHandingOff.set(sessionId, left);
+    else sessionsHandingOff.delete(sessionId);
+  };
+};
+
+/** Ids of every ledgered SESSION, or null when the ledger cannot be read. */
+const ledgeredSessionIds = async (): Promise<string[] | null> => {
   try {
     // Session markers ONLY. The ledger is shared with nutrition, water and
-    // body-stat rows now, and this function pushes through syncWorkoutSession —
+    // body-stat rows now, and a flush pushes through syncWorkoutSession —
     // handing it a water row would send garbage to the workouts table.
-    sessionIds = (await readMarkers())
+    return (await readMarkers())
       .filter((ref) => ref.store === STORES.WORKOUT_SESSIONS)
       .map((ref) => ref.recordId);
   } catch (err) {
     logger.sync.warn('Could not read the unsynced-session ledger', err);
-    return { pushed: 0, queued: 0 };
+    return null;
   }
-  if (sessionIds.length === 0) return { pushed: 0, queued: 0 };
+};
 
-  const user = await getCurrentUser();
+/**
+ * Push each of `sessionIds` to the cloud, or queue it, and drop the markers of
+ * sessions that no longer exist.
+ *
+ * Every queued write is stamped with its owner — auth's user, else the account
+ * stored on this device — instead of leaving it to a later lookup that answers
+ * "no user" during a refresh cooldown (and would file it as a guest's change).
+ * Once one push fails the server is not answering: the rest are queued, not
+ * each given its own timeout against it.
+ *
+ * `expectedOwner` (the automatic drain): push only into that account, and do
+ * nothing at all when auth names somebody else — the identity is mid-switch.
+ */
+const flushLedgeredSessions = async (
+  sessionIds: readonly string[],
+  expectedOwner?: string
+): Promise<FlushResult> => {
+  const storedOwner = storedOwnerId();
+  const user = await resolveUserForWrite();
+  if (expectedOwner && user && user.id !== expectedOwner) return NOTHING_FLUSHED;
+  const owner = user?.id ?? expectedOwner ?? storedOwner;
+
   let pushed = 0;
   let queued = 0;
+  let serverAnswering = true;
 
   for (const sessionId of sessionIds) {
     const session = await getWorkoutSession(sessionId);
@@ -289,21 +404,23 @@ export const flushUnsyncedSessions = async (): Promise<{ pushed: number; queued:
     }
 
     const payload = { ...session, endTime: session.endTime ?? undefined };
-    if (user) {
+    if (user && serverAnswering) {
       const synced = await syncWithRetry(
         () => syncWorkoutSession(user.id, payload),
         `flushUnsyncedSession:${session.id}`,
         1,
-        { type: 'session:update', payload }
+        { type: 'session:update', payload, ownerId: user.id }
       );
       if (synced) {
         await clearUnsyncedSessionMarker(session.id);
         pushed++;
       } else {
+        // syncWithRetry has queued this one.
         queued++;
+        serverAnswering = false;
       }
     } else {
-      await queueMutation('session:update', payload);
+      await queueSessionWrite('session:update', payload, owner);
       queued++;
     }
   }
@@ -311,47 +428,187 @@ export const flushUnsyncedSessions = async (): Promise<{ pushed: number; queued:
   return { pushed, queued };
 };
 
+/** One flush at a time: a second caller shares the one already running. */
+let flushInFlight: Promise<FlushResult> | null = null;
+
+const singleFlightFlush = (run: () => Promise<FlushResult>): Promise<FlushResult> => {
+  if (flushInFlight) return flushInFlight;
+  const promise = run().finally(() => {
+    if (flushInFlight === promise) flushInFlight = null;
+  });
+  flushInFlight = promise;
+  return promise;
+};
+
 /**
- * Save a workout session.
+ * Try to get every ledgered session to the cloud, and drop the markers that are
+ * no longer real risk. For the "sync now" button and the sign-out guard.
+ *
+ * This is what makes the new warning actionable instead of a dead end: a session
+ * that is only in the ledger is in NO queue, so `processQueue` alone can never
+ * push it. On failure the write is handed to the offline queue, which is where
+ * the rest of the app's recovery machinery can finally see it.
  */
-export const saveWorkoutSession = async (session: WorkoutSession): Promise<void> => {
-  await dbPut(STORES.WORKOUT_SESSIONS, session);
+export const flushUnsyncedSessions = (): Promise<FlushResult> =>
+  singleFlightFlush(async () => {
+    if (!isSupabaseConfigured()) return NOTHING_FLUSHED;
+    const ids = await ledgeredSessionIds();
+    const due = (ids ?? []).filter((id) => !sessionsHandingOff.has(id));
+    return due.length > 0 ? flushLedgeredSessions(due) : NOTHING_FLUSHED;
+  });
 
+/**
+ * The flush the app runs ON ITS OWN (offlineQueue.drainUnsyncedLedger: start-up,
+ * back online, after a pull). Nothing used to drain the ledger without a tap, so
+ * a workout whose push was cut short by closing the tab waited for "sync now".
+ *
+ * More careful than the button, because nobody asked for it:
+ *  - only the ledgered sessions in NO queue and NOT held. A queued one is the
+ *    queue's to deliver: re-queuing it would reset its backoff and its retry
+ *    budget on every trigger, and a quarantined guest change would be pushed
+ *    straight into whoever is signed in. A held one is the user's decision.
+ *  - only into the account the local data belongs to (the owner marker), so a
+ *    drain that runs while an account switch is still wiping the previous
+ *    account's rows cannot push them into the new one.
+ */
+export const drainUnsyncedSessions = (): Promise<FlushResult> =>
+  singleFlightFlush(async () => {
+    if (!isSupabaseConfigured()) return NOTHING_FLUSHED;
+    const owner = storedOwnerId();
+    if (!owner || localDataOwnerId() !== owner) return NOTHING_FLUSHED;
+
+    const ids = await ledgeredSessionIds();
+    if (!ids || ids.length === 0) return NOTHING_FLUSHED;
+    let queuedOrHeld: Set<string>;
+    try {
+      queuedOrHeld = await getQueuedRecordIds('session');
+    } catch (err) {
+      // Cannot tell what is queued: leave it all to the queue and the button.
+      logger.sync.warn('Could not read the queue before draining the ledger', err);
+      return NOTHING_FLUSHED;
+    }
+    const due = ids.filter((id) => !sessionsHandingOff.has(id) && !queuedOrHeld.has(id));
+    return due.length > 0 ? flushLedgeredSessions(due, owner) : NOTHING_FLUSHED;
+  });
+
+/**
+ * Give a saved session to the cloud: a direct push when auth names the user in
+ * time, the offline queue otherwise. Never throws — the session is already in
+ * IndexedDB and on the ledger, so a failure here leaves it counted (offline
+ * indicator, sign-out guard) and pushable (`flushUnsyncedSessions`), not lost.
+ */
+const handOffSessionToCloud = async (
+  session: WorkoutSession,
+  ownerAtSave: string | null,
+  release: () => void
+): Promise<void> => {
   const payload = { ...session, endTime: session.endTime ?? undefined };
-  const user = await resolveCurrentUserOrNull();
-
-  // No cloud configured means nothing to sync to, and nothing at risk — mirrors
-  // syncWithRetry, which returns early in that case rather than queueing.
-  if (isSupabaseConfigured()) {
-    // Ledger FIRST. From here until the cloud confirms, this workout exists in
-    // exactly one place; recording that is what lets the sign-out guard and the
-    // offline indicator see it at all — including if the tab is closed while the
-    // request is still in flight.
-    await markSessionUnsynced(session.id);
-
-    if (user) {
+  let pushStarted = false;
+  try {
+    const user = await resolveUserForWrite();
+    // Gone locally while auth was being asked — deleted by the user, or wiped by
+    // a sign-out that already counted it: pushing or queueing the save now would
+    // bring the workout back (a queued update after the delete replays last).
+    if (!(await getWorkoutSession(session.id))) {
+      logger.sync.info('Saved workout was removed locally before its hand-off; not sending it', {
+        id: session.id,
+      });
+      return;
+    }
+    // This runs AFTER the save resolved, so a sign-out or an account switch can
+    // land while auth is being asked. The workout belongs to the account that
+    // was signed in when it was SAVED (`ownerAtSave`): push it directly only into
+    // that account; in every other case it is queued below stamped with that
+    // owner, so it can never be written into whoever is signed in by now.
+    if (user && (!ownerAtSave || user.id === ownerAtSave)) {
+      pushStarted = true;
       void syncWithRetry(
         () => syncWorkoutSession(user.id, payload),
         `saveWorkoutSession:${session.id}`,
         3,
-        { type: 'session:update', payload }
-      ).then((synced) => {
-        if (synced) void clearUnsyncedSessionMarker(session.id);
-      });
-    } else {
-      // THE FIX. This enqueue used to live inside the `if (user)` above, and
-      // `getCurrentUser()` returns null not only for a guest but for a
-      // signed-in user whose token refresh just failed. That user's workout was
-      // written locally with NOTHING scheduled to push it.
-      //
-      // `queueMutation` resolves and stamps ownership itself — the real account
-      // id when auth answers, GUEST_OWNER / UNKNOWN_OWNER when it does not — so
-      // the entry does not need a user id from here. An ownerless entry is
-      // quarantined into the dead-letter store on replay (claimable from
-      // Settings) and re-stamped by `adoptGuestDataForUser` on a first sign-in.
-      // Either way it is inside the machinery instead of invisible to it.
-      await queueMutation('session:update', payload);
+        // The fallback enqueue runs only after every retry has failed — seconds
+        // later, possibly after a sign-out. Stamped with the saving account, it
+        // can neither turn into a guest's change nor replay into anybody else.
+        { type: 'session:update', payload, ownerId: user.id }
+      )
+        .then((synced) => {
+          if (synced) void clearUnsyncedSessionMarker(session.id);
+        })
+        .finally(release);
+      return;
     }
+    // THE FIX. This enqueue used to live inside the `if (user)` above, and
+    // `getCurrentUser()` returns null not only for a guest but for a signed-in
+    // user whose token refresh just failed — or, now, did not answer within
+    // WRITE_AUTH_LOOKUP_TIMEOUT_MS. That user's workout was written locally with
+    // NOTHING scheduled to push it.
+    //
+    // `queueMutation` resolves and stamps ownership itself — the real account
+    // id when auth names one, otherwise the account stored on this device, and
+    // GUEST_OWNER / UNKNOWN_OWNER only when nothing is stored — so the entry does
+    // not need a user id from here. An ownerless entry is quarantined into the dead-letter store
+    // on replay (claimable from Settings) and re-stamped by
+    // `adoptGuestDataForUser` on a first sign-in. Either way it is inside the
+    // machinery instead of invisible to it.
+    //
+    // Stamped with the saving account explicitly (the local-existence guard is
+    // above). Left to queueMutation, a lookup after a sign-out answers "guest",
+    // and `adoptGuestDataForUser` would hand the previous account's workout to
+    // whoever signs up next on this device. Stamped, it replays only when that
+    // same account is back.
+    await queueSessionWrite('session:update', payload, ownerAtSave);
+  } catch (err) {
+    logger.sync.error('Could not hand a saved workout to the cloud or the queue', {
+      id: session.id,
+      err,
+    });
+  } finally {
+    // A direct push releases the session when it settles, not here.
+    if (!pushStarted) release();
+  }
+};
+
+/**
+ * Wait until every cloud hand-off started by `saveWorkoutSession` has either
+ * started its push or written its queue row. For tests, and for any flow that
+ * must not race one.
+ */
+export const settleSessionCloudHandoffs = async (): Promise<void> => {
+  while (pendingCloudHandoffs.size > 0) {
+    await Promise.allSettled([...pendingCloudHandoffs]);
+  }
+};
+
+/**
+ * Save a workout session.
+ *
+ * Resolves as soon as the session is in IndexedDB and on the unsynced ledger —
+ * the two writes that make it impossible to lose. The cloud hand-off continues
+ * in the background: finishing a workout used to wait on an auth lookup that
+ * can run a token refresh, so on a slow server the save spinner turned for as
+ * long as that took, with the workout neither queued nor marked meanwhile.
+ */
+export const saveWorkoutSession = async (session: WorkoutSession): Promise<void> => {
+  // Who is saving, read NOW (synchronously): the hand-off below runs later.
+  const ownerAtSave = storedOwnerId();
+  await dbPut(STORES.WORKOUT_SESSIONS, session);
+
+  // No cloud configured means nothing to sync to, and nothing at risk — mirrors
+  // syncWithRetry, which returns early in that case rather than queueing.
+  if (isSupabaseConfigured()) {
+    // Ledger FIRST, before any auth lookup. From here until the cloud confirms,
+    // this workout exists in exactly one place; recording that is what lets the
+    // sign-out guard and the offline indicator see it at all — including if the
+    // tab is closed before the hand-off below finishes.
+    await markSessionUnsynced(session.id);
+
+    const release = holdForHandoff(session.id);
+    const handoff: Promise<void> = handOffSessionToCloud(session, ownerAtSave, release).finally(
+      () => {
+        pendingCloudHandoffs.delete(handoff);
+      }
+    );
+    pendingCloudHandoffs.add(handoff);
   }
 
   // Trigger UI Refresh
@@ -366,11 +623,18 @@ const IMPORT_BATCH_SIZE = 50;
  * cloud request per workout would mean hundreds. Same guarantees as
  * `saveWorkoutSession`: local first, ledger before the cloud, and a batch the
  * cloud refuses goes to the offline queue session by session.
+ *
+ * The owner is resolved ONCE, before anything is written: queueing hundreds of
+ * sessions one by one used to ask auth for each — up to 2 s apiece on a slow
+ * server, and "no user" (a guest's change) during a refresh cooldown. After the
+ * first refused batch the rest are queued without being pushed: the server is
+ * not answering, and each batch would only wait out its own timeout.
  */
 export const saveImportedWorkoutSessions = async (
   sessions: readonly WorkoutSession[]
 ): Promise<void> => {
   if (sessions.length === 0) return;
+  const ownerAtImport = storedOwnerId();
 
   const db = await initDB();
   await new Promise<void>((resolve, reject) => {
@@ -383,26 +647,42 @@ export const saveImportedWorkoutSessions = async (
   });
 
   if (isSupabaseConfigured()) {
-    for (const session of sessions) await markSessionUnsynced(session.id);
-    const user = await resolveCurrentUserOrNull();
+    // Held for the whole import, like a save's hand-off: a pull landing midway
+    // must not let the ledger drain push these one by one while their batches
+    // are still on the way.
+    const releases = sessions.map((session) => holdForHandoff(session.id));
+    try {
+      for (const session of sessions) await markSessionUnsynced(session.id);
+      const user = await resolveUserForWrite();
+      const owner = user?.id ?? ownerAtImport ?? (await resolveQueueOwner());
+      let serverAnswering = Boolean(user);
 
-    for (let i = 0; i < sessions.length; i += IMPORT_BATCH_SIZE) {
-      const batch = sessions.slice(i, i + IMPORT_BATCH_SIZE);
-      const payloads = batch.map((s) => ({ ...s, endTime: s.endTime ?? undefined }));
-      let pushed = false;
-      if (user) {
-        try {
-          await syncWorkoutSessionsBatch(user.id, payloads);
-          pushed = true;
-        } catch (err) {
-          logger.sync.warn(`saveImportedWorkoutSessions: batch of ${batch.length} queued`, err);
+      for (let i = 0; i < sessions.length; i += IMPORT_BATCH_SIZE) {
+        const batch = sessions.slice(i, i + IMPORT_BATCH_SIZE);
+        const payloads = batch.map((s) => ({ ...s, endTime: s.endTime ?? undefined }));
+        let pushed = false;
+        if (user && serverAnswering) {
+          try {
+            await syncWorkoutSessionsBatch(user.id, payloads);
+            pushed = true;
+          } catch (err) {
+            serverAnswering = false;
+            logger.sync.warn(
+              `saveImportedWorkoutSessions: batch of ${batch.length} refused; queueing the rest`,
+              err
+            );
+          }
+        }
+        if (pushed) {
+          for (const s of batch) await clearUnsyncedSessionMarker(s.id);
+        } else {
+          for (const payload of payloads) {
+            await queueSessionWrite('session:update', payload, owner);
+          }
         }
       }
-      if (pushed) {
-        for (const s of batch) await clearUnsyncedSessionMarker(s.id);
-      } else {
-        for (const payload of payloads) await queueMutation('session:update', payload);
-      }
+    } finally {
+      for (const release of releases) release();
     }
   }
 
@@ -557,11 +837,17 @@ export const replaceWorkoutSessionsFromCloud = async (
  */
 export const deleteWorkoutSession = async (sessionId: string): Promise<void> => {
   if (!sessionId) throw new ValidationError('Session ID is required for deletion.');
+  // Who is deleting, read NOW: the tombstone may be queued only after the auth
+  // lookup below, or after every direct retry has failed.
+  const ownerAtDelete = storedOwnerId();
   await dbDelete(STORES.WORKOUT_SESSIONS, sessionId);
   // The local row is gone, so it is no longer a workout that can be lost.
   await clearUnsyncedSessionMarker(sessionId);
 
-  const user = await resolveCurrentUserOrNull();
+  // Capped like the save path, but still AWAITED: a deletion has no ledger
+  // marker, so its tombstone must be pushed or queued before this resolves —
+  // otherwise closing the tab now would let the next pull resurrect the row.
+  const user = await resolveUserForWrite();
   // No cloud configured means nothing to sync to and nothing at risk — mirrors
   // syncWithRetry, which returns early in that case rather than queueing.
   if (isSupabaseConfigured()) {
@@ -573,7 +859,7 @@ export const deleteWorkoutSession = async (sessionId: string): Promise<void> => 
         () => deleteCloudWorkoutSession(user.id, sessionId),
         `deleteWorkoutSession:${sessionId}`,
         3,
-        { type: 'session:delete', payload: sessionId }
+        { type: 'session:delete', payload: sessionId, ownerId: user.id }
       );
     } else {
       // THE FIX (T-119) — the same shape as `saveWorkoutSession` above, and as
@@ -590,8 +876,12 @@ export const deleteWorkoutSession = async (sessionId: string): Promise<void> => 
       // `session:delete` replays through `deleteCloudWorkoutSession`, which
       // stamps `deleted_at` rather than hard-deleting, so what is queued really
       // is a tombstone and it converges on every other device too.
-      // `queueMutation` stamps ownership itself, so no user id is needed here.
-      await queueMutation('session:delete', sessionId);
+      //
+      // Stamped with the account that deleted it. A null here is most often a
+      // signed-in user in the refresh cooldown; filed as a guest's change, the
+      // tombstone was quarantined on replay and the next pull brought the
+      // deleted workout back.
+      await queueSessionWrite('session:delete', sessionId, ownerAtDelete);
     }
   }
 

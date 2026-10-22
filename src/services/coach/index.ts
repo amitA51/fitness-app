@@ -8,6 +8,7 @@ export * from './coachAnalytics';
 export * from './checkInService';
 export * from './assignmentService';
 export * from './messageService';
+export * from './coachLinkEvents';
 export * from './groupService';
 export * from './reminderService';
 export * from './pushService';

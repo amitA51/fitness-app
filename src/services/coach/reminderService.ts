@@ -86,6 +86,24 @@ const listMyGroupIds = async (userId: string): Promise<Set<string>> => {
   return new Set((data ?? []).map((r: { group_id: string }) => r.group_id));
 };
 
+/** listMyReminders for a known user, except that a failed read THROWS, so a
+ * cache can tell "the server failed" apart from "there are no reminders". */
+const fetchRemindersFor = async (userId: string): Promise<Reminder[]> => {
+  const supabase = requireClient();
+  const { data, error } = await supabase
+    .from('reminders')
+    .select('id, coach_id, client_id, group_id, title, body, schedule, created_at')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  const rows = (data ?? []).map(toReminder);
+  // Only pay for the membership lookup when a group-addressed row is in play.
+  const needsGroups = rows.some((r) => !r.clientId && r.groupId);
+  const myGroupIds = needsGroups ? await listMyGroupIds(userId) : new Set<string>();
+  return rows.filter((r) =>
+    r.clientId ? r.clientId === userId : !!r.groupId && myGroupIds.has(r.groupId)
+  );
+};
+
 /**
  * Reminders addressed TO the current user — the only set the local materializer
  * may fire.
@@ -102,24 +120,69 @@ const listMyGroupIds = async (userId: string): Promise<Set<string>> => {
  * mirrors the server-side reminders-dispatch resolution (client_id wins).
  */
 export const listMyReminders = async (): Promise<Reminder[]> => {
-  const supabase = requireClient();
+  requireClient();
   const user = await getCurrentUser();
   if (!user) return [];
-  const { data, error } = await supabase
-    .from('reminders')
-    .select('id, coach_id, client_id, group_id, title, body, schedule, created_at')
-    .order('created_at', { ascending: false });
-  if (error) {
+  try {
+    return await fetchRemindersFor(user.id);
+  } catch (error) {
     logger.db.error('listMyReminders failed', error);
     return [];
   }
-  const rows = (data ?? []).map(toReminder);
-  // Only pay for the membership lookup when a group-addressed row is in play.
-  const needsGroups = rows.some((r) => !r.clientId && r.groupId);
-  const myGroupIds = needsGroups ? await listMyGroupIds(user.id) : new Set<string>();
-  return rows.filter((r) =>
-    r.clientId ? r.clientId === user.id : !!r.groupId && myGroupIds.has(r.groupId)
-  );
+};
+
+/** How often the open app re-reads the reminder list from the server. */
+export const REMINDERS_REFRESH_MS = 5 * 60_000;
+/** How often due reminders are checked against the cached list (no network). */
+export const REMINDERS_TICK_MS = 60_000;
+
+/** The last list the server returned, per user. In memory: a reload re-reads it.
+ * Keyed by user so a late answer for one account never displaces another's. */
+const reminderCache = new Map<string, Reminder[]>();
+/** When the server was last ASKED per user (success or failure), so a failing
+ * server is retried every REMINDERS_REFRESH_MS rather than on every tick. */
+const lastAttemptAt = new Map<string, number>();
+/** The read in flight per user, shared by every caller (single-flight). */
+const inFlight = new Map<string, Promise<void>>();
+
+const refreshReminderCache = (userId: string): Promise<void> => {
+  const running = inFlight.get(userId);
+  if (running) return running;
+  lastAttemptAt.set(userId, Date.now());
+  const promise: Promise<void> = fetchRemindersFor(userId)
+    .then((reminders) => {
+      reminderCache.set(userId, reminders);
+    })
+    .catch((error) => {
+      // Keep the last good list: an overloaded server must not silence reminders.
+      logger.db.warn('Reminder refresh failed; keeping the last list', error);
+    })
+    .finally(() => {
+      inFlight.delete(userId);
+    });
+  inFlight.set(userId, promise);
+  return promise;
+};
+
+/**
+ * The current user's reminders from the in-memory cache, re-read from the
+ * server at most every REMINDERS_REFRESH_MS. With a cached list the answer is
+ * immediate and a due re-read happens in the background; only the very first
+ * read (nothing cached yet) is awaited. Concurrent callers share one request.
+ */
+export const getMyRemindersCached = async (): Promise<Reminder[]> => {
+  requireClient();
+  const user = await getCurrentUser();
+  if (!user) return [];
+  const askedAt = lastAttemptAt.get(user.id);
+  const due = askedAt === undefined || Date.now() - askedAt >= REMINDERS_REFRESH_MS;
+  const cached = reminderCache.get(user.id);
+  if (cached) {
+    if (due) void refreshReminderCache(user.id);
+    return cached;
+  }
+  if (due || inFlight.has(user.id)) await refreshReminderCache(user.id);
+  return reminderCache.get(user.id) ?? [];
 };
 
 const FIRED_KEY = 'coach_reminders_fired';
@@ -150,12 +213,17 @@ export const isReminderDue = (reminder: Reminder, now: Date): boolean => {
 
 /**
  * Fire due reminders as local notifications, de-duplicated per reminder+minute
- * so re-renders within the same minute don't double-notify.
+ * so re-renders within the same minute don't double-notify. Pass `list` to
+ * check an already-loaded list (the open-app loop passes its cache); without
+ * it the list is read from the server.
  */
-export const materializeDueReminders = async (now: Date = new Date()): Promise<number> => {
+export const materializeDueReminders = async (
+  now: Date = new Date(),
+  list?: Reminder[]
+): Promise<number> => {
   let reminders: Reminder[];
   try {
-    reminders = await listMyReminders();
+    reminders = list ?? (await listMyReminders());
   } catch {
     return 0; // offline — nothing to do
   }
@@ -192,4 +260,64 @@ export const materializeDueReminders = async (now: Date = new Date()): Promise<n
     // ignore storage errors
   }
   return count;
+};
+
+/**
+ * The open-app reminder loop. Every REMINDERS_TICK_MS it checks the cached list
+ * for reminders due this minute (local work only); the list itself is re-read
+ * from the server at most every REMINDERS_REFRESH_MS (getMyRemindersCached).
+ *
+ * - Visible only: the loop stops while the tab is hidden and runs at once when
+ *   it comes back, which also re-reads the list if it has gone stale.
+ * - Single-flight: a tick that finds the previous one still running is skipped,
+ *   so a slow server never stacks requests or fires a reminder twice.
+ *
+ * Returns the function that stops the loop.
+ */
+export const startReminderLoop = (): (() => void) => {
+  let timer: ReturnType<typeof setInterval> | null = null;
+  let running = false;
+  let stopped = false;
+
+  const run = async (): Promise<void> => {
+    if (running || stopped || document.hidden) return;
+    running = true;
+    // Take the minute BEFORE any network wait, so a slow first read still
+    // checks the minute this tick was meant for.
+    const now = new Date();
+    try {
+      const reminders = await getMyRemindersCached();
+      if (!stopped) await materializeDueReminders(now, reminders);
+    } catch {
+      // Offline / no backend: nothing to fire, try again next tick.
+    } finally {
+      running = false;
+    }
+  };
+
+  const start = (): void => {
+    if (timer !== null) return;
+    void run();
+    timer = setInterval(() => void run(), REMINDERS_TICK_MS);
+  };
+
+  const stop = (): void => {
+    if (timer === null) return;
+    clearInterval(timer);
+    timer = null;
+  };
+
+  const handleVisibility = (): void => {
+    if (document.hidden) stop();
+    else start();
+  };
+
+  if (!document.hidden) start();
+  document.addEventListener('visibilitychange', handleVisibility);
+
+  return () => {
+    stopped = true;
+    stop();
+    document.removeEventListener('visibilitychange', handleVisibility);
+  };
 };

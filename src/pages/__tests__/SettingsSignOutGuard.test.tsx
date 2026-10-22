@@ -12,7 +12,7 @@
 // unsynced local session. It fails on the pre-fix guard, which signs straight out.
 // ============================================================================
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -233,6 +233,58 @@ describe('Settings sign-out guard', () => {
 
     await waitFor(() => expect(signOut).toHaveBeenCalledOnce());
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+  });
+});
+
+// ── A server that does not answer ────────────────────────────────────────────
+// Each flush step awaited the network with no limit and no feedback, so with
+// the database overloaded "התנתקות" did nothing for minutes. The steps are now
+// bounded; what they did not push is still counted, so the guard still holds.
+describe('Settings sign-out when the server does not answer', () => {
+  it('stops waiting on a hung flush and still signs out when nothing is at risk', async () => {
+    vi.useFakeTimers();
+    try {
+      flushUnsyncedSessions.mockReturnValue(new Promise(() => {}));
+      render(
+        <MemoryRouter>
+          <Settings />
+        </MemoryRouter>
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'התנתקות' }));
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4_000);
+      });
+
+      expect(signOut).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('still warns when the hung flush leaves a workout unsynced', async () => {
+    vi.useFakeTimers();
+    try {
+      flushUnsyncedSessions.mockReturnValue(new Promise(() => {}));
+      setUnsynced(1);
+      render(
+        <MemoryRouter>
+          <Settings />
+        </MemoryRouter>
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'התנתקות' }));
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4_000);
+      });
+
+      expect(screen.getByRole('alertdialog')).toHaveTextContent(
+        'במכשיר שמור אימון אחד שטרם הגיע לענן'
+      );
+      expect(signOut).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

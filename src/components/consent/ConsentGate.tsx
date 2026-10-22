@@ -5,9 +5,13 @@
 // app with a full-screen consent prompt. It allowlists the public /legal/* and
 // /accessibility routes so the user can READ the documents before accepting.
 // Fail-open: dormant until the legal_documents seed exists (no rows → no block).
-// NOT fail-open on a real error, though: an unreadable consent status, or an
-// acceptance that could not be persisted, keeps the gate up with an explanation
-// rather than letting the user through as if they had consented.
+//
+// It goes up ONLY when the server listed documents to accept — now, or at its
+// last answer when the live read fails (ConsentContext). A slow or unreachable
+// server on its own never raises it: that walled off users who had already
+// accepted, and the shell behind it unmounted and remounted with every flicker.
+// An acceptance that could not be persisted still keeps the gate up with an
+// explanation rather than letting the user through as if they had consented.
 //
 // Design system: Fresh Steel / Obsidian (var(--fs-*) tokens only).
 // ============================================================================
@@ -20,6 +24,8 @@ import ConsentCheckboxes from './ConsentCheckboxes';
 // Routes that must stay reachable even while consent is pending (so the user
 // can read what they are being asked to accept).
 const PUBLIC_ALLOWLIST = /^\/(legal\/|accessibility)/;
+
+const UNVERIFIED_MESSAGE = 'לא הצלחנו לאמת את ההסכמות שלכם. בדקו את החיבור ונסו שוב.';
 
 export function ConsentGate({ children }: { children: ReactNode }) {
   const { loading, needsConsent, statusUnavailable, accept } = useConsent();
@@ -36,12 +42,11 @@ export function ConsentGate({ children }: { children: ReactNode }) {
     if (blocking) headingRef.current?.focus();
   }, [blocking]);
 
-  // Show why the gate is up when the status itself could not be read, instead of
-  // asking the user to re-accept documents we cannot even name.
+  // The gate is up from the server's LAST answer while the live read fails: say
+  // so, since accepting needs the connection too. Cleared once a read succeeds.
   useEffect(() => {
-    if (blocking && statusUnavailable) {
-      setError('לא הצלחנו לאמת את ההסכמות שלכם. בדקו את החיבור ונסו שוב.');
-    }
+    if (blocking && statusUnavailable) setError(UNVERIFIED_MESSAGE);
+    else if (!statusUnavailable) setError((prev) => (prev === UNVERIFIED_MESSAGE ? null : prev));
   }, [blocking, statusUnavailable]);
 
   if (!blocking) return <>{children}</>;

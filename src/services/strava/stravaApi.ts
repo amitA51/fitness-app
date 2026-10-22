@@ -4,7 +4,7 @@
 // The app never talks to strava.com and never holds a Strava token: every call
 // goes through the edge function, which answers with trimmed activities.
 
-import { supabase } from '../../lib/supabase';
+import { invokePublicFunction, supabase } from '../../lib/supabase';
 import type { StravaActivityDetail, StravaActivitySummary } from './stravaMapping';
 
 export type StravaCallError =
@@ -64,9 +64,36 @@ async function call<T>(body: Record<string, unknown>): Promise<StravaResult<T>> 
 export const startStravaConnect = (redirectUri: string, mobile: boolean) =>
   call<{ url: string }>({ action: 'start', redirectUri, mobile });
 
-/** Finish a connect from the redirect page — no user session needed. */
-export const finishStravaConnect = (code: string, state: string, scope: string) =>
-  call<{ athleteName: string | null }>({ action: 'exchange', code, state, scope });
+/**
+ * Finish a connect from the redirect page — no user session needed. Sent as
+ * nobody on purpose: the page may run in a browser holding a stale session,
+ * and the one-time `state` is what ties the code to the user.
+ */
+export const finishStravaConnect = async (
+  code: string,
+  state: string,
+  scope: string
+): Promise<StravaResult<{ athleteName: string | null }>> => {
+  if (!supabase) return { ok: false, error: 'not_configured' };
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return { ok: false, error: 'offline' };
+  }
+  try {
+    const { status, data } = await invokePublicFunction<{
+      ok?: boolean;
+      error?: string;
+      athleteName?: string | null;
+    } | null>('strava', { action: 'exchange', code, state, scope });
+    if (data?.ok) return { ok: true, athleteName: data.athleteName ?? null };
+    const known = KNOWN_ERRORS.find((k) => k === data?.error);
+    if (known) return { ok: false, error: known };
+    if (status === 429) return { ok: false, error: 'rate_limited' };
+    if (status === 503) return { ok: false, error: 'not_configured' };
+    return { ok: false, error: 'failed' };
+  } catch {
+    return { ok: false, error: 'failed' };
+  }
+};
 
 export interface StravaStatus {
   connected: boolean;

@@ -131,6 +131,7 @@ export default function LoginPage() {
             <SignUpStep
               key="signup"
               onBack={handleBack}
+              onSuccess={handleSuccess}
               isSupabaseConfigured={isSupabaseConfigured}
             />
           )}

@@ -46,8 +46,16 @@ export const USER_SCOPED_STORAGE_REGISTRY = {
     'mycoach:ackedAssignments',
     'date_prefs',
     'app_locale',
+    'ai_share_consent_v1',
   ] as const,
-  localStorageKeyPrefixes: ['ai_tutorial_'] as const,
+  localStorageKeyPrefixes: [
+    'ai_tutorial_',
+    // Strava link flags, sync clocks and the connect-in-progress marker.
+    'strava_',
+    // Last server answer of the consent and age gates, per user id.
+    'consent_status_lkg:',
+    'age_status_lkg:',
+  ] as const,
   sessionStorageKeys: ['onboarding_step', 'onboarding_draft', 'sparkos_prewo_started'] as const,
   sessionStorageKeyPrefixes: ['scroll:'] as const,
 } as const;

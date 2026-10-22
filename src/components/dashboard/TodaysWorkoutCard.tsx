@@ -5,13 +5,15 @@
 // Surfaces today's coach-scheduled workouts. Invisible for guests and when the
 // trainee has nothing scheduled today (renders null), so it never adds noise to
 // a self-guided user's home. Reflects coach edits live via the workout_schedule
-// realtime channel. Errors are swallowed (render null) — the Dashboard must not
-// break if this online-only surface fails.
+// realtime channel — opened only for a trainee with an active coach, the only
+// one whose schedule anybody else can change. Load errors are swallowed (render
+// null) — the Dashboard must not break if this online-only surface fails.
 
 import { Check, Play } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { syncTemplatesFromCloud } from '../../hooks/useCloudTemplateReflection';
+import { COACH_LINK_STATE_EVENT } from '../../services/coach/coachLinkEvents';
+import { getCoachLinkState } from '../../services/coach/messageService';
 import { subscribeToUserTable } from '../../services/coach/realtime';
 import {
   type ScheduledWorkout,
@@ -19,6 +21,7 @@ import {
   markScheduleStatus,
 } from '../../services/coach/scheduleService';
 import { getCurrentUser } from '../../services/supabaseAuth';
+import { prepareTemplateForStart } from '../../services/supabaseSyncOrchestrator';
 import { logger } from '../../utils/logger';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -60,87 +63,115 @@ function CardSkeleton() {
   );
 }
 
+/** Shown under a row whose workout could not be loaded for a start. */
+const START_ERROR_TEXT = 'לא הצלחנו לטעון את האימון. בדקו את החיבור ונסו שוב.';
+
 interface RowProps {
   item: ScheduledWorkout;
   onStart: (item: ScheduledWorkout) => void;
   onSkip: (item: ScheduledWorkout) => void;
   isBusy: boolean;
+  /** Inline error for this row's last start attempt, if it failed. */
+  startError: string | null;
 }
 
-function ScheduledRow({ item, onStart, onSkip, isBusy }: RowProps) {
+function ScheduledRow({ item, onStart, onSkip, isBusy, startError }: RowProps) {
   const isDone = item.status === 'done';
   const isSkipped = item.status === 'skipped';
   const title = item.title?.trim() || 'אימון';
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: '12px 14px',
-        background: 'var(--fs-bg)',
-        border: '1px solid var(--fs-surface-2)',
-        borderRadius: 'var(--radius-md)',
-        marginBottom: 8,
-        opacity: isSkipped ? 0.6 : 1,
-      }}
-    >
-      <div className="flex-1 min-w-0">
-        <div
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 15,
-            fontWeight: 600,
-            color: 'var(--fs-ink)',
-          }}
-        >
-          <bdi>{title}</bdi>
+    <div style={{ marginBottom: 8 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '12px 14px',
+          background: 'var(--fs-bg)',
+          border: '1px solid var(--fs-surface-2)',
+          borderRadius: 'var(--radius-md)',
+          opacity: isSkipped ? 0.6 : 1,
+        }}
+      >
+        <div className="flex-1 min-w-0">
+          <div
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 15,
+              fontWeight: 600,
+              color: 'var(--fs-ink)',
+            }}
+          >
+            <bdi>{title}</bdi>
+          </div>
+          {(isDone || isSkipped) && (
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fs-muted)' }}>
+              {isDone ? 'בוצע' : 'דולג'}
+            </div>
+          )}
         </div>
-        {(isDone || isSkipped) && (
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fs-muted)' }}>
-            {isDone ? 'בוצע' : 'דולג'}
+
+        {isDone ? (
+          <span
+            aria-label="האימון בוצע"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              borderRadius: 999,
+              background: 'var(--fs-accent)',
+              color: 'var(--color-ink-on-accent)',
+              flexShrink: 0,
+            }}
+          >
+            <Check size={18} aria-hidden="true" />
+          </span>
+        ) : isSkipped ? null : (
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onSkip(item)}
+              disabled={isBusy}
+              aria-label={`דילוג על ${title}`}
+            >
+              דילוג
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<Play size={14} aria-hidden="true" />}
+              isLoading={isBusy}
+              onClick={() => onStart(item)}
+              aria-label={`התחל ${title}`}
+            >
+              התחל אימון
+            </Button>
           </div>
         )}
       </div>
-
-      {isDone ? (
-        <span
-          aria-label="האימון בוצע"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 36,
-            height: 36,
-            borderRadius: 999,
-            background: 'var(--fs-accent)',
-            color: 'var(--color-ink-on-accent)',
-            flexShrink: 0,
-          }}
+      {startError && !isBusy && (
+        <div
+          role="alert"
+          style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, paddingInline: 4 }}
         >
-          <Check size={18} aria-hidden="true" />
-        </span>
-      ) : isSkipped ? null : (
-        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onSkip(item)}
-            disabled={isBusy}
-            aria-label={`דילוג על ${title}`}
+          <p
+            style={{
+              flex: 1,
+              margin: 0,
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              lineHeight: 1.4,
+              color: 'var(--color-error-fg)',
+            }}
           >
-            דילוג
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            icon={<Play size={14} aria-hidden="true" />}
-            isLoading={isBusy}
-            onClick={() => onStart(item)}
-            aria-label={`התחל ${title}`}
-          >
-            התחל אימון
+            {startError}
+          </p>
+          <Button variant="ghost" size="sm" onClick={() => onStart(item)}>
+            נסו שוב
           </Button>
         </div>
       )}
@@ -168,6 +199,7 @@ export function TodaysWorkoutCard({ onHasScheduleChange }: TodaysWorkoutCardProp
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [startError, setStartError] = useState<{ id: string; message: string } | null>(null);
   const mountedRef = useRef(true);
 
   const load = useCallback(async () => {
@@ -188,6 +220,29 @@ export function TodaysWorkoutCard({ onHasScheduleChange }: TodaysWorkoutCardProp
   useEffect(() => {
     mountedRef.current = true;
     let unsubscribe: (() => void) | undefined;
+    let initialised = false;
+
+    // Realtime is a live-update enhancement only — it must NEVER blank the card
+    // if the load already succeeded. subscribeToUserTable is itself
+    // non-throwing, but keep this isolated as defense in depth. Only a trainee
+    // with an active coach gets the channel: nobody else can change their
+    // schedule, and every channel is load on the server. An unknown link state
+    // (null: offline, a failed probe) leaves the channel as it is.
+    const syncChannel = async () => {
+      try {
+        const [uid, link] = await Promise.all([getCurrentUser(), getCoachLinkState()]);
+        if (!mountedRef.current || link === null) return;
+        const wanted = Boolean(uid) && link.coachIds.length > 0;
+        if (wanted && uid && !unsubscribe) {
+          unsubscribe = subscribeToUserTable('workout_schedule', uid.id, () => void load());
+        } else if (!wanted && unsubscribe) {
+          unsubscribe();
+          unsubscribe = undefined;
+        }
+      } catch {
+        /* live updates unavailable — the loaded data still renders */
+      }
+    };
 
     void (async () => {
       try {
@@ -207,36 +262,46 @@ export function TodaysWorkoutCard({ onHasScheduleChange }: TodaysWorkoutCardProp
         logger.db.warn('TodaysWorkoutCard init failed (non-fatal)', e);
         return;
       }
-      // Realtime is a live-update enhancement only — it must NEVER blank the
-      // card if the initial load already succeeded. subscribeToUserTable is
-      // itself non-throwing, but keep this isolated as defense in depth.
       if (!mountedRef.current) return;
-      try {
-        const uid = await getCurrentUser();
-        if (mountedRef.current && uid) {
-          unsubscribe = subscribeToUserTable('workout_schedule', uid.id, () => void load());
-        }
-      } catch {
-        /* live updates unavailable — the loaded data still renders */
-      }
+      initialised = true;
+      await syncChannel();
     })();
+
+    // A coach link made or ended on this device, or a failed probe that now has
+    // an answer: re-check the channel, and reload — a new coach may already
+    // have scheduled today. Ignored until the first load has run.
+    const onLinkStateChange = () => {
+      if (!initialised || !mountedRef.current) return;
+      void load();
+      void syncChannel();
+    };
+    window.addEventListener(COACH_LINK_STATE_EVENT, onLinkStateChange);
 
     return () => {
       mountedRef.current = false;
+      window.removeEventListener(COACH_LINK_STATE_EVENT, onLinkStateChange);
       unsubscribe?.();
     };
   }, [load]);
 
+  // Start at once when the workout is already on this device (the coach's latest
+  // version is fetched in the background). Otherwise fetch just that workout,
+  // capped at TEMPLATE_START_WAIT_MS, and show an inline error with a retry
+  // instead of a button that spins until the request times out.
   const handleStart = useCallback(
     async (item: ScheduledWorkout) => {
-      if (!item.templateId) return;
+      const { templateId } = item;
+      if (!templateId) return;
+      setStartError(null);
       setBusyId(item.id);
       try {
-        await syncTemplatesFromCloud();
-        navigate(`/workout/${item.templateId}`);
+        await prepareTemplateForStart(templateId);
+        navigate(`/workout/${templateId}`);
       } catch (e) {
-        if (mountedRef.current) setBusyId(null);
         logger.workout.warn('Failed to start scheduled workout', e);
+        if (!mountedRef.current) return;
+        setBusyId(null);
+        setStartError({ id: item.id, message: START_ERROR_TEXT });
       }
     },
     [navigate]
@@ -279,6 +344,7 @@ export function TodaysWorkoutCard({ onHasScheduleChange }: TodaysWorkoutCardProp
           onStart={handleStart}
           onSkip={handleSkip}
           isBusy={busyId === item.id}
+          startError={startError?.id === item.id ? startError.message : null}
         />
       ))}
     </CardShell>

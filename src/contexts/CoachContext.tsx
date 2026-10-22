@@ -9,6 +9,10 @@
 //
 // Lightweight: it only hits the network once when authenticated, and degrades
 // gracefully offline/guest.
+//
+// Never a wall: `loading` clears after at most READ_WAIT_MS even when the
+// server does not answer, leaving the cached role from the last visit in place.
+// The reads keep running, and a late answer still updates the role.
 
 import type React from 'react';
 import {
@@ -18,17 +22,22 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { getMyCoachProfile, getMySubscription, leaveCoachMode } from '../services/coach';
 import { getMyProfile } from '../services/coach/profileService';
 import type { CoachProfile, CoachSubscription, UserRole } from '../types/coach';
 import { logger } from '../utils/logger';
+import { withTimeout } from '../utils/withTimeout';
 import { useAuth } from './AuthContext';
 
 /** First-paint hint so a returning coach doesn't flash the trainee shell while
  * the network resolves. The server (profiles.role) always wins on hydration. */
 const CACHED_ROLE_KEY = 'cached_role';
+
+/** How long screens that need the role wait for the server before using the cache. */
+export const READ_WAIT_MS = 4_000;
 
 const readCachedRole = (): UserRole | null => {
   try {
@@ -56,6 +65,8 @@ interface CoachContextValue {
   role: UserRole | null;
   coachProfile: CoachProfile | null;
   subscription: CoachSubscription | null;
+  /** True until the first server read settles, READ_WAIT_MS at most. While
+   * true, `role` / `isCoach` reflect the role cached on the last visit. */
   loading: boolean;
   refresh: () => Promise<void>;
   /** Leave coach mode entirely (server RPC; refuses with active clients). */
@@ -70,8 +81,12 @@ export const CoachProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [coachProfile, setCoachProfile] = useState<CoachProfile | null>(null);
   const [subscription, setSubscription] = useState<CoachSubscription | null>(null);
   const [loading, setLoading] = useState(true);
+  // Bumped on every refresh, so an answer that lands after a newer refresh (or
+  // after sign-out) cannot overwrite the newer state.
+  const generationRef = useRef(0);
 
   const refresh = useCallback(async () => {
+    const generation = ++generationRef.current;
     if (status !== 'authenticated') {
       // Guests have no cloud identity → trainee semantics, no coach data.
       setRole(null);
@@ -80,28 +95,43 @@ export const CoachProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setLoading(false);
       return;
     }
-    try {
-      const [profile, coachProf, sub] = await Promise.all([
-        getMyProfile(),
-        getMyCoachProfile(),
-        getMySubscription(),
-      ]);
+
+    // allSettled, not all: one failed read must not throw away the others.
+    const settled = Promise.allSettled([
+      getMyProfile(),
+      getMyCoachProfile(),
+      getMySubscription(),
+    ]).then(([profileRes, coachRes, subRes]) => {
+      if (generation !== generationRef.current) return;
+      const profile = profileRes.status === 'fulfilled' ? profileRes.value : null;
+      const coachProf = coachRes.status === 'fulfilled' ? coachRes.value : null;
+      if (coachRes.status === 'fulfilled') setCoachProfile(coachRes.value);
+      if (subRes.status === 'fulfilled') setSubscription(subRes.value);
+      for (const res of [profileRes, coachRes, subRes]) {
+        if (res.status === 'rejected') logger.app.warn('CoachContext read failed', res.reason);
+      }
 
       // Role SSOT is profiles.role; fall back to the coach_profiles row for
       // resilience if the profile read failed but coach data exists.
       const resolvedRole: UserRole | null = profile?.role ?? (coachProf ? 'coach' : null);
-      setRole(resolvedRole);
-      writeCachedRole(resolvedRole);
-      setCoachProfile(coachProf);
-      setSubscription(sub);
+      // No role at all means the reads failed (they return null on error), not
+      // that the account has no role. Keep the cached role in that case —
+      // flipping a coach to the trainee shell because the server is struggling
+      // would be worse than stale.
+      if (resolvedRole) {
+        setRole(resolvedRole);
+        writeCachedRole(resolvedRole);
+      }
+    });
+
+    try {
+      // Screens gated on the role wait READ_WAIT_MS at most. A slower answer is
+      // still applied by `settled` when it lands.
+      await withTimeout(settled, READ_WAIT_MS, 'CoachContext.refresh');
     } catch (err) {
-      logger.app.warn('CoachContext refresh failed', err);
-      setCoachProfile(null);
-      setSubscription(null);
-      // Keep the cached role on transient failures — flipping a coach to the
-      // trainee shell because one request failed would be worse than stale.
+      logger.app.warn('CoachContext: server slow, continuing with the cached role', err);
     } finally {
-      setLoading(false);
+      if (generation === generationRef.current) setLoading(false);
     }
   }, [status]);
 

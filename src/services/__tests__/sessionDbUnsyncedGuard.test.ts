@@ -69,6 +69,7 @@ import {
   getUnsyncedSessionCount,
   mergeWorkoutSessionsFromCloud,
   saveWorkoutSession,
+  settleSessionCloudHandoffs,
 } from '../sessionDb';
 import { getCurrentUser } from '../supabaseAuth';
 import { syncWorkoutSession } from '../supabaseSync';
@@ -109,6 +110,9 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  // A save's cloud hand-off runs after the save resolves; never let one land
+  // in the next test's freshly cleared stores.
+  await settleSessionCloudHandoffs();
   await clearDatabase();
   await clearMutationQueue();
 });
@@ -118,12 +122,14 @@ describe('saveWorkoutSession when getCurrentUser() returns null', () => {
     // The 401-during-token-refresh shape: the account exists, the lookup does not
     // answer. Pre-fix this asserted 0.
     await saveWorkoutSession(makeSession('s-401'));
+    await settleSessionCloudHandoffs();
 
     expect(await getQueueDepth()).toBe(1);
   });
 
   it('keeps that session recoverable once an account resolves again', async () => {
     await saveWorkoutSession(makeSession('s-401'));
+    await settleSessionCloudHandoffs();
 
     // Auth recovers. Replay refuses to ADOPT an ownerless entry (that is how one
     // person's data ends up in another's account on a shared device) and
@@ -141,6 +147,7 @@ describe('saveWorkoutSession when getCurrentUser() returns null', () => {
 
   it('counts the workout as unsynced local data while nothing has confirmed a cloud copy', async () => {
     await saveWorkoutSession(makeSession('s-401'));
+    await settleSessionCloudHandoffs();
 
     expect(await getUnsyncedSessionCount()).toBe(1);
   });
@@ -152,6 +159,8 @@ describe('the unsynced-session ledger', () => {
     mockSyncWorkoutSession.mockResolvedValue(undefined);
 
     await saveWorkoutSession(makeSession('s-ok'));
+
+    await settleSessionCloudHandoffs();
     // The sync is fire-and-forget; let the confirmation microtasks settle.
     await vi.waitFor(async () => expect(await getUnsyncedSessionCount()).toBe(0));
   });
@@ -166,11 +175,14 @@ describe('the unsynced-session ledger', () => {
 
     await saveWorkoutSession(makeSession('s-fail'));
 
+    await settleSessionCloudHandoffs();
+
     expect(await getUnsyncedSessionCount()).toBe(1);
   });
 
   it('does not report a session that no longer exists locally', async () => {
     await saveWorkoutSession(makeSession('s-gone'));
+    await settleSessionCloudHandoffs();
     expect(await getUnsyncedSessionCount()).toBe(1);
 
     await deleteWorkoutSession('s-gone');
@@ -180,6 +192,7 @@ describe('the unsynced-session ledger', () => {
 
   it('does not report a session the cloud has just sent back to us', async () => {
     await saveWorkoutSession(makeSession('s-pulled'));
+    await settleSessionCloudHandoffs();
     expect(await getUnsyncedSessionCount()).toBe(1);
 
     // A row arriving from the cloud demonstrably HAS a cloud copy.
@@ -194,6 +207,7 @@ describe('the unsynced-session ledger', () => {
 describe('flushUnsyncedSessions', () => {
   it('pushes a ledgered session and clears it when the cloud accepts', async () => {
     await saveWorkoutSession(makeSession('s-flush'));
+    await settleSessionCloudHandoffs();
     expect(await getUnsyncedSessionCount()).toBe(1);
 
     mockGetCurrentUser.mockResolvedValue({ id: 'user-1' });
@@ -208,6 +222,7 @@ describe('flushUnsyncedSessions', () => {
   it('hands the session to the offline queue when the push fails, instead of losing it', async () => {
     // Saved while auth could not answer: ledgered, and queued by the fix.
     await saveWorkoutSession(makeSession('s-queue'));
+    await settleSessionCloudHandoffs();
     // Empty the queue so the assertions below describe the FLUSH only.
     await clearMutationQueue();
 

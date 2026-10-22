@@ -6,6 +6,7 @@ import PageHeader from '../components/ui/PageHeader';
 import { SectionLabel } from '../components/ui/SettingsSectionLabel';
 import { useIsAppAdmin } from '../hooks/useIsAppAdmin';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { SIGN_OUT_STEP_TIMEOUT_MS, settlesWithin } from '../services/authErrors';
 import { deleteAllUserData } from '../services/settingsService';
 import { signOut } from '../services/supabaseAuth';
 import { logger } from '../utils/logger';
@@ -77,6 +78,9 @@ export default function Settings() {
   const cloudSync = useCloudSync();
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  // From the tap until the page reloads: the button shows it is working and
+  // a second tap cannot start a second sign-out.
+  const [signingOut, setSigningOut] = useState(false);
   // What exactly is at risk, so the dialog can NAME it. A workout that only
   // exists on this device is a different loss from a queued change, and the user
   // cannot weigh "להתנתק בכל זאת?" without being told which one they have.
@@ -119,6 +123,7 @@ export default function Settings() {
   // ── Handlers that bridge state + services ──────────────────────────────────
 
   const performSignOut = async () => {
+    setSigningOut(true);
     try {
       await signOut();
     } catch (err) {
@@ -128,7 +133,24 @@ export default function Settings() {
     window.location.reload();
   };
 
+  /**
+   * Wait for one flush step, but not for long. With the server overloaded each
+   * step used to hold the tap for minutes with no feedback at all. A step that
+   * runs out of time is not a loss: whatever it did not push is still counted
+   * below, and the warning names it.
+   */
+  const flushStep = async (label: string, step: () => Promise<unknown>): Promise<void> => {
+    const task = step().catch((err: unknown) => {
+      logger.app.warn(`handleSignOut: ${label} failed`, err);
+    });
+    if (!(await settlesWithin(task, SIGN_OUT_STEP_TIMEOUT_MS))) {
+      logger.app.warn(`handleSignOut: ${label} did not finish in time`);
+    }
+  };
+
   const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
     // Data-loss guard: signOut wipes local stores AND clears both the active
     // queue and the dead-letter store, so anything unsynced is gone afterwards.
     // Flush what we can, then warn if ANYTHING would be destroyed.
@@ -144,12 +166,12 @@ export default function Settings() {
       // flush the unsynced ledger FIRST — otherwise "flush what we can"
       // silently skips the exact writes this guard exists to protect.
       if (navigator.onLine) {
-        await flushUnsyncedSessions();
+        await flushStep('unsynced-ledger flush', flushUnsyncedSessions);
       }
 
       let depth = await getQueueDepth();
       if (depth > 0 && navigator.onLine) {
-        await processQueue();
+        await flushStep('offline-queue flush', processQueue);
         depth = await getQueueDepth();
       }
       // Held ("dead letter") changes must be counted too. Checking only the
@@ -175,6 +197,7 @@ export default function Settings() {
           records: unsynced.others,
         });
         setShowSignOutConfirm(true);
+        setSigningOut(false);
         return;
       }
     } catch (err) {
@@ -275,7 +298,12 @@ export default function Settings() {
       <div className="page-shell pt-6">
         {/* ── 1 · חשבון ─────────────────────────────────────────────────── */}
         <SettingsGroup title="חשבון">
-          <AccountSection authEmail={state.authEmail} onSignOut={handleSignOut} showLabel={false} />
+          <AccountSection
+            authEmail={state.authEmail}
+            onSignOut={handleSignOut}
+            signingOut={signingOut}
+            showLabel={false}
+          />
 
           {/* Admin-only: /paywall is an AdminGuard-ed scaffold. Never offer a
               row whose destination bounces the tapper straight back home. */}

@@ -9,6 +9,11 @@ interface Props {
   authEmail: string | null;
   onSignOut: () => void;
   /**
+   * Sign-out is under way. It waits on the server (bounded) before the page
+   * reloads; without this the tap looked ignored and got repeated.
+   */
+  signingOut?: boolean;
+  /**
    * Render the "חשבון" card label. False when the enclosing SettingsGroup
    * heading already says it — the same words twice, one above the other, is
    * the heading soup the regroup set out to remove.
@@ -16,7 +21,12 @@ interface Props {
   showLabel?: boolean;
 }
 
-export function AccountSection({ authEmail, onSignOut, showLabel = true }: Props) {
+export function AccountSection({
+  authEmail,
+  onSignOut,
+  signingOut = false,
+  showLabel = true,
+}: Props) {
   // Guests reach Settings without a Supabase session. Calling clearGuest()
   // drops auth status to "unauthenticated", which renders the Login screen —
   // the only sign-in path out of the guest state.
@@ -52,6 +62,8 @@ export function AccountSection({ authEmail, onSignOut, showLabel = true }: Props
               shape="sharp"
               icon={<LogOut size={16} aria-hidden="true" />}
               onClick={onSignOut}
+              loading={signingOut}
+              loadingLabel="מתנתקים…"
             >
               התנתקות
             </Button>

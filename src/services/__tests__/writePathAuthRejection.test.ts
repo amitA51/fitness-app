@@ -32,7 +32,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /** Hoisted so the `lib/supabase` factory can read it during module init. */
-const authState = vi.hoisted(() => ({ mode: 'null' as 'null' | 'reject' | 'user' }));
+const authState = vi.hoisted(() => ({ mode: 'null' as 'null' | 'reject' | 'user' | 'hang' }));
 
 const lockTimeout = () => new Error('NavigatorLockAcquireTimeoutError: lock sb-auth-token');
 
@@ -41,6 +41,8 @@ vi.mock('../../lib/supabase', () => ({
   supabase: {
     auth: {
       getSession: async () => {
+        // A token refresh stuck on an overloaded server.
+        if (authState.mode === 'hang') return new Promise(() => {});
         if (authState.mode === 'reject') throw lockTimeout();
         if (authState.mode === 'user') {
           return { data: { session: { user: { id: 'user-1' } } }, error: null };
@@ -105,7 +107,7 @@ import {
 } from '../nutritionService';
 import { clearMutationQueue, getQueueDepth, listDeadLetters, processQueue } from '../offlineQueue';
 import { deletePR, savePR } from '../prService';
-import { deleteWorkoutSession, saveWorkoutSession } from '../sessionDb';
+import { deleteWorkoutSession, saveWorkoutSession, settleSessionCloudHandoffs } from '../sessionDb';
 import { resolveCurrentUserOrNull } from '../supabaseAuth';
 import { createWorkoutTemplate, deleteWorkoutTemplate, updateWorkoutTemplate } from '../templateDb';
 import { addWaterEntry } from '../waterService';
@@ -300,12 +302,18 @@ const writePaths: { label: string; seed?: () => Promise<void>; run: () => Promis
   },
   {
     label: 'sessionDb.saveWorkoutSession',
-    run: async () => void (await saveWorkoutSession(makeSession('sess-1'))),
+    run: async () => {
+      await saveWorkoutSession(makeSession('sess-1'));
+      // The cloud hand-off runs after the save resolves: the save UI must not
+      // wait on auth. Settle it before reading the queue.
+      await settleSessionCloudHandoffs();
+    },
   },
   {
     label: 'sessionDb.deleteWorkoutSession',
     run: async () => {
       await saveWorkoutSession(makeSession('sess-1'));
+      await settleSessionCloudHandoffs();
       await clearMutationQueue();
       await deleteWorkoutSession('sess-1');
     },
@@ -408,6 +416,25 @@ describe('resolveCurrentUserOrNull', () => {
     authState.mode = 'user';
 
     expect((await resolveCurrentUserOrNull())?.id).toBe('user-1');
+  });
+
+  it('gives up after 2 s on a lookup stuck behind a token refresh, answering null', async () => {
+    // Every write path awaits this between its local write and its enqueue; a
+    // stuck refresh used to hold the meal / glass of water out of the queue.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    authState.mode = 'hang';
+    let answer: unknown = 'pending';
+    const lookup = resolveCurrentUserOrNull().then((user) => {
+      answer = user;
+    });
+
+    await vi.advanceTimersByTimeAsync(1_999);
+    expect(answer).toBe('pending');
+    await vi.advanceTimersByTimeAsync(1);
+    await lookup;
+    vi.useRealTimers();
+
+    expect(answer).toBeNull();
   });
 });
 

@@ -29,6 +29,7 @@ import { getExerciseImages } from '../../data/exerciseImages';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useIsRTL } from '../../hooks/useIsRTL';
 import { arrowKeyTargetIndex } from '../../pages/progress/components/SegmentedControl';
+import { grantAiShareConsent, hasAiShareConsent } from '../../services/ai/aiConsent';
 import { logger } from '../../utils/logger';
 import { MuscleMap } from '../fitness/MuscleMap';
 import { splitInstructionSteps } from './instructionSteps';
@@ -146,8 +147,12 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   const [failedImgs, setFailedImgs] = useState<ReadonlySet<number>>(() => new Set());
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState<string | null>(null);
+  /** The question `answer` replies to — the input may have changed since. */
+  const [answeredQuestion, setAnsweredQuestion] = useState('');
   const [asking, setAsking] = useState(false);
   const [qaError, setQaError] = useState<string | null>(null);
+  const [aiConsent, setAiConsent] = useState(hasAiShareConsent);
+  const [report, setReport] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
   const [noteDraft, setNoteDraft] = useState(note ?? '');
   const [noteSaved, setNoteSaved] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -315,6 +320,12 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   const handleAsk = useCallback(async () => {
     const q = question.trim();
     if (!q || asking) return;
+    // The send button reads "אישור ושליחה" under the disclosure until the
+    // first press, so pressing it is the explicit permission.
+    if (!aiConsent) {
+      grantAiShareConsent();
+      setAiConsent(true);
+    }
     setAsking(true);
     setQaError(null);
     let humanize: (e: unknown) => string = () => 'לא הצלחתי לענות כרגע. נסה שוב.';
@@ -327,13 +338,34 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
       const grounding = ai.buildExerciseGrounding(exerciseName, sessions);
       const reply = await ai.askExerciseQuestion(exerciseName, q, { grounding });
       setAnswer(reply);
+      setAnsweredQuestion(q);
+      setReport('idle');
     } catch (error) {
       logger.ai.error('Exercise Q&A failed', error);
       setQaError(humanize(error));
     } finally {
       setAsking(false);
     }
-  }, [question, asking, exerciseName]);
+  }, [question, asking, aiConsent, exerciseName]);
+
+  const handleReport = useCallback(async () => {
+    if (!answer || report === 'sending' || report === 'sent') return;
+    setReport('sending');
+    try {
+      const { reportAiAnswer } = await import('../../services/ai/aiFeedback');
+      const ok = await reportAiAnswer({
+        surface: 'exercise_qa',
+        subject: exerciseName,
+        question: answeredQuestion,
+        answer,
+      });
+      setReport(ok ? 'sent' : 'failed');
+    } catch (error) {
+      // Offline, the module itself may fail to load; the button must come back.
+      logger.ai.warn('AI answer report threw', error);
+      setReport('failed');
+    }
+  }, [answer, answeredQuestion, exerciseName, report]);
 
   const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     { id: 'guide', label: 'ביצוע', icon: <Sparkles size={15} strokeWidth={2.3} /> },
@@ -891,6 +923,22 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
               >
                 התשובה מבוססת על הנתונים האמיתיים שלכם בתרגיל הזה.
               </p>
+              {!aiConsent && (
+                <p
+                  id="exercise-qa-consent"
+                  style={{
+                    ...accentCard,
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 13,
+                    color: 'var(--fs-ink)',
+                    lineHeight: 1.55,
+                    margin: '0 0 10px',
+                  }}
+                >
+                  כדי לענות, השאלה, שם התרגיל והמספרים מהאימון האחרון בו נשלחים לשירות בינה מלאכותית
+                  חיצוני. השם והמייל שלכם לא נשלחים.
+                </p>
+              )}
               <input
                 id="exercise-qa"
                 type="text"
@@ -900,12 +948,14 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                   if (e.key === 'Enter') handleAsk();
                 }}
                 placeholder="למשל: איזה משקל לנסות?"
+                aria-describedby={aiConsent ? undefined : 'exercise-qa-consent'}
                 style={fieldStyle}
               />
               <button
                 type="button"
                 onClick={handleAsk}
                 disabled={asking || !question.trim()}
+                aria-describedby={aiConsent ? undefined : 'exercise-qa-consent'}
                 className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-[0.98]"
                 style={{
                   width: '100%',
@@ -922,7 +972,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                   opacity: asking || !question.trim() ? 0.5 : 1,
                 }}
               >
-                {asking ? 'שולח…' : 'שלחו למאמן'}
+                {asking ? 'שולח…' : aiConsent ? 'שלחו למאמן' : 'אישור ושליחה'}
               </button>
 
               {answer && (
@@ -941,6 +991,63 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                   >
                     {answer}
                   </p>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      marginTop: 12,
+                      paddingTop: 10,
+                      borderTop: '0.5px solid var(--color-separator)',
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 12,
+                      color: 'var(--fs-muted)',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    <span>התשובה נכתבה בבינה מלאכותית ועלולה לטעות.</span>
+                    {report === 'sent' ? (
+                      <span role="status">תודה, הדיווח התקבל.</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleReport}
+                        disabled={report === 'sending'}
+                        aria-busy={report === 'sending'}
+                        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
+                        style={{
+                          flexShrink: 0,
+                          // Full touch target although the text is small.
+                          minHeight: 44,
+                          padding: '0 4px',
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--fs-link)',
+                          textDecoration: 'underline',
+                          textUnderlineOffset: 2,
+                          fontFamily: 'var(--font-body)',
+                          fontSize: 12,
+                          cursor: report === 'sending' ? 'default' : 'pointer',
+                        }}
+                      >
+                        {report === 'sending' ? 'שולחים…' : 'דיווח על התשובה'}
+                      </button>
+                    )}
+                  </div>
+                  {report === 'failed' && (
+                    <p
+                      role="alert"
+                      style={{
+                        margin: '8px 0 0',
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 13,
+                        color: 'var(--fs-error)',
+                      }}
+                    >
+                      הדיווח לא נשלח. נסו שוב.
+                    </p>
+                  )}
                 </div>
               )}
               {qaError && (

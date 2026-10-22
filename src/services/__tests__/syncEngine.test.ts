@@ -1,20 +1,26 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../lib/supabase', () => ({ isSupabaseConfigured: vi.fn(() => true) }));
+const mockStoredSession = vi.hoisted(() => ({ current: null as { user: { id: string } } | null }));
+vi.mock('../../lib/supabase', () => ({
+  isSupabaseConfigured: vi.fn(() => true),
+  readStoredAuthSession: () => mockStoredSession.current,
+}));
 vi.mock('../errorReporter', () => ({ reportError: vi.fn() }));
 // Keep the real isRetriableError classifier (syncEngine now imports it) and
 // only stub the queue write.
 vi.mock('../offlineQueue', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../offlineQueue')>()),
   queueMutation: vi.fn(),
+  discardWritesObsoletedBy: vi.fn(async () => 0),
 }));
 
 import { isSupabaseConfigured } from '../../lib/supabase';
-import { queueMutation } from '../offlineQueue';
+import { discardWritesObsoletedBy, queueMutation } from '../offlineQueue';
 import { syncWithRetry } from '../syncEngine';
 
 const mockIsConfigured = isSupabaseConfigured as ReturnType<typeof vi.fn>;
 const mockQueueMutation = queueMutation as ReturnType<typeof vi.fn>;
+const mockDiscard = discardWritesObsoletedBy as ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -62,6 +68,25 @@ describe('syncWithRetry', () => {
     expect(mockQueueMutation).toHaveBeenCalledWith('session:create', { id: 'x' });
   });
 
+  it('stamps the account signed in when the push started, not when the enqueue runs', async () => {
+    // The fallback enqueue runs only after every retry failed; a sign-out in
+    // between must not turn the write into guest data the next account adopts.
+    mockStoredSession.current = { user: { id: 'account-a' } };
+    const syncFn = vi.fn().mockRejectedValue(new Error('fail'));
+    const queue = { type: 'template:update' as const, payload: { id: 't1' } };
+
+    const promise = syncWithRetry(syncFn, 'test-owner', 2, queue);
+    mockStoredSession.current = null; // signed out while the retries ran
+    await vi.advanceTimersByTimeAsync(120_000);
+    await promise;
+
+    expect(mockQueueMutation).toHaveBeenCalledWith(
+      'template:update',
+      { id: 't1' },
+      { ownerId: 'account-a' }
+    );
+  });
+
   it('short-circuits non-retriable errors (4xx) without retrying', async () => {
     const syncFn = vi.fn().mockRejectedValue({ status: 400, message: 'Bad Request' });
     const queue = { type: 'session:create' as const, payload: { id: 'x' } };
@@ -91,5 +116,40 @@ describe('syncWithRetry', () => {
 
     expect(result).toBe(false);
     expect(syncFn).not.toHaveBeenCalled();
+  });
+
+  it('queues the fallback under the owner the caller pushed for', async () => {
+    // The enqueue runs after the retries, possibly after a sign-out: the owner
+    // must come from the caller, not from whoever auth names by then.
+    const syncFn = vi.fn().mockRejectedValue({ status: 400, message: 'Bad Request' });
+    const queue = { type: 'session:update' as const, payload: { id: 'x' }, ownerId: 'user-1' };
+
+    await syncWithRetry(syncFn, 'test-owner', 3, queue);
+
+    expect(mockQueueMutation).toHaveBeenCalledWith(
+      'session:update',
+      { id: 'x' },
+      { ownerId: 'user-1' }
+    );
+  });
+
+  it('drops the queued writes a directly-pushed delete makes obsolete', async () => {
+    const syncFn = vi.fn().mockResolvedValue(undefined);
+
+    await syncWithRetry(syncFn, 'test-delete', 3, { type: 'session:delete', payload: 's1' });
+    await vi.waitFor(() => expect(mockDiscard).toHaveBeenCalledWith('session:delete', 's1'));
+    // The push itself starts at once, not after the queue has been cleaned.
+    expect(syncFn).toHaveBeenCalledOnce();
+  });
+
+  it('leaves the queue alone for anything but a delete', async () => {
+    const syncFn = vi.fn().mockResolvedValue(undefined);
+
+    await syncWithRetry(syncFn, 'test-update', 3, {
+      type: 'session:update',
+      payload: { id: 's1' },
+    });
+
+    expect(mockDiscard).not.toHaveBeenCalled();
   });
 });

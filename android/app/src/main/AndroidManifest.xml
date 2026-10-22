@@ -23,6 +23,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!--
+              Google sign-in returns here from the system browser
+              (com.sparkos.fitness://auth/callback#access_token=…), see
+              src/services/nativeOAuth.ts. singleTask above keeps it in the
+              running app instead of starting a second copy.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.sparkos.fitness" android:host="auth" />
+            </intent-filter>
+
         </activity>
 
         <provider

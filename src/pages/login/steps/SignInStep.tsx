@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnnualInput } from '../../../components/ui/AnnualInput';
 import { AnnualPasswordInput } from '../../../components/ui/AnnualPasswordInput';
 import { Button } from '../../../components/ui/Button';
+import { authErrorMessage } from '../../../services/authErrors';
 import { signIn } from '../../../services/supabaseAuth';
 import { logger } from '../../../utils/logger';
 import { slideFromRight, staggerContainer, staggerItem } from '../animations';
@@ -68,23 +69,18 @@ export function SignInStep({
       setLoading(true);
       setGeneralError('');
 
-      const { error } = await signIn(form.email.trim(), form.password);
-
-      setLoading(false);
-
-      if (error) {
-        if (error.includes('Invalid login credentials') || error.includes('Invalid credentials')) {
-          setGeneralError('אימייל או סיסמה שגויים');
-        } else if (error.includes('Email not confirmed')) {
-          setGeneralError('יש לאמת את כתובת הדוא"ל לפני התחברות');
-        } else {
-          logger.auth.warn('Unrecognized sign-in error', error);
-          setGeneralError('אירעה שגיאה בלתי צפויה. יש לנסות שוב.');
+      // finally: whatever happens below, the button must not keep spinning.
+      try {
+        const { error, errorKind } = await signIn(form.email.trim(), form.password);
+        if (error) {
+          if (errorKind === 'unknown') logger.auth.warn('Unrecognized sign-in error', error);
+          setGeneralError(authErrorMessage(errorKind));
+          return;
         }
-        return;
+        onSuccess();
+      } finally {
+        setLoading(false);
       }
-
-      onSuccess();
     },
     [form, validate, isSupabaseConfigured, onSuccess]
   );

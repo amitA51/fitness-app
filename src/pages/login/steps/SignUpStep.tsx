@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AnnualInput } from '../../../components/ui/AnnualInput';
 import { AnnualPasswordInput } from '../../../components/ui/AnnualPasswordInput';
 import { Button } from '../../../components/ui/Button';
+import { type AuthErrorKind, authErrorMessage } from '../../../services/authErrors';
 import { resendSignUpConfirmation, signUp } from '../../../services/supabaseAuth';
 import { logger } from '../../../utils/logger';
 import { pageVariants, slideFromRight, staggerContainer, staggerItem } from '../animations';
@@ -16,14 +17,18 @@ import type { SignUpFormData, ValidationErrors } from '../types';
 
 interface SignUpStepProps {
   onBack: () => void;
+  /** The account is ready and signed in — same exit as a successful sign-in. */
+  onSuccess: () => void;
   isSupabaseConfigured: boolean;
 }
+
+const RESEND_FAILED_TEXT = 'השליחה נכשלה. נסו שוב בעוד רגע.';
 
 // Resend throttle: block repeat taps for a short window after a successful send.
 const RESEND_COOLDOWN_SECONDS = 30;
 const RESEND_TICK_MS = 1000;
 
-export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
+export function SignUpStep({ onBack, onSuccess, isSupabaseConfigured }: SignUpStepProps) {
   const [form, setForm] = useState<SignUpFormData>({
     fullName: '',
     email: '',
@@ -40,6 +45,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
   // taps; `resendStatus` drives an aria-live confirmation/error line.
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [resendErrorKind, setResendErrorKind] = useState<AuthErrorKind | null>(null);
 
   const validate = useCallback((): boolean => {
     const newErrors: ValidationErrors = {};
@@ -80,25 +86,30 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
       setLoading(true);
       setGeneralError('');
 
-      const { error } = await signUp(form.email.trim(), form.password, {
-        full_name: form.fullName.trim(),
-      });
-
-      setLoading(false);
-
-      if (error) {
-        if (error.includes('already registered') || error.includes('already exists')) {
-          setGeneralError('כתובת אימייל זו כבר רשומה');
-        } else {
-          logger.auth.warn('Unrecognized sign-up error', error);
-          setGeneralError('אירעה שגיאה בלתי צפויה. יש לנסות שוב.');
+      // finally: whatever happens below, the button must not keep spinning.
+      try {
+        const { session, error, errorKind } = await signUp(form.email.trim(), form.password, {
+          full_name: form.fullName.trim(),
+        });
+        if (error) {
+          if (errorKind === 'unknown') logger.auth.warn('Unrecognized sign-up error', error);
+          setGeneralError(authErrorMessage(errorKind));
+          return;
         }
-        return;
+        // A project that confirms addresses automatically signs the user in
+        // right away and sends no email at all — "check your inbox" with a
+        // resend button would be a dead end. Only a sign-up WITHOUT a session
+        // genuinely waits on the confirmation link.
+        if (session) {
+          onSuccess();
+          return;
+        }
+        setConfirmSent(true);
+      } finally {
+        setLoading(false);
       }
-
-      setConfirmSent(true);
     },
-    [form, validate, isSupabaseConfigured]
+    [form, validate, isSupabaseConfigured, onSuccess]
   );
 
   // Tick the resend cooldown down to zero. One interval per active cooldown.
@@ -113,14 +124,23 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
   const handleResend = useCallback(async () => {
     if (resendCooldown > 0 || resendStatus === 'sending') return;
     setResendStatus('sending');
-    const { error } = await resendSignUpConfirmation(form.email.trim());
-    if (error) {
-      logger.auth.warn('Resend confirmation failed', error);
+    setResendErrorKind(null);
+    try {
+      const { error, errorKind } = await resendSignUpConfirmation(form.email.trim());
+      if (error) {
+        logger.auth.warn('Resend confirmation failed', error);
+        setResendErrorKind(errorKind);
+        setResendStatus('error');
+        return;
+      }
+      setResendStatus('sent');
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+    } catch (err) {
+      // The service does not throw; this only keeps 'sending' from sticking.
+      logger.auth.warn('Resend confirmation threw', err);
+      setResendErrorKind('unreachable');
       setResendStatus('error');
-      return;
     }
-    setResendStatus('sent');
-    setResendCooldown(RESEND_COOLDOWN_SECONDS);
   }, [form.email, resendCooldown, resendStatus]);
 
   if (confirmSent) {
@@ -247,7 +267,9 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
             {resendStatus === 'sent'
               ? 'הקישור נשלח שוב'
               : resendStatus === 'error'
-                ? 'השליחה נכשלה. נסו שוב בעוד רגע.'
+                ? resendErrorKind && resendErrorKind !== 'unknown'
+                  ? authErrorMessage(resendErrorKind)
+                  : RESEND_FAILED_TEXT
                 : ''}
           </p>
 

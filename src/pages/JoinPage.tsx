@@ -11,8 +11,13 @@ import {
   getPendingInviteCode,
   rememberInviteContinuation,
 } from '../services/authContinuation';
-import { acceptInvite } from '../services/coach';
+import { type AcceptResult, acceptInvite } from '../services/coach';
+import { withTimeout } from '../utils/withTimeout';
 import { inviteErrorMessage } from './coach/useAcceptInvite';
+
+/** How long the invite screen spins before offering a retry. Accepting runs
+ * real work in an edge function, so this is longer than a plain read's cap. */
+const ACCEPT_WAIT_MS = 15_000;
 
 function getCode(urlCode: string) {
   return urlCode || getPendingInviteCode() || '';
@@ -91,24 +96,67 @@ function AuthenticatedJoinPage({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const didRun = useRef(false);
+  // The accept request still running, if any. A retry after a slow-server
+  // timeout joins it instead of sending the same invite a second time.
+  const pendingRef = useRef<Promise<AcceptResult> | null>(null);
+  const joinedRef = useRef(false);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const handleResult = useCallback(
+    (res: AcceptResult) => {
+      if (joinedRef.current) return;
+      if (res.ok) {
+        joinedRef.current = true;
+        // The continuation has been consumed: clear it so the router stops
+        // redirecting back to /join and a brand-new account can reach onboarding.
+        // Done even when a late answer lands after the user left this screen.
+        clearInviteContinuation();
+        trackFunnel('coach_invite_accepted');
+        showToast('מחובר למאמן', 'success');
+        // Only move the user if they are still here; never yank them elsewhere.
+        if (mountedRef.current) navigate('/my-coach', { replace: true });
+      } else if (mountedRef.current) {
+        setError(inviteErrorMessage(res.error));
+      }
+    },
+    [navigate]
+  );
 
   // Single accept path, callable from both the auto-run effect and the retry CTA.
+  // The spinner waits ACCEPT_WAIT_MS at most; after that the screen offers a
+  // retry, and if the original request still lands while it is open, the join
+  // completes on its own.
   const runAccept = useCallback(async () => {
     setError('');
     setBusy(true);
-    const res = await acceptInvite(code);
-    setBusy(false);
-    if (res.ok) {
-      // The continuation has been consumed: clear it so the router stops
-      // redirecting back to /join and a brand-new account can reach onboarding.
-      clearInviteContinuation();
-      trackFunnel('coach_invite_accepted');
-      showToast('מחובר למאמן', 'success');
-      navigate('/my-coach', { replace: true });
-    } else {
-      setError(inviteErrorMessage(res.error));
+    if (!pendingRef.current) {
+      const started: Promise<AcceptResult> = acceptInvite(code)
+        .catch((): AcceptResult => ({ ok: false, error: 'server' }))
+        .finally(() => {
+          if (pendingRef.current === started) pendingRef.current = null;
+        });
+      pendingRef.current = started;
     }
-  }, [code, navigate]);
+    const request = pendingRef.current;
+    try {
+      const res = await withTimeout(request, ACCEPT_WAIT_MS, 'acceptInvite');
+      if (mountedRef.current) setBusy(false);
+      handleResult(res);
+    } catch {
+      void request.then((late) => {
+        if (late.ok) handleResult(late);
+      });
+      if (!mountedRef.current) return;
+      setBusy(false);
+      setError('השרת לא הגיב בזמן. נסו שוב בעוד רגע.');
+    }
+  }, [code, handleResult]);
 
   // Authenticated (or guest with user): auto-accept. Coaches never auto-accept —
   // a coach has no coach of their own (the edge function rejects them too; this
@@ -208,7 +256,7 @@ function AuthenticatedJoinPage({
         )}
         <div className="flex flex-col items-center gap-2 w-full max-w-xs">
           <Button variant="primary" fullWidth onClick={retry}>
-            נסה שוב
+            נסו שוב
           </Button>
           <Button
             variant="ghost"

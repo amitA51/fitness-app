@@ -7,6 +7,7 @@ import { AlertCircle, ArrowLeft, Check, Mail } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { AnnualInput } from '../../../components/ui/AnnualInput';
 import { Button } from '../../../components/ui/Button';
+import { authErrorMessage } from '../../../services/authErrors';
 import { resetPassword } from '../../../services/supabaseAuth';
 import { pageVariants, slideFromLeft, staggerContainer, staggerItem } from '../animations';
 import { GhostLink } from '../components/GhostLink';
@@ -39,15 +40,18 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
       if (!validate()) return;
 
       setLoading(true);
-      const { error } = await resetPassword(form.email.trim());
-      setLoading(false);
-
-      if (error) {
-        setErrors({ general: error });
-        return;
+      // finally: whatever happens below, the button must not keep spinning.
+      try {
+        const { error, errorKind } = await resetPassword(form.email.trim());
+        if (error) {
+          // The server's own text is English and was shown as-is.
+          setErrors({ general: authErrorMessage(errorKind) });
+          return;
+        }
+        setSent(true);
+      } finally {
+        setLoading(false);
       }
-
-      setSent(true);
     },
     [form, validate]
   );

@@ -1,0 +1,105 @@
+# ============================================================================
+# Codemagic — store builds without a Mac
+# ----------------------------------------------------------------------------
+# iOS needs Xcode, which only runs on macOS; Codemagic lends a Mac per build
+# (500 free minutes a month). Android could build on Windows too, but building
+# both here keeps the signing keys off personal machines.
+#
+# One-time setup in the Codemagic dashboard (codemagic.io → this repo):
+#   1. Team integrations → App Store Connect → add an API key, named
+#      "SparkOS App Store Connect" (App Store Connect → Users and Access →
+#      Integrations → Keys, role App Manager).
+#   2. Code signing identities → iOS: let Codemagic create the distribution
+#      certificate and an App Store profile for com.sparkos.fitness.
+#   3. Code signing identities → Android keystores: upload release.jks under
+#      the reference "sparkos_release" (see docs/ANDROID-RELEASE.md).
+#   4. Environment variables → group "supabase": VITE_SUPABASE_URL and
+#      VITE_SUPABASE_ANON_KEY (the same values Netlify has).
+#   5. Below, set APP_STORE_APPLE_ID to the app's Apple ID (App Store Connect →
+#      the app → App Information → Apple ID). Without it every build would be
+#      number 1 and TestFlight refuses the second upload.
+#   6. Android: group "google_play" with GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+#      (Play Console → Setup → API access → a service account with release rights).
+# Then start a workflow from the dashboard (manual trigger).
+# ============================================================================
+
+definitions:
+  scripts:
+    - &install_dependencies
+      name: Install dependencies
+      script: npm ci
+    - &build_web
+      name: Build the web app
+      script: npm run build:release
+
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: SparkOS App Store Connect
+    environment:
+      groups:
+        - supabase
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.sparkos.fitness
+      vars:
+        APP_STORE_APPLE_ID: "0000000000" # TODO before the first build — see setup step 5
+      node: 22
+      xcode: latest
+    scripts:
+      - *install_dependencies
+      - *build_web
+      - name: Copy the web app into the iOS project
+        script: npx cap sync ios
+      - name: Use the signing profiles
+        script: xcode-project use-profiles
+      - name: Next build number
+        script: |
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          cd ios/App && agvtool new-version -all $((LATEST + 1))
+      - name: Build the IPA
+        script: xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+
+  android-play:
+    name: Android → Play (internal test)
+    instance_type: linux_x2
+    max_build_duration: 45
+    environment:
+      groups:
+        - supabase
+        - google_play # GCLOUD_SERVICE_ACCOUNT_CREDENTIALS (Play Console API access)
+      android_signing:
+        - sparkos_release
+      node: 22
+      java: 21
+    scripts:
+      - *install_dependencies
+      - *build_web
+      - name: Copy the web app into the Android project
+        script: npx cap sync android
+      - name: Point Gradle at the release keystore
+        script: |
+          cat > android/keystore.properties <<EOF
+          storeFile=$CM_KEYSTORE_PATH
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          keyPassword=$CM_KEY_PASSWORD
+          EOF
+      - name: Build the app bundle
+        script: cd android && ./gradlew bundleRelease -PversionCode=$((BUILD_NUMBER + 1))
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+        submit_as_draft: true

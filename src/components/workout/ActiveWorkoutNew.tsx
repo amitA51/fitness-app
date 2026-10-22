@@ -6,12 +6,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import type { ActiveExercise, PersonalItem, WorkoutSettings } from '../../types';
 
 import { getProgramDayMetadata } from '../../data/bbtProgramMetadata';
-import { syncTemplatesFromCloud } from '../../hooks/useCloudTemplateReflection';
 import { listMyAssignments } from '../../services/coach';
 import { normalizeExerciseName } from '../../services/prService';
 import { TRAINING_DAYS, getProgress } from '../../services/programProgressService';
 import { ensurePersistentStorage } from '../../services/storagePersistence';
+import { prepareTemplateForStart } from '../../services/supabaseSyncOrchestrator';
 import { logger } from '../../utils/logger';
+import { showToast } from '../ui/GlobalToast';
 
 import { useWorkoutDerived, useWorkoutDispatch, useWorkoutState } from './core/WorkoutContext';
 // Core
@@ -522,21 +523,39 @@ export const WorkoutContent: React.FC<{
       onChangeExercise: handleChangeExercise,
     });
 
-  // Start the coach-assigned program: ensure the referenced template is synced
-  // into the local-first store (it lives in Supabase), then SPA-navigate into
-  // the workout flow with that template. Mirrors MyCoach.startProgram so both
-  // entry points behave identically.
+  // Start the coach-assigned program. When its template is already on this
+  // device, go at once (the coach's latest version is fetched in the background);
+  // otherwise fetch just that template, capped at TEMPLATE_START_WAIT_MS. It used
+  // to wait for a full fetch of every template, so on a slow server the button
+  // spun until the request timed out.
+  //
+  // The failure notice is a toast with a retry, not an inline message: the
+  // button lives inside PreWorkoutScreen, which has no slot for an error.
   const handleStartCoachProgram = async () => {
     if (!coachProgram || startingCoachProgram) return;
+    const { templateId } = coachProgram;
     setStartingCoachProgram(true);
     try {
-      await syncTemplatesFromCloud();
-      navigate(`/workout/${coachProgram.templateId}`);
+      await prepareTemplateForStart(templateId);
+      navigate(`/workout/${templateId}`);
     } catch (err) {
       logger.workout?.error?.('failed to start coach program', err);
       setStartingCoachProgram(false);
+      showToast('לא הצלחנו לטעון את האימון. בדקו את החיבור ונסו שוב.', {
+        variant: 'error',
+        duration: 8000,
+        action: {
+          label: 'נסו שוב',
+          onClick: () => {
+            void startCoachProgramRef.current?.();
+          },
+        },
+      });
     }
   };
+  // The toast's retry must call the LATEST handler (it is recreated each render).
+  const startCoachProgramRef = useRef<(() => Promise<void>) | null>(null);
+  startCoachProgramRef.current = handleStartCoachProgram;
 
   // Materialize the built-in program's current day into the hidden runner
   // template and navigate to it. Mirrors Program.tsx's handleStart so both entry

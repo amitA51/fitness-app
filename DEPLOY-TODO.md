@@ -6,16 +6,31 @@
 
 ---
 
-## Strava — ייבוא ריצות מהגרמין (נוסף 21.10.2026, טרם נפרס)
+## יציבות השרת (נוסף 22.10.2026)
 
-בלי הצעדים האלה כרטיס Strava בהגדרות יראה "החיבור ל-Strava עוד לא הופעל בשרת".
+בסיס הנתונים החי נחנק כ-12 שעות ברצף כי שני יומנים פנימיים (`cron.job_run_details`,
+`net._http_response`) התנפחו ל-214 MB ולא נוקו. כלי ה-MCP חוסם TRUNCATE, אז את זה מריצים ב-SQL Editor:
 
-- [ ] אפליקציית מפתחים ב-strava.com/settings/api (דורש מנוי Strava): Website
-      `https://fitness-app-amit.netlify.app`, Authorization Callback Domain `fitness-app-amit.netlify.app`.
-- [ ] `supabase secrets set STRAVA_CLIENT_ID=... STRAVA_CLIENT_SECRET=...`
-      (ודאו ש-`ALLOWED_ORIGIN` כולל את `https://fitness-app-amit.netlify.app` — הפונקציה דוחה כתובת חזרה אחרת).
-- [ ] migration: `supabase/migrations/20261021000000_strava_connections.sql`
-- [ ] `supabase functions deploy strava` (ה-`config.toml` שלה קובע `verify_jwt = false` — בכוונה, ראו ראש `index.ts`).
+- [ ] migration `supabase/migrations/20261022000000_prune_cron_and_net_logs.sql` — להדביק ב-
+      https://supabase.com/dashboard/project/qxhgmqxiomidmimpnjvs/sql/new את ה-`select cron.schedule(...)`
+      ולהריץ. בדיקה: `select jobname, schedule from cron.job` מראה `cron-and-net-logs-prune`, ואחרי
+      שעה שתי הטבלאות קטנות מ-1 MB.
+- [x] migration `20261022000100_ai_feedback.sql` — הוחל ב-22.10 (RLS נבדק: הכנסה בלבד, רק כמשתמש עצמו).
+- [x] migration `20261022000300_reminders_dispatch_only_when_needed.sql` — הוחל ב-22.10: משימת התזכורות
+      שרצה כל דקה פונה לשרת רק כשיש תזכורת (טבלת reminders הייתה ריקה; זה מקור הניפוח).
+- [x] migration `20261022000200_ai_feedback_daily_cap.sql` (עד 20 דיווחים למשתמש ביום) — הוחל ב-22.10
+      (טריגר + פונקציה SECURITY DEFINER שמשתמשים לא יכולים להפעיל ישירות).
+- [ ] לאפליקציות בחנויות: Supabase → Authentication → URL Configuration → Redirect URLs ← להוסיף
+      `com.sparkos.fitness://**` (החזרה מגוגל לאפליקציה). ראו `docs/STORE-LAUNCH.md`.
+- [ ] לאפליקציות בחנויות: הסוד `ALLOWED_ORIGIN` של ה-Edge Functions ← להוסיף בסוף
+      `,capacitor://localhost,https://localhost` (בלי זה המאמן החכם, סטרבה וקבלת הזמנה חסומים בתוך האפליקציות).
+
+---
+
+## Strava — ייבוא ריצות מהגרמין (נפרס 21.10.2026)
+
+אפליקציית המפתחים, הסודות, המיגרציה והפונקציה — בוצעו ונבדקו. נשאר:
+
 - [ ] בדיקה: הגדרות ← Strava ← "חיבור ל-Strava" ← אישור ← ריצה מהשעון מופיעה ב-/cardio עם "מ-Strava".
 
 ---

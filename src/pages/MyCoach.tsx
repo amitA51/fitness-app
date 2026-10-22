@@ -14,7 +14,6 @@ import { Input } from '../components/ui/Input';
 import { Textarea } from '../components/ui/Textarea';
 import { NUTRITION_TRAINEE_UI_ENABLED } from '../constants/featureFlags';
 import { useAuth } from '../contexts/AuthContext';
-import { syncTemplatesFromCloud } from '../hooks/useCloudTemplateReflection';
 import {
   type ProgramDayRef,
   disconnectCoach,
@@ -30,6 +29,7 @@ import {
 import { listGroupThreads } from '../services/coach/groupMessageService';
 import type { Assignment, GroupThreadSummary } from '../types/coach';
 import { getWeekStart, toLocalDateStr } from '../utils/dateUtils';
+import { logger } from '../utils/logger';
 import {
   CoachPage,
   ListRow,
@@ -59,6 +59,9 @@ const KIND_RAIL: Record<Assignment['kind'], string> = {
 };
 
 const ACK_STORAGE_KEY = 'mycoach:ackedAssignments';
+
+/** How long "start workout" waits for an assigned template that is not on this device yet. */
+const TEMPLATE_SYNC_WAIT_MS = 5_000;
 
 /**
  * Local-only "handled" state for assignment cards. The trainee cannot write to
@@ -164,20 +167,27 @@ export default function MyCoach() {
     el.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
   }, [location.hash, coachesLoading]);
 
-  // Start a coach-assigned program: ensure the referenced template is synced
-  // into the local-first store, then enter the existing ActiveWorkout flow.
-  // When called with an explicit templateId (multi-day), that overrides a.templateId.
+  // Start a coach-assigned program: make sure that ONE template is on this
+  // device, then enter the existing ActiveWorkout flow. When called with an
+  // explicit templateId (multi-day), that overrides a.templateId.
+  //
+  // A copy already here starts at once (it is refreshed in the background);
+  // otherwise only that template is fetched, within a short cap. Only a
+  // template that never reached this device stops the start, with a toast.
   const startProgram = async (a: Assignment, templateId?: string) => {
     const id = templateId ?? a.templateId;
     if (!id) return;
     setStartingId(a.id);
     try {
-      await syncTemplatesFromCloud();
-      navigate(`/workout/${id}`);
-    } catch {
+      const { prepareTemplateForStart } = await import('../services/supabaseSyncPull');
+      await prepareTemplateForStart(id, TEMPLATE_SYNC_WAIT_MS);
+    } catch (err) {
+      logger.sync.warn('Assigned template could not be prepared', err);
       setStartingId(null);
-      showToast('לא ניתן להתחיל את האימון', 'error');
+      showToast('לא הצלחנו לטעון את האימון. בדקו את החיבור ונסו שוב.', 'error');
+      return;
     }
+    navigate(`/workout/${id}`);
   };
 
   // Manual code entry. Shares one accept path with JoinPage via useAcceptInvite.

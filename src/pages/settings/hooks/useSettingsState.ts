@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { showToast } from '../../../components/ui/GlobalToast';
+import { useAuth } from '../../../contexts/AuthContext';
 import { useSettings } from '../../../contexts/SettingsContext';
 import {
   isPushSupported,
@@ -13,7 +14,6 @@ import {
   saveNotificationConfig,
 } from '../../../services/notificationService';
 import type { NotificationConfig } from '../../../services/notificationService';
-import { getCurrentUser } from '../../../services/supabaseAuth';
 import { logger } from '../../../utils/logger';
 import type { UserProfile, WorkoutPrefs } from '../types';
 import {
@@ -27,6 +27,7 @@ import { useAutosave, useSavedFlash } from './useAutosave';
 
 export function useSettingsState() {
   const { settings, updateSettings, updateWorkoutSettings } = useSettings();
+  const { user } = useAuth();
 
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [workoutPrefs, setWorkoutPrefs] = useState<WorkoutPrefs>(DEFAULT_WORKOUT_PREFS);
@@ -36,8 +37,11 @@ export function useSettingsState() {
   const [weeklyReport, setWeeklyReport] = useState<string | null>(null);
   const [copiedReport, setCopiedReport] = useState(false);
 
-  // Account / Auth state
-  const [authEmail, setAuthEmail] = useState<string | null>(null);
+  // Account / Auth state. Seeded from the session AuthContext already holds, so
+  // the account row shows the signed-in email on first paint instead of "לא
+  // מחוברים לחשבון" while a separate session read (which can refresh the token
+  // over a slow network) catches up.
+  const [authEmail, setAuthEmail] = useState<string | null>(() => user?.email ?? null);
 
   // Web-Push enrollment state — resolved asynchronously on mount
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -90,12 +94,10 @@ export function useSettingsState() {
     settings.workoutSettings.hapticsEnabled,
   ]);
 
-  // Load auth user email on mount
+  // Follow the auth session (sign-in / account switch) without a network call.
   useEffect(() => {
-    getCurrentUser().then((user) => {
-      if (user) setAuthEmail(user.email ?? null);
-    });
-  }, []);
+    setAuthEmail(user?.email ?? null);
+  }, [user?.email]);
 
   // Resolve initial push-enabled state: supported + permission granted + active SW subscription
   useEffect(() => {

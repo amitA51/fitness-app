@@ -19,7 +19,15 @@ vi.mock('../../../lib/supabase', () => ({
   supabase: { rpc },
 }));
 
-import { acceptPendingConsents, getLegalConsentStatus, recordConsent } from '../consentService';
+import {
+  CONSENT_LKG_TTL_MS,
+  acceptPendingConsents,
+  cacheConsentPending,
+  getConsentGateStatus,
+  getLegalConsentStatus,
+  readCachedConsentPending,
+  recordConsent,
+} from '../consentService';
 import type { LegalVersionStatus } from '../types';
 
 const pendingTerms: LegalVersionStatus = {
@@ -33,7 +41,21 @@ const pendingTerms: LegalVersionStatus = {
 
 beforeEach(() => {
   rpc.mockReset();
+  localStorage.clear();
 });
+
+const pendingTermsRow = {
+  doc_type: 'terms',
+  current_version: '2.0',
+  content_hash: 'hash',
+  effective_date: '2026-01-01',
+  accepted_version: null,
+  needs_consent: true,
+};
+
+const acceptedTermsRow = { ...pendingTermsRow, accepted_version: '2.0', needs_consent: false };
+
+const networkDown = { data: null, error: { message: 'network', code: '08006' } };
 
 describe('getLegalConsentStatus', () => {
   it('maps rows and reports availability on success', async () => {
@@ -84,6 +106,115 @@ describe('getLegalConsentStatus', () => {
     // The feature is not live yet — that must not block the whole app.
     expect(result.unavailable).toBe(false);
     expect(result.statuses).toEqual([]);
+  });
+});
+
+describe('getConsentGateStatus — last-known-good fallback', () => {
+  it('follows a live "needed" answer and stores it', async () => {
+    rpc.mockResolvedValue({ data: [pendingTermsRow], error: null });
+
+    const result = await getConsentGateStatus({ id: 'u1' });
+
+    expect(result.unavailable).toBe(false);
+    expect(result.pending).toHaveLength(1);
+    expect(readCachedConsentPending('u1')).toHaveLength(1);
+  });
+
+  it('lets a user the server had cleared through when the read fails (no wall on an outage)', async () => {
+    rpc.mockResolvedValueOnce({ data: [acceptedTermsRow], error: null });
+    await getConsentGateStatus({ id: 'u1' });
+
+    rpc.mockResolvedValueOnce(networkDown);
+    const result = await getConsentGateStatus({ id: 'u1' });
+
+    expect(result.unavailable).toBe(true);
+    expect(result.pending).toEqual([]);
+  });
+
+  it('keeps asking a user the server had asked, when the read fails', async () => {
+    rpc.mockResolvedValueOnce({ data: [pendingTermsRow], error: null });
+    await getConsentGateStatus({ id: 'u1' });
+
+    rpc.mockResolvedValueOnce(networkDown);
+    const result = await getConsentGateStatus({ id: 'u1' });
+
+    expect(result.unavailable).toBe(true);
+    expect(result.pending.map((p) => p.docType)).toEqual(['terms']);
+  });
+
+  it('fails OPEN for an established account when the read fails and nothing is stored', async () => {
+    rpc.mockResolvedValue(networkDown);
+
+    const result = await getConsentGateStatus({ id: 'u1', created_at: '2026-01-01T00:00:00Z' });
+
+    expect(result).toEqual({ pending: [], unavailable: true, unverified: false });
+    // A fallback is never stored as if the server had said it.
+    expect(readCachedConsentPending('u1')).toBeNull();
+  });
+
+  it('holds a NEW account at the gate when the read fails and nothing is stored', async () => {
+    // Sign-up records no consent: the gate is the only place a new account is asked.
+    rpc.mockResolvedValue(networkDown);
+
+    const result = await getConsentGateStatus({ id: 'u1', created_at: new Date().toISOString() });
+
+    expect(result).toEqual({ pending: [], unavailable: true, unverified: true });
+  });
+
+  it('treats a request that throws (fetch timeout) like a failed read', async () => {
+    cacheConsentPending('u1', []);
+    rpc.mockRejectedValue(new DOMException('The server did not answer in time', 'TimeoutError'));
+
+    const result = await getConsentGateStatus({ id: 'u1' });
+
+    expect(result).toEqual({ pending: [], unavailable: true, unverified: false });
+  });
+
+  it('lets a stored "nothing to accept" expire after the TTL', () => {
+    const now = Date.now();
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(now - CONSENT_LKG_TTL_MS - 1000);
+    cacheConsentPending('u1', []);
+    clock.mockRestore();
+
+    expect(readCachedConsentPending('u1')).toBeNull();
+  });
+
+  it('never lets a stored "still needed" expire (only a live answer lifts it)', () => {
+    const now = Date.now();
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(now - CONSENT_LKG_TTL_MS - 1000);
+    cacheConsentPending('u1', [pendingTerms]);
+    clock.mockRestore();
+
+    expect(readCachedConsentPending('u1')).toHaveLength(1);
+  });
+
+  it('does not let a slow read asked BEFORE an acceptance overwrite it', async () => {
+    // The read is asked first and answers "needed" late; meanwhile the
+    // acceptance is recorded and stored. The late answer must be dropped.
+    let answer: (v: unknown) => void = () => {};
+    rpc.mockReturnValueOnce(
+      new Promise((resolve) => {
+        answer = resolve;
+      })
+    );
+    const slowRead = getConsentGateStatus({ id: 'u1' });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    cacheConsentPending('u1', []);
+
+    answer({ data: [pendingTermsRow], error: null });
+    await slowRead;
+
+    expect(readCachedConsentPending('u1')).toEqual([]);
+  });
+
+  it('keeps answers per user', async () => {
+    rpc.mockResolvedValueOnce({ data: [pendingTermsRow], error: null });
+    await getConsentGateStatus({ id: 'u1' });
+
+    rpc.mockResolvedValueOnce(networkDown);
+    const other = await getConsentGateStatus({ id: 'u2' });
+
+    expect(other.pending).toEqual([]);
   });
 });
 

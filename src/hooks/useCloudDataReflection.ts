@@ -2,23 +2,38 @@
 // Trainee-side reflection of coach edits (all data tables)
 // ============================================================================
 // A coach can now edit a trainee's sessions, nutrition, body weight, etc.
-// directly in the cloud. The trainee's app is local-first and only pulls on the
-// SIGNED_IN event, so a warm/open app would never see those edits. This hook,
-// mounted once at the app root, closes that gap:
-//   1. on mount (when authenticated) it pulls the whole store once, best-effort;
-//   2. it subscribes to Realtime on every coach-writable table and, per table,
-//      debounces a fetch+merge of just that table, then emits the existing
-//      data-changed event so any open screen reloads.
+// directly in the cloud. The trainee's app is local-first, so a warm/open app
+// would never see those edits. This hook, mounted once at the app root, closes
+// that gap:
+//   1. on mount and on every return to the foreground it runs the ROUTINE pull
+//      (pullAllDataIfStale): incremental, and skipped when the last successful
+//      pull is under 15 minutes old. It used to pull every table in full on
+//      every mount;
+//   2. only for a user with an active coach (getCoachLinkState), it subscribes
+//      to Realtime on every coach-writable table and, per table, debounces a
+//      fetch+merge of just the rows that changed, then emits the existing
+//      data-changed event so any open screen reloads. A self-guided user — most
+//      users — opens no channels at all. The link is re-checked on every return
+//      to the foreground and on COACH_LINK_STATE_EVENT (a link made or ended on
+//      this device, or a failed probe that has since got an answer).
 // It no-ops for guests and when Supabase is unconfigured.
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { subscribeToUserTable } from '../services/coach/realtime';
+import { COACH_LINK_STATE_EVENT } from '../services/coach/coachLinkEvents';
+import { getCoachLinkState } from '../services/coach/messageService';
+import { type UserTableChange, subscribeToUserTable } from '../services/coach/realtime';
 import { emitTemplatesChanged, emitWorkoutSaved } from '../services/dataEvents';
 
 // 1.2s: long enough to coalesce a burst of coach edits (a multi-set update fires
 // several row events), short enough that the trainee sees the change promptly.
 const REFLECT_DEBOUNCE_MS = 1200;
+
+/**
+ * Above this many changed rows in one burst, one incremental pull of the table
+ * is cheaper than asking for each id.
+ */
+const MAX_IDS_PER_REFLECTION = 200;
 
 /** Coach-writable trainee tables we mirror live (RLS scopes them to the link). */
 const REFLECTED_TABLES = [
@@ -56,98 +71,131 @@ const emitChangeFor = (table: ReflectedTable): void => {
   window.dispatchEvent(new CustomEvent('settings-updated'));
 };
 
-/** Fetch the one changed table from the cloud, merge it locally, then notify. */
-const reflectTable = async (table: ReflectedTable, userId: string): Promise<void> => {
-  const [sync, mappers] = await Promise.all([
-    import('../services/supabaseSync'),
-    import('../services/supabaseSyncMappers'),
-  ]);
+/** Rows of one table waiting for the debounce to fire. */
+interface PendingReflection {
+  ids: Set<string>;
+  /** An event named no row (or too many did): catch up on the whole table instead. */
+  wholeTable: boolean;
+  timer: ReturnType<typeof setTimeout> | undefined;
+}
 
-  if (table === 'workout_sessions') {
-    const { mergeWorkoutSessionsFromCloud } = await import('../services/sessionDb');
-    const rows = await sync.fetchWorkoutSessions(userId);
-    await mergeWorkoutSessionsFromCloud(rows.map(mappers.toCanonicalSession));
-  } else if (table === 'workout_templates') {
-    const { mergeWorkoutTemplatesFromCloud } = await import('../services/templateDb');
-    const rows = await sync.fetchWorkoutTemplates(userId);
-    await mergeWorkoutTemplatesFromCloud(rows.map(mappers.toCanonicalTemplate));
-  } else if (table === 'body_weight') {
-    const { mergeBodyWeightFromCloud } = await import('../services/bodyWeightDb');
-    const rows = await sync.fetchBodyWeight(userId);
-    await mergeBodyWeightFromCloud(rows.map(mappers.toCanonicalBodyWeight));
-  } else if (table === 'body_measurements') {
-    const { mergeBodyMeasurementsFromCloud } = await import('../services/cloudMerge');
-    const rows = await sync.fetchBodyMeasurements(userId);
-    await mergeBodyMeasurementsFromCloud(rows.map(mappers.toCanonicalBodyMeasurement));
-  } else if (table === 'personal_records') {
-    const { mergePersonalRecordsFromCloud } = await import('../services/cloudMerge');
-    const rows = await sync.fetchPersonalRecords(userId);
-    await mergePersonalRecordsFromCloud(rows);
-  } else if (table === 'recovery_logs') {
-    const { mergeRecoveryLogsFromCloud } = await import('../services/cloudMerge');
-    const rows = await sync.fetchRecoveryLogs(userId);
-    await mergeRecoveryLogsFromCloud(rows);
-  } else if (table === 'nutrition_logs') {
-    const { mergeNutritionLogsFromCloud } = await import('../services/cloudMerge');
-    const rows = await sync.fetchNutritionLogs(userId);
-    await mergeNutritionLogsFromCloud(rows.map(mappers.toCanonicalNutritionLog));
-  }
-
+/**
+ * Fetch just the changed rows of one table (or, when the events named no row,
+ * the rows changed since the last pull), merge them locally, then notify.
+ * Each realtime event used to refetch the table's ENTIRE history.
+ */
+const reflectRows = async (table: ReflectedTable, pending: PendingReflection): Promise<void> => {
+  const { pullTableRows } = await import('../services/supabaseSyncOrchestrator');
+  const ids =
+    pending.wholeTable || pending.ids.size > MAX_IDS_PER_REFLECTION ? undefined : [...pending.ids];
+  await pullTableRows(table, ids);
   emitChangeFor(table);
 };
 
+/** True while the page is on screen (always true outside a browser). */
+const isVisible = (): boolean =>
+  typeof document === 'undefined' || document.visibilityState !== 'hidden';
+
 /**
- * Mount once (app root). Pulls everything on entry, then keeps the local store
- * in sync with coach edits via Realtime. No-ops for guests / offline.
+ * Mount once (app root). Keeps the local store in step with the cloud on entry
+ * and on return to the foreground, and — for a coach-linked user — with coach
+ * edits via Realtime. No-ops for guests / offline.
  */
 export function useCloudDataReflection(): void {
   const { user, isGuest } = useAuth();
   const userId = user?.id ?? null;
-  const timersRef = useRef<Partial<Record<ReflectedTable, ReturnType<typeof setTimeout>>>>({});
 
   useEffect(() => {
     if (!userId || isGuest) return;
 
     let cancelled = false;
-    const timers = timersRef.current;
-    const unsubscribers: Array<() => void> = [];
+    const pending = new Map<ReflectedTable, PendingReflection>();
+    let unsubscribers: Array<() => void> | null = null;
 
-    // (a) Best-effort full pull so a warm open catches edits made while away.
-    void (async () => {
-      try {
-        const { pullAllData } = await import('../services/supabaseSync');
-        await pullAllData();
-        if (cancelled) return;
-        for (const table of REFLECTED_TABLES) emitChangeFor(table);
-      } catch {
-        // Offline / transient — Realtime below still reflects subsequent edits.
-      }
-    })();
+    // (a) Routine pull: incremental, at most once per freshness window.
+    const pullIfStale = () => {
+      void (async () => {
+        try {
+          const { pullAllDataIfStale } = await import('../services/supabaseSyncOrchestrator');
+          const result = await pullAllDataIfStale();
+          if (cancelled || result.skipped) return;
+          for (const table of REFLECTED_TABLES) emitChangeFor(table);
+        } catch {
+          // Offline / transient — the next foreground (or Realtime) catches up.
+        }
+      })();
+    };
 
-    // (b) Per-table Realtime → debounced fetch+merge+emit.
-    for (const table of REFLECTED_TABLES) {
-      const unsubscribe = subscribeToUserTable(table, userId, () => {
+    // (b) Per-table Realtime → debounced fetch of the changed rows → emit.
+    const onRowChange = (table: ReflectedTable) => (change: UserTableChange) => {
+      if (cancelled) return;
+      const entry: PendingReflection = pending.get(table) ?? {
+        ids: new Set<string>(),
+        wholeTable: false,
+        timer: undefined,
+      };
+      if (change.id) entry.ids.add(change.id);
+      else entry.wholeTable = true;
+      if (entry.timer) clearTimeout(entry.timer);
+      entry.timer = setTimeout(() => {
+        pending.delete(table);
         if (cancelled) return;
-        const existing = timers[table];
-        if (existing) clearTimeout(existing);
-        timers[table] = setTimeout(() => {
-          void reflectTable(table, userId).catch(() => {
-            // Swallow: a failed reflection must not crash the app; the next
-            // event (or full pull) retries.
-          });
-        }, REFLECT_DEBOUNCE_MS);
-      });
-      unsubscribers.push(unsubscribe);
-    }
+        void reflectRows(table, entry).catch(() => {
+          // Swallow: a failed reflection must not crash the app; the next
+          // event (or routine pull) catches up.
+        });
+      }, REFLECT_DEBOUNCE_MS);
+      pending.set(table, entry);
+    };
+
+    const subscribe = () => {
+      unsubscribers = REFLECTED_TABLES.map((table) =>
+        subscribeToUserTable(table, userId, onRowChange(table))
+      );
+    };
+    const unsubscribe = () => {
+      for (const stop of unsubscribers ?? []) stop();
+      unsubscribers = null;
+    };
+
+    // Channels only while someone can actually edit this user's data. The link
+    // state is cached (getCoachLinkState), so re-checking on each foreground is
+    // cheap; an unknown answer (offline) leaves the channels as they are.
+    const syncSubscriptions = async () => {
+      const link = await getCoachLinkState().catch(() => null);
+      if (cancelled || link === null) return;
+      const wanted = link.coachIds.length > 0;
+      if (wanted && !unsubscribers) subscribe();
+      else if (!wanted && unsubscribers) unsubscribe();
+    };
+
+    pullIfStale();
+    void syncSubscriptions();
+
+    // (c) Back in the foreground: catch up (throttled) and re-check the link.
+    const onVisibilityChange = () => {
+      if (!isVisible()) return;
+      pullIfStale();
+      void syncSubscriptions();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    // (d) The link state changed (an invite accepted, a coach disconnected) or
+    // became known after a failed probe: open or close the channels now.
+    const onLinkStateChange = () => {
+      void syncSubscriptions();
+    };
+    window.addEventListener(COACH_LINK_STATE_EVENT, onLinkStateChange);
 
     return () => {
       cancelled = true;
-      for (const unsubscribe of unsubscribers) unsubscribe();
-      for (const table of REFLECTED_TABLES) {
-        const t = timers[table];
-        if (t) clearTimeout(t);
-        delete timers[table];
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener(COACH_LINK_STATE_EVENT, onLinkStateChange);
+      unsubscribe();
+      for (const entry of pending.values()) {
+        if (entry.timer) clearTimeout(entry.timer);
       }
+      pending.clear();
     };
   }, [userId, isGuest]);
 }

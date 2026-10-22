@@ -42,7 +42,9 @@ android {
         applicationId "com.sparkos.fitness"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        // Play refuses an upload whose versionCode it has seen before; the CI
+        // build (codemagic.yaml) passes -PversionCode=<build number>.
+        versionCode((project.findProperty('versionCode') ?: '1') as Integer)
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

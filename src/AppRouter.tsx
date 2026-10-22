@@ -361,23 +361,34 @@ export function AppRouter() {
 // ("האימונים שלי") reaches it directly and never redirects.
 // ============================================================================
 
+// Until the server answers, `isCoach` is the role cached on the last visit (see
+// RoleHome). Both guards trust it instead of showing a loader: a returning
+// coach gets the coach screens at once, a trainee never waits, and an answer
+// that disagrees redirects the moment it lands. Only a coach screen opened with
+// no cached coach role waits CoachContext's short read cap.
 function CoachGuard({ children }: { children: ReactNode }) {
   const { isCoach, loading } = useCoach();
+  if (isCoach) return <>{children}</>;
   if (loading) return <PageLoader />;
-  if (!isCoach) return <Navigate to="/" replace />;
-  return <>{children}</>;
+  return <Navigate to="/" replace />;
 }
 
 function TraineeGuard({ children }: { children: ReactNode }) {
-  const { isCoach, loading } = useCoach();
-  if (loading) return <PageLoader />;
+  const { isCoach } = useCoach();
   if (isCoach) return <Navigate to="/coach" replace />;
   return <>{children}</>;
 }
 
-function RoleHome() {
-  const { isCoach, loading } = useCoach();
-  if (loading) return <PageLoader />;
+/**
+ * "/" never waits on the role reads. Until the server answers, `isCoach` is the
+ * role cached on the last visit, so a trainee (or a brand-new account, which has
+ * no cache) gets the Dashboard at once, and a returning coach goes straight to
+ * /coach, where CoachGuard waits CoachContext's short cap at most. An answer
+ * that disagrees re-renders this: a new coach is redirected, and a demoted coach
+ * is bounced home again by CoachGuard. Exported for the route test.
+ */
+export function RoleHome() {
+  const { isCoach } = useCoach();
   if (isCoach) return <Navigate to="/coach" replace />;
   return (
     <PageErrorBoundary pageLabel="מסך הבית">
@@ -891,44 +902,23 @@ function AppShell() {
 
   // Surface any coach-set reminders that are due, as local notifications, while
   // the app is open. (Delivery when the app is closed is handled by Web Push.)
-  // The 60s poll is paused while the tab is hidden and resumed on focus, so we
-  // don't run timers/IndexedDB work in the background.
+  // The loop lives in reminderService (startReminderLoop): due reminders are
+  // checked every minute against a cached list, the list is re-read from the
+  // server at most every 5 minutes, one run at a time, and nothing runs while
+  // the tab is hidden.
   useEffect(() => {
     let active = true;
-    let interval: number | null = null;
+    let stopLoop: (() => void) | null = null;
 
-    const run = () => {
-      import('./services/coach/reminderService')
-        .then(({ materializeDueReminders }) => {
-          if (active) void materializeDueReminders();
-        })
-        .catch(() => {});
-    };
-
-    const start = () => {
-      if (interval !== null) return;
-      run();
-      interval = window.setInterval(run, 60_000);
-    };
-
-    const stop = () => {
-      if (interval === null) return;
-      window.clearInterval(interval);
-      interval = null;
-    };
-
-    const handleVisibility = () => {
-      if (document.hidden) stop();
-      else start();
-    };
-
-    if (!document.hidden) start();
-    document.addEventListener('visibilitychange', handleVisibility);
+    import('./services/coach/reminderService')
+      .then(({ startReminderLoop }) => {
+        if (active) stopLoop = startReminderLoop();
+      })
+      .catch((err) => logger.app.warn('Reminder loop failed to load', err));
 
     return () => {
       active = false;
-      stop();
-      document.removeEventListener('visibilitychange', handleVisibility);
+      stopLoop?.();
     };
   }, []);
 

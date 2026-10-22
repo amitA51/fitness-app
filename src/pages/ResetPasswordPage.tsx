@@ -19,11 +19,15 @@ import { AlertCircle, Check, Lock } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { AnnualInput } from '../components/ui/AnnualInput';
 import { Button } from '../components/ui/Button';
-import { isSupabaseConfigured, supabase } from '../lib/supabase';
-import { updatePassword } from '../services/supabaseAuth';
+import { hasPendingAuthCallback, isSupabaseConfigured, supabase } from '../lib/supabase';
+import { authErrorMessage } from '../services/authErrors';
+import { passwordRuleError, updatePassword } from '../services/supabaseAuth';
 import { logger } from '../utils/logger';
 
 type ScreenState = 'verifying' | 'ready' | 'invalid' | 'done';
+
+const NO_LINK_GRACE_MS = 2_500;
+const RECOVERY_EXCHANGE_WAIT_MS = 20_000;
 
 /**
  * Recovery errors arrive in the URL fragment (`#error=...&error_description=...`)
@@ -92,14 +96,26 @@ export default function ResetPasswordPage() {
         logger.auth.warn('Recovery session lookup failed', err);
       });
 
-    // The exchange is local (no network round-trip beyond the initial load), so a
-    // short grace period is enough to distinguish "still parsing" from "no token".
-    const timeout = window.setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      setGeneralError('לא זיהינו קישור איפוס תקין. בקשו קישור חדש ופתחו אותו מאותו מכשיר.');
-      setState('invalid');
-    }, 2500);
+    // Without a token in the URL a short grace period is enough to tell "still
+    // parsing" from "no token". WITH one, the SDK asks the server who the token
+    // belongs to before it reports the session — on an overloaded day that took
+    // longer than the grace period, and a valid link was called invalid. Auth
+    // requests give up after 15 s (src/lib/supabase.ts), so wait past that and
+    // then say what actually happened.
+    const linkInUrl = hasPendingAuthCallback();
+    const timeout = window.setTimeout(
+      () => {
+        if (settled) return;
+        settled = true;
+        setGeneralError(
+          linkInUrl
+            ? authErrorMessage('unreachable')
+            : 'לא זיהינו קישור איפוס תקין. בקשו קישור חדש ופתחו אותו מאותו מכשיר.'
+        );
+        setState('invalid');
+      },
+      linkInUrl ? RECOVERY_EXCHANGE_WAIT_MS : NO_LINK_GRACE_MS
+    );
 
     return () => {
       subscription.unsubscribe();
@@ -122,19 +138,28 @@ export default function ResetPasswordPage() {
         setConfirmError('הסיסמאות אינן זהות');
         return;
       }
-
-      setSaving(true);
-      // updatePassword() runs the shared strength policy and returns a localised
-      // message, so the rules stay identical to sign-up.
-      const { error } = await updatePassword(password);
-      setSaving(false);
-
-      if (error) {
-        setGeneralError(error);
+      // The shared strength rule names the exact rule broken, in Hebrew, beside
+      // the field. updatePassword() applies the same rule again.
+      const ruleError = passwordRuleError(password);
+      if (ruleError) {
+        setFieldError(ruleError);
         return;
       }
 
-      setState('done');
+      setSaving(true);
+      // finally: whatever happens below, the button must not keep spinning.
+      try {
+        const { error, errorKind } = await updatePassword(password);
+        if (error) {
+          // Server text is English ("New password should be different…"), so
+          // the screen shows the Hebrew for its kind instead.
+          setGeneralError(authErrorMessage(errorKind));
+          return;
+        }
+        setState('done');
+      } finally {
+        setSaving(false);
+      }
     },
     [password, confirm]
   );
